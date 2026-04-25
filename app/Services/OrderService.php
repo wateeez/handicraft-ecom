@@ -152,11 +152,15 @@ class OrderService
         $item = new OrderItem([
             'order_id' => $order->id,
             'product_id' => $itemData['product_id'] ?? null,
+            'purchase_type' => $itemData['purchase_type'] ?? 'Normal',
             'quantity' => $itemData['quantity'] ?? 1,
             'unit_price' => $itemData['unit_price'],
             'weight_kg' => $itemData['weight_kg'] ?? 0,
             'item_discount_type' => $itemData['item_discount_type'] ?? 'none',
             'item_discount_value' => $itemData['item_discount_value'] ?? 0,
+            // Spiritual options
+            'spiritual_option' => $itemData['spiritual_option'] ?? null,
+            'option_price' => $itemData['option_price'] ?? 0,
         ]);
 
         // Build product snapshot
@@ -200,7 +204,18 @@ class OrderService
         $order->load('items');
 
         // The subtotal now DIRECTLY reflects item-level discounts
-        $subtotal = $order->items->sum('line_total');
+        $subtotal = ($this->unit_price + ($this->option_price ?? 0)) * $this->quantity;
+
+        if ($this->item_discount_type === 'percent') {
+            $this->item_discount_amount = round($subtotal * ($this->item_discount_value / 100), 2);
+        } elseif ($this->item_discount_type === 'fixed') {
+            $this->item_discount_amount = min($this->item_discount_value, $subtotal);
+        } else {
+            $this->item_discount_amount = 0;
+        }
+
+        $this->line_total = max(0, $subtotal - $this->item_discount_amount);
+
         $itemDiscountTotal = $order->items->sum('item_discount_amount');
         $totalWeight = $order->items->sum(fn($i) => $i->weight_kg * $i->quantity);
 

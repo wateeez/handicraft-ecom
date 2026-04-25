@@ -28,13 +28,70 @@ class CartController extends Controller
     {
         $productId = $request->product_id;
         $quantity = $request->quantity ?? 1;
+        $purchaseType = $request->purchase_type ?? 'Normal';
+        $spiritualOption = $request->spiritual_option ?? null;
+        $optionPrice = (float)($request->option_price ?? 0);
+
+        // Validate product exists
+        $product = Product::find($productId);
+        if (!$product) {
+            return redirect()->route('products.index')->with('error', 'Product not found.');
+        }
+
+        // Validate spiritual options if product has them
+        if ($product->has_spiritual_options) {
+            $validOptions = ['Filling Only', 'Blessing Only', 'Both Filling & Blessing'];
+            
+            // If a spiritual option is selected, validate it
+            if ($spiritualOption && !in_array($spiritualOption, $validOptions)) {
+                return redirect()->back()->with('error', 'Invalid spiritual option selected.');
+            }
+
+            // Validate option price matches the product's configured price
+            if ($spiritualOption) {
+                $expectedPrice = match($spiritualOption) {
+                    'Filling Only' => (float)$product->price_filling_only,
+                    'Blessing Only' => (float)$product->price_blessing_only,
+                    'Both Filling & Blessing' => (float)$product->price_both,
+                    default => 0
+                };
+
+                if (abs($optionPrice - $expectedPrice) > 0.01) { // Allow for floating point tolerance
+                    return redirect()->back()->with('error', 'Invalid option price provided.');
+                }
+            }
+        } else {
+            // If product doesn't have spiritual options, reject any spiritual option
+            if ($spiritualOption) {
+                return redirect()->back()->with('error', 'This product does not support spiritual options.');
+            }
+            $optionPrice = 0;
+        }
+
+        // Validate purchase type
+        $validPurchaseTypes = ['Normal', 'Sale'];
+        if (!in_array($purchaseType, $validPurchaseTypes)) {
+            return redirect()->back()->with('error', 'Invalid purchase type selected.');
+        }
+
+        // Build a unique cart key combining product_id + spiritual_option
+        // This allows the same product with different options to be separate cart items
+        $cartKey = $product->id . '_' . ($spiritualOption ? md5($spiritualOption) : 'none');
 
         $cart = session()->get('cart', []);
 
-        if (isset($cart[$productId])) {
-            $cart[$productId] += $quantity;
+        // If item already in cart, update quantity; otherwise create new entry
+        if (isset($cart[$cartKey])) {
+            $cart[$cartKey]['quantity'] += $quantity;
         } else {
-            $cart[$productId] = $quantity;
+            $cart[$cartKey] = [
+                'product_id' => $product->id,
+                'quantity' => $quantity,
+                'purchase_type' => $purchaseType,
+                'spiritual_option' => $spiritualOption,
+                'option_price' => $optionPrice,
+                'added_at' => now()->timestamp
+            ];
         }
 
         session()->put('cart', $cart);
@@ -45,19 +102,33 @@ class CartController extends Controller
     public function index()
     {
         $cart = session()->get('cart', []);
-        $products = Product::whereIn('id', array_keys($cart))->get();
+        
+        // Extract unique product IDs from cart
+        $productIds = array_unique(array_column($cart, 'product_id') ?: []);
+        $products = Product::whereIn('id', $productIds)->get();
+        $productMap = $products->keyBy('id');
 
         $cartItems = [];
         $subtotal = 0;
 
-        foreach ($products as $product) {
-            $qty = $cart[$product->id];
+        foreach ($cart as $cartKey => $cartItem) {
+            $product = $productMap->get($cartItem['product_id']);
+            if (!$product) continue;
+
+            $itemPrice = $product->effective_price + $cartItem['option_price'];
+            $itemSubtotal = $itemPrice * $cartItem['quantity'];
+
             $cartItems[] = [
+                'cartKey' => $cartKey,
                 'product' => $product,
-                'quantity' => $qty,
-                'subtotal' => $product->effective_price * $qty
+                'quantity' => $cartItem['quantity'],
+                'purchase_type' => $cartItem['purchase_type'] ?? 'Normal',
+                'spiritual_option' => $cartItem['spiritual_option'] ?? null,
+                'option_price' => $cartItem['option_price'] ?? 0,
+                'item_price' => $itemPrice,
+                'subtotal' => $itemSubtotal
             ];
-            $subtotal += ($product->effective_price * $qty);
+            $subtotal += $itemSubtotal;
         }
 
         return view('frontend.cart.index', compact('cartItems', 'subtotal'));
@@ -106,15 +177,29 @@ class CartController extends Controller
             if (empty($cart))
                 return redirect()->route('home');
 
-            $products = Product::whereIn('id', array_keys($cart))->get();
-            foreach ($products as $product) {
-                $qty = $cart[$product->id];
+            // Extract unique product IDs from cart
+            $productIds = array_unique(array_column($cart, 'product_id') ?: []);
+            $products = Product::whereIn('id', $productIds)->get();
+            $productMap = $products->keyBy('id');
+
+            foreach ($cart as $cartKey => $cartItem) {
+                $product = $productMap->get($cartItem['product_id']);
+                if (!$product) continue;
+
+                $itemPrice = $product->effective_price + $cartItem['option_price'];
+                $itemSubtotal = $itemPrice * $cartItem['quantity'];
+
                 $items[] = [
+                    'cartKey' => $cartKey,
                     'product' => $product,
-                    'quantity' => $qty,
-                    'subtotal' => $product->effective_price * $qty
+                    'quantity' => $cartItem['quantity'],
+                    'purchase_type' => $cartItem['purchase_type'] ?? 'Normal',
+                    'spiritual_option' => $cartItem['spiritual_option'] ?? null,
+                    'option_price' => $cartItem['option_price'] ?? 0,
+                    'item_price' => $itemPrice,
+                    'subtotal' => $itemSubtotal
                 ];
-                $subtotal += ($product->effective_price * $qty);
+                $subtotal += $itemSubtotal;
             }
         }
 
@@ -187,13 +272,13 @@ class CartController extends Controller
     // Update cart quantity
     public function updateQuantity(Request $request)
     {
-        $productId = $request->product_id;
+        $cartKey = $request->cart_key;
         $quantity = max(1, (int) $request->quantity); // Ensure at least 1
 
         $cart = session()->get('cart', []);
 
-        if (isset($cart[$productId])) {
-            $cart[$productId] = $quantity;
+        if (isset($cart[$cartKey])) {
+            $cart[$cartKey]['quantity'] = $quantity;
             session()->put('cart', $cart);
         }
 
@@ -203,11 +288,11 @@ class CartController extends Controller
     // Remove item from cart
     public function removeItem(Request $request)
     {
-        $productId = $request->product_id;
+        $cartKey = $request->cart_key;
         $cart = session()->get('cart', []);
 
-        if (isset($cart[$productId])) {
-            unset($cart[$productId]);
+        if (isset($cart[$cartKey])) {
+            unset($cart[$cartKey]);
             session()->put('cart', $cart);
         }
 
@@ -279,17 +364,25 @@ class CartController extends Controller
             if (empty($cart)) {
                 return response()->json(['error' => 'Your cart is empty.'], 422);
             }
-            $products = Product::whereIn('id', array_keys($cart))->get()->keyBy('id');
-            foreach ($cart as $productId => $qty) {
-                $product = $products[$productId] ?? null;
+            
+            // Extract unique product IDs from cart
+            $productIds = array_unique(array_column($cart, 'product_id') ?: []);
+            $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
+            
+            foreach ($cart as $cartKey => $cartItem) {
+                $product = $products[$cartItem['product_id']] ?? null;
                 if (!$product) continue;
+                
                 $items[] = [
                     'product_id'        => $product->id,
-                    'quantity'          => $qty,
+                    'purchase_type'     => $cartItem['purchase_type'] ?? 'Normal',
+                    'quantity'          => $cartItem['quantity'],
                     'unit_price'        => $product->effective_price,
                     'weight_kg'         => $product->weight ?? 0,
                     'item_discount_type' => 'none',
                     'item_discount_value' => 0,
+                    'spiritual_option'  => $cartItem['spiritual_option'] ?? null,
+                    'option_price'      => $cartItem['option_price'] ?? 0,
                 ];
             }
         }

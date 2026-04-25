@@ -145,6 +145,9 @@ class InvoiceService
                 'item_discount_type' => $item->item_discount_type,
                 'item_discount_value' => $item->item_discount_value,
                 'item_discount_amount' => $item->item_discount_amount,
+                'purchase_type' => $item->purchase_type,
+                'spiritual_option' => $item->spiritual_option,
+                'option_price' => $item->option_price,
                 'line_total' => $item->line_total,
             ];
         })->toArray();

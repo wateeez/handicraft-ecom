@@ -57,6 +57,24 @@
             <p><strong>Dispatched:</strong> {{ $order->dispatched_at?->format('d M Y, H:i') }}</p>
             <p><strong>Expected Delivery:</strong> {{ $order->expected_delivery_at?->format('d M Y') }}</p>
         </div>
+
+        @if($order->items->count() > 0)
+            <div style="background: white; border: 1px solid #e5e7eb; padding: 15px; margin: 15px 0; border-radius: 4px;">
+                <h3 style="margin-top: 0; margin-bottom: 10px; font-size: 14px;">Order Items:</h3>
+                @foreach($order->items as $item)
+                    <div style="padding: 10px 0; border-bottom: 1px solid #f0f0f0;">
+                        <div style="font-weight: bold;">{{ $item->product_snapshot['name'] ?? 'Product' }}</div>
+                        <div style="font-size: 13px; color: #666;">
+                            Quantity: {{ $item->quantity }} | Purchase Type: {{ $item->purchase_type }}
+                            @if($item->spiritual_option)
+                                | Spiritual Option: {{ $item->spiritual_option }}
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
         <p>Best regards,<br>The Operations Team</p>
     </div>
     <div class="footer">This is an automated message.</div>

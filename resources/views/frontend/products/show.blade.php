@@ -159,12 +159,122 @@
                 <div class="flex flex-col gap-4">
                     {{-- Order Now Button --}}
                     @if($product->is_order_now_enabled)
-                        <form action="{{ route('cart.add') }}" method="POST">
+                        <form action="{{ route('cart.add') }}" method="POST" 
+                              x-data="{
+                                  qty: {{ $product->min_quantity }},
+                                  min: {{ $product->min_quantity }},
+                                  basePrice: {{ $product->effective_price }},
+                                  purchaseType: 'Normal',
+                                  spiritualOption: '',
+                                  optionPrice: 0,
+                                  fillingPrice: {{ $product->price_filling_only ?? 0 }},
+                                  blessingPrice: {{ $product->price_blessing_only ?? 0 }},
+                                  bothPrice: {{ $product->price_both ?? 0 }},
+                                  hasSpiritual: {{ $product->has_spiritual_options ? 'true' : 'false' }},
+                                  getTotalPrice() {
+                                      return this.basePrice + this.optionPrice;
+                                  },
+                                  getPriceBreakdown() {
+                                      let breakdown = 'Base: $' + this.basePrice.toFixed(2);
+                                      if (this.optionPrice > 0) {
+                                          breakdown += ' + ' + this.spiritualOption + ': $' + this.optionPrice.toFixed(2);
+                                      }
+                                      breakdown += ' = $' + this.getTotalPrice().toFixed(2) + ' per item';
+                                      return breakdown;
+                                  },
+                                  updateOptionPrice(option) {
+                                      this.spiritualOption = option;
+                                      switch(option) {
+                                          case 'Filling Only':
+                                              this.optionPrice = this.fillingPrice;
+                                              break;
+                                          case 'Blessing Only':
+                                              this.optionPrice = this.blessingPrice;
+                                              break;
+                                          case 'Both Filling & Blessing':
+                                              this.optionPrice = this.bothPrice;
+                                              break;
+                                          default:
+                                              this.optionPrice = 0;
+                                      }
+                                  }
+                              }">
                             @csrf
                             <input type="hidden" name="product_id" value="{{ $product->id }}">
+                            <input type="hidden" name="purchase_type" x-model="purchaseType">
+                            <input type="hidden" name="spiritual_option" x-model="spiritualOption">
+                            <input type="hidden" name="option_price" x-model="optionPrice">
+                            
+                            <!-- Purchase Type Selection -->
+                            <div class="mb-6">
+                                <label class="font-medium text-truffle-extra-dark mb-3 block">Purchase Type:</label>
+                                <div class="flex gap-3">
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="purchase_type_radio" value="Normal" 
+                                               x-model="purchaseType" class="w-4 h-4">
+                                        <span class="text-truffle-extra-dark">Normal</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="purchase_type_radio" value="Sale" 
+                                               x-model="purchaseType" class="w-4 h-4">
+                                        <span class="text-truffle-extra-dark">Sale</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Spiritual Options (Conditional) -->
+                            @if($product->has_spiritual_options)
+                                <div class="mb-6 p-4 bg-[#F5F2EA] rounded-lg border border-gold/30">
+                                    <label class="font-medium text-truffle-extra-dark mb-3 block">Spiritual Options:</label>
+                                    <div class="space-y-2">
+                                        <label class="flex items-center gap-3 cursor-pointer p-2 rounded hover:bg-white/50 transition">
+                                            <input type="radio" name="spiritual_option_radio" value="" 
+                                                   @change="updateOptionPrice('')" 
+                                                   x-model="spiritualOption" class="w-4 h-4">
+                                            <span class="text-truffle-extra-dark">No Spiritual Option</span>
+                                        </label>
+                                        <label class="flex items-center gap-3 cursor-pointer p-2 rounded hover:bg-white/50 transition">
+                                            <input type="radio" name="spiritual_option_radio" value="Filling Only" 
+                                                   @change="updateOptionPrice('Filling Only')" class="w-4 h-4">
+                                            <span class="text-truffle-extra-dark">
+                                                Filling Only 
+                                                <span class="text-gold font-semibold">+${{ number_format($product->price_filling_only ?? 0, 2) }}</span>
+                                            </span>
+                                        </label>
+                                        <label class="flex items-center gap-3 cursor-pointer p-2 rounded hover:bg-white/50 transition">
+                                            <input type="radio" name="spiritual_option_radio" value="Blessing Only" 
+                                                   @change="updateOptionPrice('Blessing Only')" class="w-4 h-4">
+                                            <span class="text-truffle-extra-dark">
+                                                Blessing Only 
+                                                <span class="text-gold font-semibold">+${{ number_format($product->price_blessing_only ?? 0, 2) }}</span>
+                                            </span>
+                                        </label>
+                                        <label class="flex items-center gap-3 cursor-pointer p-2 rounded hover:bg-white/50 transition">
+                                            <input type="radio" name="spiritual_option_radio" value="Both Filling & Blessing" 
+                                                   @change="updateOptionPrice('Both Filling & Blessing')" class="w-4 h-4">
+                                            <span class="text-truffle-extra-dark">
+                                                Both Filling & Blessing 
+                                                <span class="text-gold font-semibold">+${{ number_format($product->price_both ?? 0, 2) }}</span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                            @endif
+
+                            <!-- Price Breakdown Display -->
+                            <div class="mb-6 p-4 bg-gold/10 rounded-lg border border-gold/30">
+                                <div class="text-sm font-medium text-truffle-extra-dark">
+                                    <span x-text="getPriceBreakdown()"></span>
+                                </div>
+                                <div class="text-lg font-bold text-gold mt-2">
+                                    Total per item: $<span x-text="getTotalPrice().toFixed(2)"></span>
+                                </div>
+                            </div>
+
+                            <!-- Quantity Selection -->
                             <div class="flex items-center gap-4 mb-4">
                                 <label class="font-medium text-truffle-extra-dark">Quantity:</label>
-                                <div class="flex items-center border border-truffle-medium/30 rounded-full overflow-hidden" x-data="{ qty: {{ $product->min_quantity }}, min: {{ $product->min_quantity }} }">
+                                <div class="flex items-center border border-truffle-medium/30 rounded-full overflow-hidden">
                                     <button type="button" @click="qty = Math.max(min, qty - 1)"
                                         class="w-9 h-9 flex items-center justify-center text-truffle-extra-dark hover:text-truffle-extra-dark hover:bg-[#F5F2EA] transition text-lg leading-none select-none">-</button>
                                     <input type="number" name="quantity" x-model="qty" :min="min"
@@ -173,6 +283,7 @@
                                         class="w-9 h-9 flex items-center justify-center text-truffle-extra-dark hover:text-truffle-extra-dark hover:bg-[#F5F2EA] transition text-lg leading-none select-none">+</button>
                                 </div>
                             </div>
+
                             <button type="submit"
                                 class="w-full bg-green-premium text-white text-lg font-bold py-4 rounded-full shadow-lg hover:bg-green-800 transition transform hover:-translate-y-1">
                                 Add to Cart

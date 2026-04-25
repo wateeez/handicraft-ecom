@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Category;
+use App\Models\Inquiry;
 use App\Models\ShippingZone;
 use App\Models\SiteSetting;
 use App\Models\SubCategory;
@@ -37,7 +39,11 @@ class Product extends Model
         'is_featured',
         'is_recommended',
         'is_on_sale',
-        'carousel_priority'
+        'carousel_priority',
+        'has_spiritual_options',
+        'price_filling_only',
+        'price_blessing_only',
+        'price_both',
     ];
 
     protected $guarded = [];

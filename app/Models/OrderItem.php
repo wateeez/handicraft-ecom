@@ -10,6 +10,7 @@ class OrderItem extends Model
     protected $fillable = [
         'order_id',
         'product_id',
+        'purchase_type',
         'product_snapshot',
         'quantity',
         'unit_price',
@@ -18,6 +19,8 @@ class OrderItem extends Model
         'item_discount_value',
         'item_discount_amount',
         'line_total',
+        'spiritual_option',
+        'option_price',
     ];
 
     protected $casts = [
@@ -28,6 +31,8 @@ class OrderItem extends Model
         'item_discount_value' => 'decimal:2',
         'item_discount_amount' => 'decimal:2',
         'line_total' => 'decimal:2',
+        'option_price' => 'decimal:2',
+        'spiritual_option' => 'string',
     ];
 
     public function order(): BelongsTo
