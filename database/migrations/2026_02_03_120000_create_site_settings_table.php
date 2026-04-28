@@ -24,7 +24,7 @@ return new class extends Migration
         DB::table('site_settings')->insert([
             [
                 'key' => 'site_name',
-                'value' => 'LuxeStore',
+                'value' => 'Handicraft Nepal',
                 'type' => 'text',
                 'group' => 'general',
                 'created_at' => now(),

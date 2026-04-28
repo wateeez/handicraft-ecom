@@ -35,7 +35,7 @@ class AppServiceProvider extends ServiceProvider
                     $footerQrCode = rescue(fn() => SiteSetting::where('key', 'footer_qr_code')->first());
 
                     $view->with('siteSettings', [
-                        'site_name'          => rescue(fn() => SiteSetting::get('site_name', 'LuxeStore'), 'LuxeStore'),
+                        'site_name'          => rescue(fn() => SiteSetting::get('site_name', 'Handicraft Nepal'), 'Handicraft Nepal'),
                         'navbar_logo'        => $navbarLogo,
                         'footer_logo'        => $footerLogo,
                         'favicon'            => $favicon,
@@ -56,7 +56,7 @@ class AppServiceProvider extends ServiceProvider
                 }
             } catch (\Throwable $e) {
                 $view->with('siteSettings', [
-                    'site_name'          => 'LuxeStore',
+                    'site_name'          => 'Handicraft Nepal',
                     'navbar_logo'        => null,
                     'footer_logo'        => null,
                     'favicon'            => null,
