@@ -43,7 +43,7 @@
                 <div class="flex-1 min-w-0 flex justify-center">
                     <a href="{{ route('admin.dashboard') }}" class="flex items-center justify-center min-w-0">
                         @if(!empty($siteSettings['navbar_logo_url']))
-                            <img src="{{ $siteSettings['navbar_logo_url'] }}"
+                            <img src="{{ asset($siteSettings['navbar_logo_url']) }}"
                                 alt="{{ $siteSettings['site_name'] ?? 'Ecom' }} Admin"
                                 class="h-10 w-auto max-w-[150px] md:max-w-[200px] object-contain">
                         @else

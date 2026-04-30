@@ -11,7 +11,12 @@
                 <div class="relative z-10">
                     <div id="imageContainer" class="rounded-xl overflow-hidden mb-4 bg-[#F5F2EA] h-[50vh] md:h-[90vh] flex items-center justify-center relative cursor-crosshair">
                         @if($product->main_image)
-                            <img src="{{ $product->main_image }}" alt="{{ $product->name }}"
+                            @php
+                                // Extract filename from stored path and prepend the new folder
+                                $mainImageFile = basename($product->main_image);
+                                $mainImageUrl = asset('storage/product/' . $mainImageFile);
+                            @endphp
+                            <img src="{{ $mainImageUrl }}" alt="{{ $product->name }}"
                                 class="max-h-full max-w-full object-contain" id="mainProductImage">
                         @else
                             <span class="text-truffle-extra-dark/70 text-lg">No Image</span>
@@ -90,22 +95,25 @@
                         <div class="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                             <!-- Main image thumbnail -->
                             @if($product->main_image)
-                                <img src="{{ $product->main_image }}" 
-                                    onclick="document.getElementById('mainProductImage').src='{{ $product->main_image }}'"
+                                @php $thumbFile = basename($product->main_image); @endphp
+                                <img src="{{ asset('storage/product/' . $thumbFile) }}" 
+                                    onclick="document.getElementById('mainProductImage').src='{{ asset('storage/product/' . $thumbFile) }}'"
                                     class="h-20 w-20 object-cover rounded-lg border-2 border-green-premium cursor-pointer hover:opacity-75 transition flex-shrink-0"
                                     alt="Main">
                             @endif
                             <!-- Secondary image thumbnail -->
                             @if($product->secondary_image)
-                                <img src="{{ $product->secondary_image }}" 
-                                    onclick="document.getElementById('mainProductImage').src='{{ $product->secondary_image }}'"
+                                @php $secFile = basename($product->secondary_image); @endphp
+                                <img src="{{ asset('storage/product/' . $secFile) }}" 
+                                    onclick="document.getElementById('mainProductImage').src='{{ asset('storage/product/' . $secFile) }}'"
                                     class="h-20 w-20 object-cover rounded-lg border-2 border-truffle-medium/30 cursor-pointer hover:border-green-premium hover:opacity-75 transition flex-shrink-0"
                                     alt="Secondary">
                             @endif
                             <!-- Additional images -->
                             @foreach($product->images ?? [] as $image)
-                                <img src="{{ $image }}" 
-                                    onclick="document.getElementById('mainProductImage').src='{{ $image }}'"
+                                @php $imgFile = basename($image); @endphp
+                                <img src="{{ asset('storage/product/' . $imgFile) }}" 
+                                    onclick="document.getElementById('mainProductImage').src='{{ asset('storage/product/' . $imgFile) }}'"
                                     class="h-20 w-20 object-cover rounded-lg border-2 border-truffle-medium/30 cursor-pointer hover:border-green-premium hover:opacity-75 transition flex-shrink-0"
                                     alt="Product image">
                             @endforeach
@@ -201,26 +209,11 @@
                               }">
                             @csrf
                             <input type="hidden" name="product_id" value="{{ $product->id }}">
-                            <input type="hidden" name="purchase_type" x-model="purchaseType">
+                            <!-- purchase_type hidden input removed -->
                             <input type="hidden" name="spiritual_option" x-model="spiritualOption">
                             <input type="hidden" name="option_price" x-model="optionPrice">
                             
-                            <!-- Purchase Type Selection -->
-                            <div class="mb-6">
-                                <label class="font-medium text-truffle-extra-dark mb-3 block">Purchase Type:</label>
-                                <div class="flex gap-3">
-                                    <label class="flex items-center gap-2 cursor-pointer">
-                                        <input type="radio" name="purchase_type_radio" value="Normal" 
-                                               x-model="purchaseType" class="w-4 h-4">
-                                        <span class="text-truffle-extra-dark">Normal</span>
-                                    </label>
-                                    <label class="flex items-center gap-2 cursor-pointer">
-                                        <input type="radio" name="purchase_type_radio" value="Sale" 
-                                               x-model="purchaseType" class="w-4 h-4">
-                                        <span class="text-truffle-extra-dark">Sale</span>
-                                    </label>
-                                </div>
-                            </div>
+                            <!-- Purchase Type selection removed -->
 
                             <!-- Spiritual Options (Conditional) -->
                             @if($product->has_spiritual_options)
@@ -261,15 +254,7 @@
                                 </div>
                             @endif
 
-                            <!-- Price Breakdown Display -->
-                            <div class="mb-6 p-4 bg-gold/10 rounded-lg border border-gold/30">
-                                <div class="text-sm font-medium text-truffle-extra-dark">
-                                    <span x-text="getPriceBreakdown()"></span>
-                                </div>
-                                <div class="text-lg font-bold text-gold mt-2">
-                                    Total per item: $<span x-text="getTotalPrice().toFixed(2)"></span>
-                                </div>
-                            </div>
+                            <!-- Price breakdown UI removed as per request -->
 
                             <!-- Quantity Selection -->
                             <div class="flex items-center gap-4 mb-4">

@@ -70,7 +70,7 @@
                         
                         @if($navbarLogo && $navbarLogo->value)
                             <div class="mb-3 p-4 bg-[#F5F2EA] rounded-lg border border-truffle-medium/30">
-                                <img src="{{ $navbarLogo->getLogoUrl() }}" 
+                                <img src="{{ asset($navbarLogo->getLogoUrl()) }}" 
                                      alt="Current Navbar Logo" 
                                      class="h-16 w-auto object-contain mb-2">
                                 <label class="flex items-center text-sm text-red-600 cursor-pointer">
@@ -103,7 +103,7 @@
                         
                         @if($footerLogo && $footerLogo->value)
                             <div class="mb-3 p-4 bg-[#F5F2EA] rounded-lg border border-truffle-medium/30">
-                                <img src="{{ $footerLogo->getLogoUrl() }}" 
+                                <img src="{{ asset($footerLogo->getLogoUrl()) }}" 
                                      alt="Current Footer Logo" 
                                      class="h-16 w-auto object-contain mb-2 bg-gray-800 p-2 rounded">
                                 <label class="flex items-center text-sm text-red-600 cursor-pointer">
@@ -139,7 +139,7 @@
                         @if($favicon && $favicon->value)
                             <div class="mb-3 p-4 bg-[#F5F2EA] rounded-lg border border-truffle-medium/30 flex items-center justify-between">
                                 <div class="flex items-center">
-                                    <img src="{{ $favicon->getLogoUrl() }}" 
+                                    <img src="{{ asset($favicon->getLogoUrl()) }}" 
                                          alt="Current Favicon" 
                                          class="h-8 w-8 object-contain mr-3">
                                     <span class="text-sm text-truffle-extra-dark">Current favicon</span>
@@ -200,7 +200,7 @@
                         <div class="mb-3 p-4 bg-[#F5F2EA] rounded-lg border border-truffle-medium/30">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center">
-                                    <img src="{{ $footerQrCode->getLogoUrl() }}" 
+                                    <img src="{{ asset($footerQrCode->getLogoUrl()) }}" 
                                          alt="Current QR Code" 
                                          class="w-24 h-24 object-contain border border-truffle-medium/30 rounded mr-4 bg-cream p-2">
                                     <span class="text-sm text-truffle-extra-dark">Current QR Code</span>

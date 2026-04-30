@@ -202,7 +202,7 @@
                             <!-- Image -->
                             <div class="relative aspect-[3/4] overflow-hidden bg-[#F5F2EA]">
                                 @if($product->main_image)
-                                    <img src="{{ $product->main_image }}" alt="{{ $product->name }}"
+                                    <img src="{{ asset($product->main_image) }}" alt="{{ $product->name }}"
                                         class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
                                 @else
                                     <div class="w-full h-full flex items-center justify-center text-truffle-extra-dark/70">No Image</div>

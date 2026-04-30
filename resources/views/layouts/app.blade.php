@@ -39,7 +39,7 @@
                 <!-- Logo / Store Name -->
                 <a href="{{ route('home') }}" class="flex items-center space-x-3">
                     @if(!empty($siteSettings['navbar_logo_url']))
-                        <img src="{{ $siteSettings['navbar_logo_url'] }}"
+                        <img src="{{ asset($siteSettings['navbar_logo_url']) }}"
                             alt="{{ $siteSettings['site_name'] }}" class="h-12 w-auto object-contain">
                     @else
                         <span class="text-2xl font-bold font-serif text-truffle-extra-dark tracking-wide">
@@ -131,7 +131,7 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div>
                     @if(!empty($siteSettings['footer_logo_url']))
-                        <img src="{{ $siteSettings['footer_logo_url'] }}"
+                        <img src="{{ asset($siteSettings['footer_logo_url']) }}"
                             alt="{{ $siteSettings['site_name'] }}" class="h-16 w-auto object-contain mb-4">
                     @else
                         <h3 class="text-xl font-serif mb-4">{{ $siteSettings['site_name'] }}</h3>
@@ -214,7 +214,7 @@
                             @endphp
                             <a href="{{ $whatsappLink }}" target="_blank" rel="noopener noreferrer"
                                 title="Chat on WhatsApp">
-                                <img src="{{ $siteSettings['footer_qr_code_url'] }}"
+                                <img src="{{ asset($siteSettings['footer_qr_code_url']) }}"
                                     alt="WhatsApp QR Code"
                                     class="w-32 h-32 object-contain bg-cream p-2 rounded hover:shadow-lg transition cursor-pointer">
                             </a>

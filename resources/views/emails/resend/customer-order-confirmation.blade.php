@@ -17,7 +17,7 @@
                     <!-- Header with Logo -->
                     <tr>
                         <td align="center" style="background-color: #2d4a34; padding: 40px 20px;">
-                            <img src="{{ config('app.url') }}/images/logo.png" alt="Handicraft Nepal NP" width="200" style="display: block; margin-bottom: 20px; border: 0;">
+                            <img src="{{ asset('images/logo.png') }}" alt="Handicraft Nepal NP" width="200" style="display: block; margin-bottom: 20px; border: 0;">
                             <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: normal; text-transform: uppercase; letter-spacing: 2px;">Order Confirmation</h1>
                         </td>
                     </tr>

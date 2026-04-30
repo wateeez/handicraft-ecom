@@ -10,7 +10,6 @@ class OrderItem extends Model
     protected $fillable = [
         'order_id',
         'product_id',
-        'purchase_type',
         'product_snapshot',
         'quantity',
         'unit_price',
@@ -21,6 +20,7 @@ class OrderItem extends Model
         'line_total',
         'spiritual_option',
         'option_price',
+        // 'purchase_type' removed as it is no longer needed
     ];
 
     protected $casts = [

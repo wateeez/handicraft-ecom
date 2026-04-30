@@ -58,7 +58,7 @@
                         <label class="block text-sm font-medium text-truffle-extra-dark mb-2">Featured Image</label>
                         @if($blog->featured_image)
                             <div class="mb-3 p-4 bg-[#F5F2EA] rounded-lg border border-truffle-medium/30">
-                                <img src="{{ $blog->featured_image }}" alt="" class="w-48 h-32 object-cover rounded mb-2">
+                                <img src="{{ asset($blog->featured_image) }}" alt="" class="w-48 h-32 object-cover rounded mb-2">
                                 <label class="flex items-center text-sm text-red-600 cursor-pointer">
                                     <input type="checkbox" name="remove_featured_image" value="1" class="mr-2">
                                     Remove current image

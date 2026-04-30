@@ -33,7 +33,7 @@
                 <p><strong>Dimensions:</strong>
                     {{ $inquiry->product->length }}x{{ $inquiry->product->width }}x{{ $inquiry->product->height }} cm</p>
                 <div class="mt-4">
-                    <img src="{{ $inquiry->product->main_image }}" alt="Product Image" class="h-32 object-cover rounded">
+                    <img src="{{ asset($inquiry->product->main_image) }}" alt="Product Image" class="h-32 object-cover rounded">
                 </div>
             @else
                 <p class="text-red-500">Product no longer exists.</p>
