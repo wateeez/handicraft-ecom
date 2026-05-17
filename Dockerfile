@@ -25,4 +25,6 @@ RUN php artisan config:cache \
 
 EXPOSE 80
 
-CMD service nginx start && php-fpm
+COPY docker/start.sh /start.sh
+RUN chmod +x /start.sh
+CMD ["/start.sh"]
