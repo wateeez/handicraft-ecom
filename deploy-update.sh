@@ -20,7 +20,7 @@ echo ""
 # 2. Run migrations
 echo "2. Running database migrations..."
 php artisan migrate --force
-echo "✓ Migrations completed"
+echo "Migrations completed"
 echo ""
 
 # 3. Seed roles and permissions

@@ -19,7 +19,7 @@
     </style>
 </head>
 
-<body class="bg-truffle-light text-truffle-extra-dark">
+<body class="bg-truffle-light text-truffle-extra-dark m-0 p-0">
 
     <div class="min-h-screen md:h-screen flex flex-col md:flex-row">
         <input id="adminSidebarToggle" type="checkbox" class="peer sr-only" aria-hidden="true" />
