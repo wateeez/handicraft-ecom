@@ -19,10 +19,6 @@ RUN npm install && npm run build
 
 COPY docker/nginx.conf /etc/nginx/sites-enabled/default
 
-RUN php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache
-
 EXPOSE 80
 
 COPY docker/start.sh /start.sh
