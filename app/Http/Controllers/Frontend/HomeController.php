@@ -6,16 +6,26 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Category;
+use Illuminate\Support\Facades\Cache;
 
 class HomeController extends Controller
 {
     public function index(Request $request)
     {
-        // Get counts for filter tabs
-        $newArrivalsCount = Product::where('is_new_arrival', true)->count();
-        $featuredCount = Product::where('is_featured', true)->count();
-        $recommendedCount = Product::where('is_recommended', true)->count();
-        $onSaleCount = Product::where('is_on_sale', true)->whereNotNull('discount_price')->count();
+        // Cache filter-tab counts for 60 seconds to avoid repeated DB hits
+        // that cause 504 timeouts on cold starts / high-latency PostgreSQL connections.
+        $newArrivalsCount = Cache::remember('count_new_arrivals', 60, fn () =>
+            Product::where('is_new_arrival', true)->count()
+        );
+        $featuredCount = Cache::remember('count_featured', 60, fn () =>
+            Product::where('is_featured', true)->count()
+        );
+        $recommendedCount = Cache::remember('count_recommended', 60, fn () =>
+            Product::where('is_recommended', true)->count()
+        );
+        $onSaleCount = Cache::remember('count_on_sale', 60, fn () =>
+            Product::where('is_on_sale', true)->whereNotNull('discount_price')->count()
+        );
 
         $query = Product::query();
 
@@ -104,7 +114,9 @@ class HomeController extends Controller
         }
 
         $products = $query->paginate(16);
-        $categories = Category::with('subCategories')->withCount('products')->get();
+        $categories = Cache::remember('all_categories_with_counts', 120, fn () =>
+            Category::with('subCategories')->withCount('products')->get()
+        );
 
         return view('frontend.home', compact(
             'products', 
