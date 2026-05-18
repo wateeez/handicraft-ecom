@@ -17,6 +17,14 @@ COPY . .
 RUN composer install --no-dev --optimize-autoloader
 RUN npm install && npm run build
 
+RUN mkdir -p storage/framework/sessions \
+    storage/framework/views \
+    storage/framework/cache \
+    storage/logs \
+    bootstrap/cache && \
+    chmod -R 775 storage bootstrap/cache && \
+    chown -R www-data:www-data storage bootstrap/cache
+
 COPY docker/nginx.conf /etc/nginx/sites-enabled/default
 
 EXPOSE 80
