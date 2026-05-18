@@ -3,7 +3,6 @@ set -e
 
 # 1. Bind to Render's dynamic port
 PORT=${PORT:-80}
-sed -i "s/listen 80;/listen $PORT;/g" /etc/nginx/sites-enabled/default
 
 # 2. Fix storage permissions at runtime
 mkdir -p storage/framework/sessions \
@@ -23,5 +22,5 @@ php artisan view:cache
 php artisan migrate --force
 
 # 5. Start services
-service nginx start
-php-fpm
+echo "Starting PHP built-in server on port ${PORT:-80}..."
+php -S 0.0.0.0:${PORT:-80} -t public

@@ -14,18 +14,18 @@ class HomeController extends Controller
     {
         // Cache filter-tab counts for 60 seconds to avoid repeated DB hits
         // that cause 504 timeouts on cold starts / high-latency PostgreSQL connections.
-        $newArrivalsCount = Cache::remember('count_new_arrivals', 60, fn () =>
-            Product::where('is_new_arrival', true)->count()
-        );
-        $featuredCount = Cache::remember('count_featured', 60, fn () =>
-            Product::where('is_featured', true)->count()
-        );
-        $recommendedCount = Cache::remember('count_recommended', 60, fn () =>
-            Product::where('is_recommended', true)->count()
-        );
-        $onSaleCount = Cache::remember('count_on_sale', 60, fn () =>
-            Product::where('is_on_sale', true)->whereNotNull('discount_price')->count()
-        );
+        $newArrivalsCount = Cache::remember('count_new_arrivals', 60, function () {
+            try { return Product::where('is_new_arrival', true)->count(); } catch (\Exception $e) { return 0; }
+        });
+        $featuredCount = Cache::remember('count_featured', 60, function () {
+            try { return Product::where('is_featured', true)->count(); } catch (\Exception $e) { return 0; }
+        });
+        $recommendedCount = Cache::remember('count_recommended', 60, function () {
+            try { return Product::where('is_recommended', true)->count(); } catch (\Exception $e) { return 0; }
+        });
+        $onSaleCount = Cache::remember('count_on_sale', 60, function () {
+            try { return Product::where('is_on_sale', true)->whereNotNull('discount_price')->count(); } catch (\Exception $e) { return 0; }
+        });
 
         $query = Product::query();
 
