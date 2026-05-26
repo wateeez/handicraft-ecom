@@ -19,6 +19,12 @@ php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
+# 3a. Install Node dependencies and build front‑end assets
+# Ensure npm is available in the container image. This installs exact versions
+# from package-lock.json and then builds the production assets (e.g., Vite).
+npm ci
+npm run build
+
 # 4. Migrate database safely
 php artisan migrate --force
 

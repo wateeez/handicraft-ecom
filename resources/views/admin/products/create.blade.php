@@ -1,4 +1,4 @@
-﻿@extends('admin.layout')
+@extends('admin.layout')
 
 @section('header')
     <h2 class="font-semibold text-xl text-truffle-extra-dark leading-tight">
@@ -119,50 +119,6 @@
                         class="mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2">
                 </div>
 
-                <div class="col-span-2 rounded-lg border border-truffle-medium/30 bg-[#F5F2EA] p-4"
-                    x-data="{ enabled: {{ old('has_spiritual_options') ? 'true' : 'false' }} }">
-                    <div class="flex items-start gap-3">
-                        <input type="checkbox" name="has_spiritual_options" id="has_spiritual_options" value="1"
-                            x-model="enabled"
-                            class="mt-1 h-4 w-4 rounded border-truffle-medium/30 text-green-premium focus:ring-green-500"
-                            {{ old('has_spiritual_options') ? 'checked' : '' }}>
-                        <div>
-                            <label for="has_spiritual_options" class="block text-sm font-medium text-truffle-extra-dark">
-                                Enable Spiritual Options
-                            </label>
-                            <p class="mt-1 text-xs text-truffle-extra-dark/80">
-                                When enabled, customers can add Filling Only, Blessing Only, or Both Filling & Blessing to the selected purchase type.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4" x-show="enabled" x-cloak>
-                        <div>
-                            <label class="block text-sm font-medium text-truffle-extra-dark">Filling Only Price ($)</label>
-                            <input type="number" step="0.01" min="0" name="price_filling_only" value="{{ old('price_filling_only') }}"
-                                class="mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 @error('price_filling_only') border-red-500 @enderror">
-                            @error('price_filling_only')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-truffle-extra-dark">Blessing Only Price ($)</label>
-                            <input type="number" step="0.01" min="0" name="price_blessing_only" value="{{ old('price_blessing_only') }}"
-                                class="mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 @error('price_blessing_only') border-red-500 @enderror">
-                            @error('price_blessing_only')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-truffle-extra-dark">Both Filling & Blessing Price ($)</label>
-                            <input type="number" step="0.01" min="0" name="price_both" value="{{ old('price_both') }}"
-                                class="mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 @error('price_both') border-red-500 @enderror">
-                            @error('price_both')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
 
                 <div>
                     <label class="block text-sm font-medium text-truffle-extra-dark">Material (Optional)</label>

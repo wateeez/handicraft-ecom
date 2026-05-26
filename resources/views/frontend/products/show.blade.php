@@ -162,21 +162,11 @@
                             x-data="productPurchaseForm({
                                 minQuantity: {{ (int) $product->min_quantity }},
                                 basePrices: { normal: {{ number_format((float) $product->price, 2, '.', '') }}, sale: {{ number_format((float) ($product->discount_price ?? $product->price), 2, '.', '') }} },
-                                saleAvailable: {{ $product->hasSalePrice() ? 'true' : 'false' }},
-                                hasSpiritualOptions: {{ $product->has_spiritual_options ? 'true' : 'false' }},
-                                initialPurchaseType: '{{ old('purchase_type', $product->hasSalePrice() ? 'sale' : 'normal') }}',
-                                initialSpiritualOption: '{{ old('spiritual_option', '') }}',
-                                spiritualPrices: {
-                                    filling_only: {{ number_format((float) ($product->price_filling_only ?? 0), 2, '.', '') }},
-                                    blessing_only: {{ number_format((float) ($product->price_blessing_only ?? 0), 2, '.', '') }},
-                                    both: {{ number_format((float) ($product->price_both ?? 0), 2, '.', '') }}
-                                }
+                                saleAvailable: {{ $product->hasSalePrice() ? 'true' : 'false' }}
                             })"
                             class="space-y-5">
                             @csrf
                             <input type="hidden" name="product_id" value="{{ $product->id }}">
-                            <input type="hidden" name="purchase_type" :value="purchaseType">
-                            <input type="hidden" name="spiritual_option" :value="selectedSpiritualOption || ''">
 
                             <div class="rounded-2xl border border-truffle-medium/30 bg-[#F5F2EA] p-5">
                                 <div class="flex items-start justify-between gap-4">
@@ -185,10 +175,6 @@
                                         <div class="mt-2 text-3xl font-bold text-primary">
                                             $<span x-text="formatMoney(totalUnitPrice)"></span>
                                         </div>
-                                        <p class="mt-2 text-sm text-truffle-extra-dark/80">
-                                            Base $<span x-text="formatMoney(basePrice)"></span>
-                                            <span x-show="optionPrice > 0"> + Option $<span x-text="formatMoney(optionPrice)"></span></span>
-                                        </p>
                                     </div>
                                     @if($product->discount_price)
                                         <div class="text-right text-sm text-truffle-extra-dark/70">
@@ -199,59 +185,9 @@
                                 </div>
                             </div>
 
-                            <div>
-                                <label class="mb-3 block font-medium text-truffle-extra-dark">Purchase Type</label>
-                                <div class="grid grid-cols-2 gap-3">
-                                    <label class="rounded-xl border border-truffle-medium/30 bg-[#F5F2EA] p-4 transition"
-                                        :class="purchaseType === 'normal' ? 'ring-2 ring-green-premium border-green-premium' : ''">
-                                        <input type="radio" name="purchase_type_visible" value="normal" x-model="purchaseType" class="sr-only">
-                                        <div class="flex items-center justify-between gap-3">
-                                            <span class="font-semibold text-truffle-extra-dark">Normal</span>
-                                            <span class="text-sm font-bold text-truffle-extra-dark">$<span x-text="formatMoney(basePrices.normal)"></span></span>
-                                        </div>
-                                    </label>
-                                    <label class="rounded-xl border border-truffle-medium/30 bg-[#F5F2EA] p-4 transition"
-                                        :class="purchaseType === 'sale' ? 'ring-2 ring-green-premium border-green-premium' : ''"
-                                        :style="!saleAvailable ? 'opacity: 0.55;' : ''">
-                                        <input type="radio" name="purchase_type_visible" value="sale" x-model="purchaseType" class="sr-only"
-                                            :disabled="!saleAvailable">
-                                        <div class="flex items-center justify-between gap-3">
-                                            <span class="font-semibold text-truffle-extra-dark">Sale</span>
-                                            <span class="text-sm font-bold text-truffle-extra-dark">
-                                                <template x-if="saleAvailable">
-                                                    <span>$<span x-text="formatMoney(basePrices.sale)"></span></span>
-                                                </template>
-                                                <template x-if="!saleAvailable">
-                                                    <span>Not Available</span>
-                                                </template>
-                                            </span>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
 
-                            @if($product->has_spiritual_options)
-                                <div>
-                                    <label class="mb-3 block font-medium text-truffle-extra-dark">Spiritual Options</label>
-                                    <div class="space-y-3">
-                                        <template x-for="option in spiritualOptionChoices" :key="option.value">
-                                            <label class="block rounded-xl border border-truffle-medium/30 bg-[#F5F2EA] p-4 transition"
-                                                :class="selectedSpiritualOption === option.value ? 'ring-2 ring-green-premium border-green-premium' : ''">
-                                                <input type="radio" name="spiritual_option_visible" :value="option.value" x-model="selectedSpiritualOption" class="sr-only">
-                                                <div class="flex items-center justify-between gap-3">
-                                                    <div>
-                                                        <div class="font-semibold text-truffle-extra-dark" x-text="option.label"></div>
-                                                        <div class="mt-1 text-xs text-truffle-extra-dark/70" x-show="option.value === ''">No additional spiritual service</div>
-                                                    </div>
-                                                    <span class="text-sm font-bold text-truffle-extra-dark">
-                                                        <span x-text="option.price > 0 ? '+ $' + formatMoney(option.price) : '+ $0.00'"></span>
-                                                    </span>
-                                                </div>
-                                            </label>
-                                        </template>
-                                    </div>
-                                </div>
-                            @endif
+
+
 
                             <div class="flex items-center gap-4">
                                 <label class="font-medium text-truffle-extra-dark">Quantity:</label>
@@ -402,34 +338,15 @@
             return {
                 minQuantity: config.minQuantity,
                 qty: config.minQuantity,
-                purchaseType: config.saleAvailable ? (config.initialPurchaseType || 'sale') : 'normal',
                 basePrices: config.basePrices,
                 saleAvailable: config.saleAvailable,
-                hasSpiritualOptions: config.hasSpiritualOptions,
-                selectedSpiritualOption: config.hasSpiritualOptions ? (config.initialSpiritualOption || '') : '',
-                spiritualPrices: config.spiritualPrices,
                 get basePrice() {
-                    return this.purchaseType === 'sale' && this.saleAvailable
+                    return this.saleAvailable
                         ? Number(this.basePrices.sale || 0)
                         : Number(this.basePrices.normal || 0);
                 },
-                get optionPrice() {
-                    if (!this.hasSpiritualOptions || !this.selectedSpiritualOption) {
-                        return 0;
-                    }
-
-                    return Number(this.spiritualPrices[this.selectedSpiritualOption] || 0);
-                },
                 get totalUnitPrice() {
-                    return this.basePrice + this.optionPrice;
-                },
-                get spiritualOptionChoices() {
-                    return [
-                        { value: '', label: 'No Spiritual Option', price: 0 },
-                        { value: 'filling_only', label: 'Filling Only', price: Number(this.spiritualPrices.filling_only || 0) },
-                        { value: 'blessing_only', label: 'Blessing Only', price: Number(this.spiritualPrices.blessing_only || 0) },
-                        { value: 'both', label: 'Both Filling & Blessing', price: Number(this.spiritualPrices.both || 0) },
-                    ];
+                    return this.basePrice;
                 },
                 formatMoney(value) {
                     return Number(value || 0).toFixed(2);

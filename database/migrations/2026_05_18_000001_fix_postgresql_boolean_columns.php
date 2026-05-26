@@ -31,7 +31,6 @@ return new class extends Migration
                 'is_featured',
                 'is_recommended',
                 'is_on_sale',
-                'has_spiritual_options',
             ],
             // orders table
             'orders' => [
@@ -112,7 +111,6 @@ return new class extends Migration
                 'is_featured',
                 'is_recommended',
                 'is_on_sale',
-                'has_spiritual_options',
             ],
             'orders' => [
                 'is_paid',

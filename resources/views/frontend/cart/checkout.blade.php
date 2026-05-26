@@ -108,19 +108,7 @@
                                         (x{{ $item['quantity'] }})</span>
                                     <span class="font-medium">${{ number_format($item['subtotal'], 2) }}</span>
                                 </div>
-                                <div class="mt-1 flex flex-wrap gap-2 text-[11px]">
-                                    <span class="inline-flex items-center rounded-full bg-[#F5F2EA] px-2 py-0.5 font-medium text-truffle-extra-dark">
-                                        Purchase: {{ $item['purchase_type_label'] ?? 'Normal' }}
-                                    </span>
-                                    @if(!empty($item['spiritual_option_label']))
-                                        <span class="inline-flex items-center rounded-full bg-[#F5F2EA] px-2 py-0.5 font-medium text-truffle-extra-dark">
-                                            {{ $item['spiritual_option_label'] }}
-                                            @if(($item['option_price'] ?? 0) > 0)
-                                                (+${{ number_format($item['option_price'], 2) }})
-                                            @endif
-                                        </span>
-                                    @endif
-                                </div>
+
                                 <div class="text-xs text-truffle-extra-dark/70 mt-1 flex items-center gap-3">
                                     <span class="inline-flex items-center">
                                         <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

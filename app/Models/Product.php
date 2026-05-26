@@ -13,18 +13,6 @@ class Product extends Model
 {
     use HasFactory;
 
-    public const PURCHASE_TYPE_NORMAL = 'normal';
-    public const PURCHASE_TYPE_SALE = 'sale';
-
-    public const SPIRITUAL_OPTION_FILLING_ONLY = 'filling_only';
-    public const SPIRITUAL_OPTION_BLESSING_ONLY = 'blessing_only';
-    public const SPIRITUAL_OPTION_BOTH = 'both';
-
-    public const SPIRITUAL_OPTION_LABELS = [
-        self::SPIRITUAL_OPTION_FILLING_ONLY => 'Filling Only',
-        self::SPIRITUAL_OPTION_BLESSING_ONLY => 'Blessing Only',
-        self::SPIRITUAL_OPTION_BOTH => 'Both Filling & Blessing',
-    ];
 
     protected $fillable = [
         'name',
@@ -46,10 +34,6 @@ class Product extends Model
         'main_image',
         'secondary_image',
         'images',
-        'has_spiritual_options',
-        'price_filling_only',
-        'price_blessing_only',
-        'price_both',
         'is_order_now_enabled',
         'is_new_arrival',
         'is_featured',
@@ -62,10 +46,6 @@ class Product extends Model
 
     protected $casts = [
         'images' => 'array',
-        'has_spiritual_options' => 'boolean',
-        'price_filling_only' => 'decimal:2',
-        'price_blessing_only' => 'decimal:2',
-        'price_both' => 'decimal:2',
         'is_new_arrival' => 'boolean',
         'is_featured' => 'boolean',
         'is_recommended' => 'boolean',
@@ -104,53 +84,6 @@ class Product extends Model
         return $this->discount_price !== null && (float) $this->discount_price >= 0;
     }
 
-    public function getPurchaseTypeOptionsAttribute(): array
-    {
-        return [
-            self::PURCHASE_TYPE_NORMAL => [
-                'label' => 'Normal',
-                'price' => (float) $this->price,
-                'enabled' => true,
-            ],
-            self::PURCHASE_TYPE_SALE => [
-                'label' => 'Sale',
-                'price' => $this->hasSalePrice() ? (float) $this->discount_price : (float) $this->price,
-                'enabled' => $this->hasSalePrice(),
-            ],
-        ];
-    }
-
-    public function getSpiritualOptionPricesAttribute(): array
-    {
-        return [
-            self::SPIRITUAL_OPTION_FILLING_ONLY => (float) ($this->price_filling_only ?? 0),
-            self::SPIRITUAL_OPTION_BLESSING_ONLY => (float) ($this->price_blessing_only ?? 0),
-            self::SPIRITUAL_OPTION_BOTH => (float) ($this->price_both ?? 0),
-        ];
-    }
-
-    public function getPurchasePrice(string $purchaseType = self::PURCHASE_TYPE_NORMAL): float
-    {
-        if ($purchaseType === self::PURCHASE_TYPE_SALE && $this->hasSalePrice()) {
-            return (float) $this->discount_price;
-        }
-
-        return (float) $this->price;
-    }
-
-    public function getSpiritualOptionPrice(?string $option): float
-    {
-        if (!$this->has_spiritual_options || empty($option)) {
-            return 0.0;
-        }
-
-        return $this->spiritual_option_prices[$option] ?? 0.0;
-    }
-
-    public function getSpiritualOptionLabel(?string $option): ?string
-    {
-        return $option ? (self::SPIRITUAL_OPTION_LABELS[$option] ?? $option) : null;
-    }
 
     // Format dimension value - remove .00 if whole number
     public function formatDimension($value)

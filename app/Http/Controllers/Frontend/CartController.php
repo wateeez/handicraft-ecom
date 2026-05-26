@@ -11,7 +11,6 @@ use App\Models\ShippingZone;
 use App\Services\OrderService;
 use App\Services\ShippingService;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class CartController extends Controller
 {
@@ -29,25 +28,12 @@ class CartController extends Controller
         $validated = $request->validate([
             'product_id' => ['required', 'exists:products,id'],
             'quantity' => ['nullable', 'integer', 'min:1'],
-            'purchase_type' => ['nullable', Rule::in([Product::PURCHASE_TYPE_NORMAL, Product::PURCHASE_TYPE_SALE])],
-            'spiritual_option' => ['nullable', Rule::in(array_keys(Product::SPIRITUAL_OPTION_LABELS))],
         ]);
 
         $product = Product::findOrFail($validated['product_id']);
         $quantity = max((int) ($validated['quantity'] ?? 1), (int) ($product->min_quantity ?? 1));
-        $validated['purchase_type'] = $validated['purchase_type'] ?? Product::PURCHASE_TYPE_NORMAL;
 
-        if ($validated['purchase_type'] === Product::PURCHASE_TYPE_SALE && !$product->hasSalePrice()) {
-            return back()->withErrors(['purchase_type' => 'Sale pricing is not available for this product.'])->withInput();
-        }
-
-        $spiritualOption = $validated['spiritual_option'] ?? null;
-        if (!$product->has_spiritual_options) {
-            $spiritualOption = null;
-        }
-
-        $optionPrice = $product->getSpiritualOptionPrice($spiritualOption);
-        $lineKey = $this->makeCartLineKey($product->id, $validated['purchase_type'], $spiritualOption);
+        $lineKey = $this->makeCartLineKey($product->id);
         $cart = $this->getCartLines();
 
         if (isset($cart[$lineKey])) {
@@ -56,9 +42,6 @@ class CartController extends Controller
             $cart[$lineKey] = [
                 'product_id' => $product->id,
                 'quantity' => $quantity,
-                'purchase_type' => $validated['purchase_type'],
-                'spiritual_option' => $spiritualOption,
-                'option_price' => round($optionPrice, 2),
             ];
         }
 
@@ -90,13 +73,7 @@ class CartController extends Controller
                     $items[] = [
                         'product' => $item->product,
                         'quantity' => $item->quantity,
-                        'purchase_type' => $item->purchase_type,
-                        'purchase_type_label' => $item->purchase_type_label,
-                        'spiritual_option' => $item->spiritual_option,
-                        'spiritual_option_label' => $item->spiritual_option_label,
-                        'option_price' => (float) $item->option_price,
                         'unit_price' => (float) $item->unit_price,
-                        'base_unit_price' => (float) $item->base_unit_price,
                         'subtotal' => (float) $item->line_total,
                     ];
                     $subtotal += (float) $item->line_total;
@@ -111,13 +88,7 @@ class CartController extends Controller
                     $items[] = [
                         'product' => $inquiry->product,
                         'quantity' => $qty,
-                        'purchase_type' => Product::PURCHASE_TYPE_NORMAL,
-                        'purchase_type_label' => 'Normal',
-                        'spiritual_option' => null,
-                        'spiritual_option_label' => null,
-                        'option_price' => 0.0,
                         'unit_price' => $unitPrice,
-                        'base_unit_price' => $unitPrice,
                         'subtotal' => $unitPrice * $qty,
                     ];
                     $subtotal += ($unitPrice * $qty);
@@ -252,9 +223,6 @@ class CartController extends Controller
                 foreach ($omsOrder->items as $item) {
                     $items[] = [
                         'product_id' => $item->product_id,
-                        'purchase_type' => $item->purchase_type,
-                        'spiritual_option' => $item->spiritual_option,
-                        'option_price' => $item->option_price,
                         'quantity' => $item->quantity,
                         'unit_price' => $item->unit_price,
                         'weight_kg' => $item->weight_kg ?? ($item->product?->weight ?? 0),
@@ -273,9 +241,6 @@ class CartController extends Controller
                     $unitPrice = (float) $product->effective_price;
                     $items[] = [
                         'product_id' => $product->id,
-                        'purchase_type' => Product::PURCHASE_TYPE_NORMAL,
-                        'spiritual_option' => null,
-                        'option_price' => 0,
                         'quantity' => $qty,
                         'unit_price' => $unitPrice,
                         'weight_kg' => $product->weight ?? 0,
@@ -291,18 +256,10 @@ class CartController extends Controller
                     continue;
                 }
 
-                $purchaseType = $line['purchase_type'] ?? Product::PURCHASE_TYPE_NORMAL;
-                $spiritualOption = $product->has_spiritual_options ? ($line['spiritual_option'] ?? null) : null;
-                $optionPrice = $product->has_spiritual_options
-                    ? $product->getSpiritualOptionPrice($spiritualOption)
-                    : 0;
-                $unitPrice = $product->getPurchasePrice($purchaseType) + $optionPrice;
+                $unitPrice = $product->effective_price;
 
                 $items[] = [
                     'product_id' => $product->id,
-                    'purchase_type' => $purchaseType,
-                    'spiritual_option' => $spiritualOption,
-                    'option_price' => $optionPrice,
                     'quantity' => $line['quantity'],
                     'unit_price' => $unitPrice,
                     'weight_kg' => $product->weight ?? 0,
@@ -362,12 +319,9 @@ class CartController extends Controller
         foreach ($cart as $key => $line) {
             if (is_numeric($line)) {
                 $productId = (int) $key;
-                $normalized[$this->makeCartLineKey($productId, Product::PURCHASE_TYPE_NORMAL, null)] = [
+                $normalized[$this->makeCartLineKey($productId)] = [
                     'product_id' => $productId,
                     'quantity' => (int) $line,
-                    'purchase_type' => Product::PURCHASE_TYPE_NORMAL,
-                    'spiritual_option' => null,
-                    'option_price' => 0,
                 ];
                 continue;
             }
@@ -376,16 +330,9 @@ class CartController extends Controller
                 continue;
             }
 
-            $purchaseType = $line['purchase_type'] ?? Product::PURCHASE_TYPE_NORMAL;
-            $spiritualOption = $line['spiritual_option'] ?? null;
             $normalized[$key] = [
                 'product_id' => (int) $line['product_id'],
                 'quantity' => max(1, (int) ($line['quantity'] ?? 1)),
-                'purchase_type' => in_array($purchaseType, [Product::PURCHASE_TYPE_NORMAL, Product::PURCHASE_TYPE_SALE], true)
-                    ? $purchaseType
-                    : Product::PURCHASE_TYPE_NORMAL,
-                'spiritual_option' => $spiritualOption,
-                'option_price' => round((float) ($line['option_price'] ?? 0), 2),
             ];
         }
 
@@ -404,29 +351,13 @@ class CartController extends Controller
                 continue;
             }
 
-            $purchaseType = $line['purchase_type'] ?? Product::PURCHASE_TYPE_NORMAL;
-            if ($purchaseType === Product::PURCHASE_TYPE_SALE && !$product->hasSalePrice()) {
-                $purchaseType = Product::PURCHASE_TYPE_NORMAL;
-            }
-
-            $spiritualOption = $product->has_spiritual_options ? ($line['spiritual_option'] ?? null) : null;
-            $optionPrice = $product->has_spiritual_options
-                ? $product->getSpiritualOptionPrice($spiritualOption)
-                : 0;
-            $baseUnitPrice = $product->getPurchasePrice($purchaseType);
-            $unitPrice = $baseUnitPrice + $optionPrice;
+            $unitPrice = $product->effective_price;
             $quantity = max((int) ($line['quantity'] ?? 1), (int) ($product->min_quantity ?? 1));
 
             $items[] = [
                 'line_key' => $lineKey,
                 'product' => $product,
                 'quantity' => $quantity,
-                'purchase_type' => $purchaseType,
-                'purchase_type_label' => $purchaseType === Product::PURCHASE_TYPE_SALE ? 'Sale' : 'Normal',
-                'spiritual_option' => $spiritualOption,
-                'spiritual_option_label' => $product->getSpiritualOptionLabel($spiritualOption),
-                'option_price' => $optionPrice,
-                'base_unit_price' => $baseUnitPrice,
                 'unit_price' => $unitPrice,
                 'subtotal' => $unitPrice * $quantity,
             ];
@@ -435,12 +366,8 @@ class CartController extends Controller
         return $items;
     }
 
-    protected function makeCartLineKey(int $productId, string $purchaseType, ?string $spiritualOption): string
+    protected function makeCartLineKey(int $productId): string
     {
-        return implode(':', [
-            $productId,
-            $purchaseType,
-            $spiritualOption ?: 'none',
-        ]);
+        return (string) $productId;
     }
 }

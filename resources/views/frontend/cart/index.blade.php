@@ -37,16 +37,7 @@
                                             </div>
                                             <div class="ml-4">
                                                 <div class="text-sm font-medium text-truffle-extra-dark">{{ $item['product']->name }}</div>
-                                                <div class="mt-1 flex flex-wrap gap-2 text-[11px]">
-                                                    <span class="inline-flex items-center rounded-full bg-[#F5F2EA] px-2 py-0.5 font-medium text-truffle-extra-dark">
-                                                        Purchase: {{ $item['purchase_type_label'] }}
-                                                    </span>
-                                                    @if($item['spiritual_option_label'])
-                                                        <span class="inline-flex items-center rounded-full bg-[#F5F2EA] px-2 py-0.5 font-medium text-truffle-extra-dark">
-                                                            {{ $item['spiritual_option_label'] }}
-                                                        </span>
-                                                    @endif
-                                                </div>
+
                                                 <div class="text-xs text-truffle-extra-dark mt-1">
                                                     <span class="inline-flex items-center">
                                                         <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,15 +58,9 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-truffle-extra-dark">
                                         <div class="font-semibold text-primary">${{ number_format($item['unit_price'], 2) }}</div>
-                                        <div class="mt-1 text-xs text-truffle-extra-dark/70">
-                                            Base: ${{ number_format($item['base_unit_price'], 2) }}
-                                            @if($item['option_price'] > 0)
-                                                + Option: ${{ number_format($item['option_price'], 2) }}
-                                            @endif
-                                        </div>
-                                        @if($item['purchase_type'] === 'sale' && $item['product']->discount_price)
+                                        @if($item['product']->discount_price)
                                             <div class="text-[11px] text-truffle-extra-dark/60">
-                                                Normal price: ${{ number_format($item['product']->price, 2) }}
+                                                Normal price: <strike>${{ number_format($item['product']->price, 2) }}</strike>
                                             </div>
                                         @endif
                                     </td>

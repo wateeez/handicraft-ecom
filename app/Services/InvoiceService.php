@@ -138,12 +138,7 @@ class InvoiceService
             return [
                 'product_name' => $item->product_name,
                 'product_sku' => $item->product_sku,
-                'purchase_type' => $item->purchase_type,
-                'purchase_type_label' => $item->purchase_type_label,
-                'spiritual_option' => $item->spiritual_option,
-                'spiritual_option_label' => $item->spiritual_option_label,
-                'option_price' => $item->option_price,
-                'base_unit_price' => $item->base_unit_price,
+
                 'quantity' => $item->quantity,
                 'unit_price' => $item->unit_price,
                 'weight_kg' => $item->weight_kg,

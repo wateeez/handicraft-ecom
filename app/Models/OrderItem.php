@@ -11,9 +11,6 @@ class OrderItem extends Model
         'order_id',
         'product_id',
         'product_snapshot',
-        'purchase_type',
-        'spiritual_option',
-        'option_price',
         'quantity',
         'unit_price',
         'weight_kg',
@@ -26,7 +23,6 @@ class OrderItem extends Model
     protected $casts = [
         'product_snapshot' => 'array',
         'quantity' => 'integer',
-        'option_price' => 'decimal:2',
         'unit_price' => 'decimal:2',
         'weight_kg' => 'decimal:3',
         'item_discount_value' => 'decimal:2',
@@ -78,22 +74,5 @@ class OrderItem extends Model
         return $this->product_snapshot['sku'] ?? '-';
     }
 
-    public function getPurchaseTypeLabelAttribute(): string
-    {
-        return $this->purchase_type === Product::PURCHASE_TYPE_SALE ? 'Sale' : 'Normal';
-    }
 
-    public function getSpiritualOptionLabelAttribute(): ?string
-    {
-        if (empty($this->spiritual_option)) {
-            return null;
-        }
-
-        return Product::SPIRITUAL_OPTION_LABELS[$this->spiritual_option] ?? $this->spiritual_option;
-    }
-
-    public function getBaseUnitPriceAttribute(): float
-    {
-        return max(0, (float) $this->unit_price - (float) $this->option_price);
-    }
 }

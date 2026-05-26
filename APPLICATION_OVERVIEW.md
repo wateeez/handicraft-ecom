@@ -382,7 +382,7 @@ Running `php artisan db:seed` populates:
   - `admin.user@ecom.com` — Admin
   - `editor@ecom.com` — Editor
   - `viewer@ecom.com` — Viewer
-- **Default Site Setting**: Site name set to "LuxeStore"
+- **Default Site Setting**: Site name set to "Handicraft Nepal NP"
 
 ---
 

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 
 <head>
@@ -242,16 +242,7 @@
                             <strong>{{ $item['product_name'] }}</strong>
                             @if($item['product_sku']) <span style="color: #6b7280; font-size: 10px; display: block;">SKU:
                             {{ $item['product_sku'] }}</span> @endif
-                            <span style="color: #6b7280; font-size: 10px; display: block;">Purchase:
-                                {{ $item['purchase_type_label'] ?? 'Normal' }}</span>
-                            @if(!empty($item['spiritual_option_label']))
-                                <span style="color: #6b7280; font-size: 10px; display: block;">
-                                    {{ $item['spiritual_option_label'] }}
-                                    @if(($item['option_price'] ?? 0) > 0)
-                                        (+${{ number_format($item['option_price'], 2) }})
-                                    @endif
-                                </span>
-                            @endif
+
                             @if(!empty($item['dimensions'])) <span
                                 style="color: #6b7280; font-size: 10px; display: block;">Dim:
                             {{ $item['dimensions'] }}</span> @endif

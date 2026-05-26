@@ -19,7 +19,7 @@
                     <div>
                         <label class="block text-sm font-medium text-truffle-extra-dark mb-2">Site Name</label>
                         <input type="text" name="site_name" 
-                            value="{{ old('site_name', $siteName->value ?? 'LuxeStore') }}"
+                            value="{{ old('site_name', $siteName->value ?? 'Handicraft Nepal NP') }}"
                             class="w-full px-4 py-2 border border-truffle-medium/30 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
                         @error('site_name')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>

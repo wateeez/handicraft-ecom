@@ -1,4 +1,4 @@
-﻿@extends('admin.layout')
+@extends('admin.layout')
 
 @section('header')
     <div class="flex items-center gap-3">
@@ -119,19 +119,7 @@
                                 <span class="font-medium text-truffle-extra-dark">{{ $item['product_name'] }}</span>
                                 @if($item['product_sku'])
                                 <div class="text-xs text-truffle-extra-dark/70">SKU: {{ $item['product_sku'] }}</div> @endif
-                                <div class="mt-1 flex flex-wrap gap-2 text-[11px]">
-                                    <span class="inline-flex items-center rounded-full bg-[#F5F2EA] px-2 py-0.5 font-medium text-truffle-extra-dark">
-                                        Purchase: {{ $item['purchase_type_label'] ?? 'Normal' }}
-                                    </span>
-                                    @if(!empty($item['spiritual_option_label']))
-                                        <span class="inline-flex items-center rounded-full bg-[#F5F2EA] px-2 py-0.5 font-medium text-truffle-extra-dark">
-                                            {{ $item['spiritual_option_label'] }}
-                                            @if(($item['option_price'] ?? 0) > 0)
-                                                (+${{ number_format($item['option_price'], 2) }})
-                                            @endif
-                                        </span>
-                                    @endif
-                                </div>
+
                             </td>
                             <td class="py-3 text-right">{{ $item['quantity'] }}</td>
                             <td class="py-3 text-right">${{ number_format($item['unit_price'], 2) }}</td>
