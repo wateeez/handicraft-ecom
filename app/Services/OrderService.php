@@ -71,11 +71,13 @@ class OrderService
 
                 if ($freshOrder->type === Order::TYPE_INQUIRY) {
                     $this->resendNotificationService->sendAdminInquiryAlert($freshOrder);
+                    $this->resendNotificationService->sendCustomerInquiryConfirmation($freshOrder);
                     return;
                 }
 
                 if ($freshOrder->type === Order::TYPE_ORDER) {
                     $this->resendNotificationService->sendAdminOrderAlert($freshOrder);
+                    $this->resendNotificationService->sendCustomerOrderCreated($freshOrder);
                 }
             });
 

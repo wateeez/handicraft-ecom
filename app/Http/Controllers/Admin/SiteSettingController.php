@@ -27,14 +27,6 @@ class SiteSettingController extends Controller
         $footerPhone = SiteSetting::where('key', 'footer_phone')->first();
         $footerEmail = SiteSetting::where('key', 'footer_email')->first();
         $footerHours = SiteSetting::where('key', 'footer_hours')->first();
-        
-        // Theme Colors
-        $colorPrimary = SiteSetting::where('key', 'color_primary')->first();
-        $colorSecondary = SiteSetting::where('key', 'color_secondary')->first();
-        $colorAccent = SiteSetting::where('key', 'color_accent')->first();
-        $colorBackground = SiteSetting::where('key', 'color_background')->first();
-        $colorText = SiteSetting::where('key', 'color_text')->first();
-        
         return view('admin.settings.index', compact(
             'groupedSettings', 
             'siteName', 
@@ -48,12 +40,7 @@ class SiteSettingController extends Controller
             'footerAddress',
             'footerPhone',
             'footerEmail',
-            'footerHours',
-            'colorPrimary',
-            'colorSecondary',
-            'colorAccent',
-            'colorBackground',
-            'colorText'
+            'footerHours'
         ));
     }
 

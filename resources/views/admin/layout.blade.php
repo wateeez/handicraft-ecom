@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -19,231 +19,251 @@
     </style>
 </head>
 
-<body class="bg-truffle-light text-truffle-extra-dark m-0 p-0">
+<body class="bg-background text-foreground font-sans antialiased m-0 p-0 selection:bg-primary/20 selection:text-foreground">
 
-    <div class="min-h-screen md:h-screen flex flex-col md:flex-row">
+    <div class="min-h-screen md:h-screen flex flex-col md:flex-row bg-background">
         <input id="adminSidebarToggle" type="checkbox" class="peer sr-only" aria-hidden="true" />
 
         <!-- Mobile overlay -->
-        <label for="adminSidebarToggle" class="hidden peer-checked:block fixed inset-0 z-40 bg-black/40 md:hidden"
+        <label for="adminSidebarToggle" class="hidden peer-checked:block fixed inset-0 z-40 bg-foreground/40 backdrop-blur-xs md:hidden transition-all duration-300"
             aria-label="Close sidebar overlay"></label>
 
         <!-- Sidebar -->
         <aside id="adminSidebar"
-            class="fixed inset-y-0 left-0 z-50 w-64 bg-truffle-dark border-r border-truffle-extra-dark flex flex-col transform transition-transform duration-200 -translate-x-full peer-checked:translate-x-0 md:static md:translate-x-0">
-            <div class="h-16 flex items-center gap-3 border-b border-truffle-medium/30 px-4 min-w-0 bg-cream">
-                <label for="adminSidebarToggle"
-                    class="relative z-10 flex-shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-lg border border-truffle-medium/30 bg-cream text-truffle-extra-dark hover:bg-[#F5F2EA] md:hidden cursor-pointer"
-                    role="button" tabindex="0" aria-label="Close sidebar">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </label>
-                <div class="flex-1 min-w-0 flex justify-center">
-                    <a href="{{ route('admin.dashboard') }}" class="flex items-center justify-center min-w-0">
+            class="fixed inset-y-0 left-0 z-50 w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col transform transition-transform duration-300 ease-in-out -translate-x-full peer-checked:translate-x-0 md:static md:translate-x-0 shadow-xl md:shadow-none">
+            <div class="h-16 flex items-center justify-between gap-3 border-b border-sidebar-border px-5 min-w-0 bg-sidebar">
+                <div class="flex items-center gap-3 min-w-0">
+                    <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2.5 min-w-0 group">
                         @if(!empty($siteSettings['navbar_logo_url']))
                             <img src="{{ $siteSettings['navbar_logo_url'] }}"
                                 alt="{{ $siteSettings['site_name'] ?? 'Ecom' }} Admin"
-                                class="h-10 w-auto max-w-[150px] md:max-w-[200px] object-contain">
+                                class="h-9 w-auto max-w-[140px] md:max-w-[160px] object-contain transition-transform group-hover:scale-105">
                         @else
-                            <h1 class="text-xl font-bold text-truffle-extra-dark truncate">
-                                {{ $siteSettings['site_name'] ?? 'Ecom' }} Admin
-                            </h1>
+                            <div class="w-8 h-8 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center text-primary font-serif font-bold text-lg">
+                                {{ strtoupper(substr($siteSettings['site_name'] ?? 'E', 0, 1)) }}
+                            </div>
+                            <div class="min-w-0">
+                                <h1 class="text-sm font-semibold tracking-wide text-sidebar-foreground truncate">
+                                    {{ $siteSettings['site_name'] ?? 'Handicraft' }}
+                                </h1>
+                                <span class="text-[10px] font-medium tracking-wider uppercase text-sidebar-foreground/50 block">Admin Suite</span>
+                            </div>
                         @endif
                     </a>
                 </div>
-                <div class="w-9 flex-shrink-0" aria-hidden="true"></div>
+                
+                <label for="adminSidebarToggle"
+                    class="flex-shrink-0 inline-flex items-center justify-center h-8 w-8 rounded-md border border-sidebar-border text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent md:hidden cursor-pointer transition-colors"
+                    role="button" tabindex="0" aria-label="Close sidebar">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </label>
             </div>
 
-            <nav class="flex-1 overflow-y-auto py-4">
-                <ul class="space-y-1">
-                    <li>
-                        <a href="{{ route('admin.dashboard') }}"
-                            class="flex items-center px-6 py-3 text-truffle-light hover:bg-truffle-medium/20 hover:text-white transition-colors {{ request()->routeIs('admin.dashboard') ? 'bg-truffle-medium/20 text-white border-r-4 border-truffle-medium' : '' }}">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
-                                </path>
-                            </svg>
-                            Dashboard
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.categories.index') }}"
-                            class="flex items-center px-6 py-3 text-truffle-light hover:bg-truffle-medium/20 hover:text-white transition-colors {{ request()->routeIs('admin.categories.*') ? 'bg-truffle-medium/20 text-white border-r-4 border-truffle-medium' : '' }}">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
-                                </path>
-                            </svg>
-                            Categories
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.products.index') }}"
-                            class="flex items-center px-6 py-3 text-truffle-light hover:bg-truffle-medium/20 hover:text-white transition-colors {{ request()->routeIs('admin.products.*') ? 'bg-truffle-medium/20 text-white border-r-4 border-truffle-medium' : '' }}">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                            </svg>
-                            Products
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.orders.index', ['type' => 'inquiry']) }}"
-                            class="flex items-center px-6 py-3 text-truffle-light hover:bg-truffle-medium/20 hover:text-white transition-colors {{ request('type') === 'inquiry' && request()->routeIs('admin.orders.*') ? 'bg-truffle-medium/20 text-white border-r-4 border-truffle-medium' : '' }}">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
-                                </path>
-                            </svg>
-                            Inquiries
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.clients.index') }}"
-                            class="flex items-center px-6 py-3 text-truffle-light hover:bg-truffle-medium/20 hover:text-white transition-colors {{ request()->routeIs('admin.clients.*') ? 'bg-truffle-medium/20 text-white border-r-4 border-truffle-medium' : '' }}">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
-                                </path>
-                            </svg>
-                            Clients
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.orders.index') }}"
-                            class="flex items-center px-6 py-3 text-truffle-light hover:bg-truffle-medium/20 hover:text-white transition-colors {{ request()->routeIs('admin.orders.*') && request('type') !== 'inquiry' ? 'bg-truffle-medium/20 text-white border-r-4 border-truffle-medium' : '' }}">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z">
-                                </path>
-                            </svg>
-                            Orders & Invoices
-                        </a>
-                    </li>
-                    <li>
-                        @php($shippingOpen = request()->routeIs('admin.shipping.*'))
-                        <details class="group" {{ $shippingOpen ? 'open' : '' }}>
-                            <summary
-                                class="cursor-pointer list-none w-full flex items-center justify-between px-6 py-3 text-truffle-light hover:bg-truffle-medium/20 hover:text-white transition-colors {{ request()->routeIs('admin.shipping.*') ? 'bg-truffle-medium/20 text-white border-r-4 border-truffle-medium' : '' }}">
-                                <div class="flex items-center">
-                                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <nav class="flex-1 overflow-y-auto py-4 px-3 custom-scroll space-y-6">
+                <div>
+                    <div class="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/40 font-sans">
+                        Overview
+                    </div>
+                    <ul class="space-y-1">
+                        <li>
+                            <a href="{{ route('admin.dashboard') }}"
+                                class="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.dashboard') ? 'bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm' : 'text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent' }}">
+                                <svg class="w-5 h-5 mr-3 flex-shrink-0 {{ request()->routeIs('admin.dashboard') ? 'text-sidebar-primary-foreground' : 'text-sidebar-foreground/60' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
+                                    </path>
+                                </svg>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div>
+                    <div class="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/40 font-sans">
+                        Catalogue & Sales
+                    </div>
+                    <ul class="space-y-1">
+                        <li>
+                            <a href="{{ route('admin.categories.index') }}"
+                                class="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.categories.*') ? 'bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm' : 'text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent' }}">
+                                <svg class="w-5 h-5 mr-3 flex-shrink-0 {{ request()->routeIs('admin.categories.*') ? 'text-sidebar-primary-foreground' : 'text-sidebar-foreground/60' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                                    </path>
+                                </svg>
+                                <span>Categories</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.products.index') }}"
+                                class="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.products.*') ? 'bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm' : 'text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent' }}">
+                                <svg class="w-5 h-5 mr-3 flex-shrink-0 {{ request()->routeIs('admin.products.*') ? 'text-sidebar-primary-foreground' : 'text-sidebar-foreground/60' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                </svg>
+                                <span>Products</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.orders.index', ['type' => 'inquiry']) }}"
+                                class="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 {{ request('type') === 'inquiry' && request()->routeIs('admin.orders.*') ? 'bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm' : 'text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent' }}">
+                                <svg class="w-5 h-5 mr-3 flex-shrink-0 {{ request('type') === 'inquiry' && request()->routeIs('admin.orders.*') ? 'text-sidebar-primary-foreground' : 'text-sidebar-foreground/60' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                                    </path>
+                                </svg>
+                                <span>Inquiries</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.clients.index') }}"
+                                class="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.clients.*') ? 'bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm' : 'text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent' }}">
+                                <svg class="w-5 h-5 mr-3 flex-shrink-0 {{ request()->routeIs('admin.clients.*') ? 'text-sidebar-primary-foreground' : 'text-sidebar-foreground/60' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                                    </path>
+                                </svg>
+                                <span>Clients</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.orders.index') }}"
+                                class="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.orders.*') && request('type') !== 'inquiry' ? 'bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm' : 'text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent' }}">
+                                <svg class="w-5 h-5 mr-3 flex-shrink-0 {{ request()->routeIs('admin.orders.*') && request('type') !== 'inquiry' ? 'text-sidebar-primary-foreground' : 'text-sidebar-foreground/60' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z">
+                                    </path>
+                                </svg>
+                                <span>Orders & Invoices</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div>
+                    <div class="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/40 font-sans">
+                        Settings & Content
+                    </div>
+                    <ul class="space-y-1">
+                        <li>
+                            @php($shippingOpen = request()->routeIs('admin.shipping.*'))
+                            <details class="group" {{ $shippingOpen ? 'open' : '' }}>
+                                <summary
+                                    class="cursor-pointer list-none w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.shipping.*') ? 'bg-sidebar-accent text-sidebar-foreground font-semibold' : 'text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent' }}">
+                                    <div class="flex items-center">
+                                        <svg class="w-5 h-5 mr-3 flex-shrink-0 text-sidebar-foreground/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0">
+                                            </path>
+                                        </svg>
+                                        <span>Shipping</span>
+                                    </div>
+                                    <svg class="w-4 h-4 transition-transform duration-200 group-open:rotate-180 text-sidebar-foreground/50" fill="none"
+                                        stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                            d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </summary>
+                                <!-- Nested Shipping submenu -->
+                                @php($sidebarProviders = \App\Models\ShippingProvider::orderBy('name')->get())
+                                <div class="pl-4 mt-1 border-l border-sidebar-border/40 ml-4 space-y-1">
+                                    <a href="{{ route('admin.shipping.zones.settings') }}"
+                                        class="flex items-center px-3 py-1.5 rounded text-xs font-medium transition-colors {{ request()->routeIs('admin.shipping.zones.settings') ? 'text-primary font-bold' : 'text-sidebar-foreground/70 hover:text-sidebar-foreground' }}">
+                                        Zone Settings
+                                    </a>
+                                    <a href="{{ route('admin.shipping.providers.settings') }}"
+                                        class="flex items-center px-3 py-1.5 rounded text-xs font-medium transition-colors {{ request()->routeIs('admin.shipping.providers.settings') ? 'text-primary font-bold' : 'text-sidebar-foreground/70 hover:text-sidebar-foreground' }}">
+                                        Providers Settings
+                                    </a>
+                                    @foreach($sidebarProviders as $prov)
+                                        <a href="{{ route('admin.shipping.providers.show', $prov) }}"
+                                            class="flex items-center px-3 py-1.5 rounded text-xs font-medium transition-colors {{ request()->routeIs('admin.shipping.providers.show') && request()->route('provider')?->id == $prov->id ? 'text-primary font-bold' : 'text-sidebar-foreground/70 hover:text-sidebar-foreground' }}">
+                                            <span class="w-1.5 h-1.5 bg-accent rounded-full mr-2"></span>
+                                            <span class="truncate">{{ $prov->name }}</span>
+                                        </a>
+                                    @endforeach
+                                </div>
+                            </details>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.blog.index') }}"
+                                class="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.blog.*') ? 'bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm' : 'text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent' }}">
+                                <svg class="w-5 h-5 mr-3 flex-shrink-0 {{ request()->routeIs('admin.blog.*') ? 'text-sidebar-primary-foreground' : 'text-sidebar-foreground/60' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z">
+                                    </path>
+                                </svg>
+                                <span>Blog Posts</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.settings.index') }}"
+                                class="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.settings.*') ? 'bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm' : 'text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent' }}">
+                                <svg class="w-5 h-5 mr-3 flex-shrink-0 {{ request()->routeIs('admin.settings.*') ? 'text-sidebar-primary-foreground' : 'text-sidebar-foreground/60' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                                    </path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                <span>Site Settings</span>
+                            </a>
+                        </li>
+                        @if(auth()->user()->isSuperAdmin())
+                            <li>
+                                <a href="{{ route('admin.users.index') }}"
+                                    class="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.users.*') ? 'bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm' : 'text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent' }}">
+                                    <svg class="w-5 h-5 mr-3 flex-shrink-0 {{ request()->routeIs('admin.users.*') ? 'text-sidebar-primary-foreground' : 'text-sidebar-foreground/60' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0">
+                                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
                                         </path>
                                     </svg>
-                                    <span>Shipping Settings</span>
-                                </div>
-                                <svg class="w-4 h-4 transition-transform duration-200 group-open:rotate-180" fill="none"
-                                    stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 9l-7 7-7-7"></path>
-                                </svg>
-                            </summary>
-                            <!-- Nested Shipping submenu -->
-                            @php($sidebarProviders = \App\Models\ShippingProvider::orderBy('name')->get())
-                            <div class="ml-6">
-                                <ul class="space-y-1 mt-1">
-                                    <li>
-                                        <a href="{{ route('admin.shipping.zones.settings') }}"
-                                            class="flex items-center px-6 py-2 text-truffle-light hover:bg-truffle-medium/20 hover:text-white transition-colors {{ request()->routeIs('admin.shipping.zones.settings') ? 'bg-truffle-medium/20 text-white border-r-4 border-truffle-medium' : '' }}">
-                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064" />
-                                            </svg>
-                                            Zone Settings
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="{{ route('admin.shipping.providers.settings') }}"
-                                            class="flex items-center px-6 py-2 text-truffle-light hover:bg-truffle-medium/20 hover:text-white transition-colors {{ request()->routeIs('admin.shipping.providers.settings') ? 'bg-truffle-medium/20 text-white border-r-4 border-truffle-medium' : '' }}">
-                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path
-                                                    d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z">
-                                                </path>
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M13 16V6a1 1 0 00-1-1H4v10h1" />
-                                            </svg>
-                                            Providers Settings
-                                        </a>
-                                    </li>
-                                    @foreach($sidebarProviders as $prov)
-                                        <li class="ml-4">
-                                            <a href="{{ route('admin.shipping.providers.show', $prov) }}"
-                                                class="flex items-center px-6 py-2 text-truffle-light hover:bg-truffle-medium/20 hover:text-white transition-colors {{ request()->routeIs('admin.shipping.providers.show') && request()->route('provider')?->id == $prov->id ? 'bg-truffle-medium/20 text-white border-r-4 border-truffle-medium' : '' }}">
-                                                <span class="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
-                                                {{ $prov->name }}</a>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        </details>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.blog.index') }}"
-                            class="flex items-center px-6 py-3 text-truffle-light hover:bg-truffle-medium/20 hover:text-white transition-colors {{ request()->routeIs('admin.blog.*') ? 'bg-truffle-medium/20 text-white border-r-4 border-truffle-medium' : '' }}">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z">
-                                </path>
-                            </svg>
-                            Blog Posts
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.settings.index') }}"
-                            class="flex items-center px-6 py-3 text-truffle-light hover:bg-truffle-medium/20 hover:text-white transition-colors {{ request()->routeIs('admin.settings.*') ? 'bg-truffle-medium/20 text-white border-r-4 border-truffle-medium' : '' }}">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
-                                </path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            </svg>
-                            Site Settings
-                        </a>
-                    </li>
-                    @if(auth()->user()->isSuperAdmin())
-                        <li>
-                            <a href="{{ route('admin.users.index') }}"
-                                class="flex items-center px-6 py-3 text-truffle-light hover:bg-truffle-medium/20 hover:text-white transition-colors {{ request()->routeIs('admin.users.*') ? 'bg-truffle-medium/20 text-white border-r-4 border-truffle-medium' : '' }}">
-                                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
-                                    </path>
-                                </svg>
-                                Admin Users
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ route('admin.roles.index') }}"
-                                class="flex items-center px-6 py-3 text-truffle-light hover:bg-truffle-medium/20 hover:text-white transition-colors {{ request()->routeIs('admin.roles.*') ? 'bg-truffle-medium/20 text-white border-r-4 border-truffle-medium' : '' }}">
-                                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
-                                    </path>
-                                </svg>
-                                Roles & Permissions
-                            </a>
-                        </li>
-                    @endif
-                </ul>
+                                    <span>Admin Users</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('admin.roles.index') }}"
+                                    class="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.roles.*') ? 'bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm' : 'text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent' }}">
+                                    <svg class="w-5 h-5 mr-3 flex-shrink-0 {{ request()->routeIs('admin.roles.*') ? 'text-sidebar-primary-foreground' : 'text-sidebar-foreground/60' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
+                                        </path>
+                                    </svg>
+                                    <span>Roles & Permissions</span>
+                                </a>
+                            </li>
+                        @endif
+                    </ul>
+                </div>
             </nav>
+
+            <!-- Sidebar footer / quick live store link -->
+            <div class="p-3 border-t border-sidebar-border bg-sidebar/50">
+                <a href="{{ route('home') }}" target="_blank"
+                    class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
+                    <span class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        <span>View Live Store</span>
+                    </span>
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                </a>
+            </div>
         </aside>
 
-        <!-- Main Content -->
-        <main class="flex-1 min-w-0 flex flex-col overflow-hidden">
+        <!-- Main Content Area -->
+        <main class="flex-1 min-w-0 flex flex-col overflow-hidden bg-background">
             <!-- Header -->
-            <header class="h-16 bg-cream border-b border-truffle-medium/30 flex items-center justify-between px-4 sm:px-6">
+            <header class="h-16 bg-card/80 backdrop-blur-md border-b border-border flex items-center justify-between px-4 sm:px-6 sticky top-0 z-20">
                 <div class="flex items-center gap-3 min-w-0">
                     <label for="adminSidebarToggle"
-                        class="md:hidden inline-flex items-center justify-center h-10 w-10 rounded-lg border border-truffle-medium/30 bg-cream text-truffle-extra-dark hover:bg-[#F5F2EA] cursor-pointer"
+                        class="md:hidden inline-flex items-center justify-center h-9 w-9 rounded-lg border border-border bg-card text-foreground hover:bg-muted cursor-pointer transition-colors shadow-xs"
                         role="button" tabindex="0" aria-label="Open sidebar">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -251,39 +271,60 @@
                         </svg>
                     </label>
 
-                    @yield('header')
+                    <div class="min-w-0">
+                        @yield('header')
+                    </div>
                 </div>
-                <div class="flex items-center gap-4">
-                    <div class="text-right">
-                        <div class="text-sm font-medium text-truffle-extra-dark">{{ auth()->user()->name }}</div>
-                        <div class="text-xs text-truffle-extra-dark">
-                            @foreach(auth()->user()->roles as $role)
-                                <span class="inline-block">{{ $role->display_name }}</span>{{ !$loop->last ? ', ' : '' }}
-                            @endforeach
+
+                <div class="flex items-center gap-3 sm:gap-4">
+                    <a href="{{ route('home') }}" target="_blank"
+                        class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-muted text-foreground/80 hover:text-primary hover:bg-muted/80 border border-border transition-colors"
+                        title="Open Storefront">
+                        <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        <span>Storefront</span>
+                    </a>
+
+                    <div class="h-6 w-px bg-border hidden sm:block"></div>
+
+                    <div class="flex items-center gap-2.5">
+                        <div class="text-right hidden sm:block">
+                            <div class="text-sm font-semibold text-foreground leading-tight">{{ auth()->user()->name }}</div>
+                            <div class="text-[11px] text-muted-foreground">
+                                @foreach(auth()->user()->roles as $role)
+                                    <span>{{ $role->display_name }}</span>{{ !$loop->last ? ', ' : '' }}
+                                @endforeach
+                            </div>
                         </div>
+                        <div class="h-9 w-9 bg-primary/10 border border-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-sm shadow-xs">
+                            {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                        </div>
+                        <form action="{{ route('logout') }}" method="POST" class="inline">
+                            @csrf
+                            <button type="submit" class="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" title="Logout">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                                    </path>
+                                </svg>
+                            </button>
+                        </form>
                     </div>
-                    <div
-                        class="h-10 w-10 bg-green-premium/20 rounded-full flex items-center justify-center text-green-premium font-bold">
-                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-                    </div>
-                    <form action="{{ route('logout') }}" method="POST" class="inline">
-                        @csrf
-                        <button type="submit" class="text-truffle-extra-dark hover:text-red-600 transition-colors" title="Logout">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
-                                </path>
-                            </svg>
-                        </button>
-                    </form>
                 </div>
             </header>
 
             <!-- Scrollable Content -->
-            <div class="flex-1 overflow-auto bg-[#F5F2EA] p-4 sm:p-6">
+            <div class="flex-1 overflow-auto bg-background p-4 sm:p-6 md:p-8 custom-scroll bg-paper">
                 @if(session('success'))
-                    <div class="mb-4 bg-green-premium/20 text-green-premium px-4 py-3 rounded relative" role="alert">
-                        <span class="block sm:inline">{{ session('success') }}</span>
+                    <div class="mb-5 bg-card border-l-4 border-primary p-4 rounded-r-xl shadow-xs flex items-start gap-3 animate-fade-in-up" role="alert">
+                        <div class="p-1 rounded-full bg-primary/10 text-primary">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        </div>
+                        <div>
+                            <p class="font-medium text-sm text-foreground">{{ session('success') }}</p>
+                        </div>
                     </div>
                 @endif
                 @if(session('checkout_link'))

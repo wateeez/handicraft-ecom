@@ -198,14 +198,15 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                     @forelse($products as $product)
                         <a href="{{ route('products.show', $product->slug ?? $product->id) }}"
-                            class="group bg-cream rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100 block">
+                            class="group bg-card rounded-2xl overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 border border-border card-lift shimmer-sweep block flex flex-col justify-between">
                             <!-- Image -->
-                            <div class="relative aspect-[3/4] overflow-hidden bg-[#F5F2EA]">
+                            <div class="relative aspect-[3/4] overflow-hidden bg-muted">
                                 @if($product->main_image)
                                     <img src="{{ $product->main_image }}" alt="{{ $product->name }}"
+                                        loading="lazy"
                                         class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
                                 @else
-                                    <div class="w-full h-full flex items-center justify-center text-truffle-extra-dark/70">No Image</div>
+                                    <div class="w-full h-full flex items-center justify-center text-muted-foreground text-sm font-medium">No Image</div>
                                 @endif
 
                                 <!-- Discount Badge -->
@@ -214,7 +215,7 @@
                                         $discountPercent = round((($product->price - $product->discount_price) / $product->price) * 100);
                                     @endphp
                                     <div class="absolute top-3 right-3">
-                                        <span class="bg-red-600 text-white text-xs px-2 py-1 rounded-full font-bold shadow-lg">
+                                        <span class="bg-destructive text-white text-xs px-2.5 py-1 rounded-full font-bold shadow-md animate-pulse-glow">
                                             -{{ $discountPercent }}%
                                         </span>
                                     </div>
@@ -222,31 +223,33 @@
 
                                 <!-- Actions Overlay -->
                                 <div
-                                    class="absolute inset-x-0 bottom-0 p-4 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300 flex justify-center pb-6 bg-gradient-to-t from-black/50 to-transparent">
+                                    class="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-center pb-6 bg-gradient-to-t from-black/60 to-transparent">
                                     <span
-                                        class="bg-cream text-truffle-extra-dark px-6 py-2 rounded-full font-medium group-hover:bg-green-premium group-hover:text-white transition shadow-lg transform translate-y-4 group-hover:translate-y-0 duration-300">
+                                        class="bg-card text-foreground px-5 py-2 rounded-full font-semibold text-xs tracking-wide group-hover:bg-primary group-hover:text-primary-foreground transition shadow-lg transform translate-y-3 group-hover:translate-y-0 duration-300">
                                         View Details
                                     </span>
                                 </div>
                             </div>
 
                             <!-- Content -->
-                            <div class="p-6 text-center">
-                                <div class="mb-2">
-                                    @if($product->is_order_now_enabled)
-                                        <span
-                                            class="bg-green-premium/20 text-green-800 text-xs px-2 py-1 rounded-full uppercase tracking-wider font-bold">In
-                                            Stock</span>
-                                    @else
-                                        <span
-                                            class="bg-truffle-medium/20 text-truffle-medium text-xs px-2 py-1 rounded-full uppercase tracking-wider font-bold">Inquiry
-                                            Only</span>
-                                    @endif
+                            <div class="p-5 text-center flex-1 flex flex-col justify-between">
+                                <div>
+                                    <div class="mb-2">
+                                        @if($product->is_order_now_enabled)
+                                            <span
+                                                class="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 text-[11px] px-2.5 py-0.5 rounded-full uppercase tracking-wider font-semibold">In
+                                                Stock</span>
+                                        @else
+                                            <span
+                                                class="bg-accent/20 text-accent-foreground border border-accent/30 text-[11px] px-2.5 py-0.5 rounded-full uppercase tracking-wider font-semibold">Inquiry
+                                                Only</span>
+                                        @endif
+                                    </div>
+                                    <h3 class="text-base font-serif font-bold text-foreground mb-2 line-clamp-1 group-hover:text-primary transition-colors">{{ $product->name }}</h3>
                                 </div>
-                                <h3 class="text-lg font-serif font-bold text-truffle-extra-dark mb-2 truncate">{{ $product->name }}</h3>
-                                <div class="text-green-premium font-bold text-xl">
+                                <div class="text-primary font-bold text-lg font-serif mt-1">
                                     @if($product->discount_price)
-                                        <span class="text-truffle-extra-dark/70 line-through text-base mr-2">${{ number_format($product->price, 2) }}</span>
+                                        <span class="text-muted-foreground line-through text-sm mr-2 font-normal">${{ number_format($product->price, 2) }}</span>
                                         <span>${{ number_format($product->discount_price, 2) }}</span>
                                     @else
                                         <span>${{ number_format($product->price, 2) }}</span>

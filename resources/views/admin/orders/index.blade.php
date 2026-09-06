@@ -1,33 +1,33 @@
-﻿@extends('admin.layout')
+@extends('admin.layout')
 
 @section('header')
     <div>
-        <h2 class="text-xl font-bold text-truffle-extra-dark">Order Management</h2>
-        <p class="text-sm text-truffle-extra-dark">Manage orders and inquiries</p>
+        <h2 class="text-xl font-serif font-bold text-foreground">Order & Inquiry Management</h2>
+        <p class="text-xs text-muted-foreground mt-0.5">Track artisan quotations, invoices, and customer communications</p>
     </div>
 @endsection
 
 @section('content')
-    <div class="space-y-4">
+    <div class="space-y-6">
 
         {{-- Header Actions --}}
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div class="flex gap-2 flex-wrap">
                 <a href="{{ route('admin.orders.index') }}"
-                    class="px-3 py-1.5 rounded-lg text-sm font-medium {{ !request('type') ? 'bg-green-premium text-white' : 'bg-cream border border-truffle-medium/30 text-truffle-extra-dark hover:bg-[#F5F2EA]' }}">
+                    class="px-4 py-2 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all {{ !request('type') ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-paper/50' }}">
                     All
                 </a>
                 <a href="{{ route('admin.orders.index', ['type' => 'order']) }}"
-                    class="px-3 py-1.5 rounded-lg text-sm font-medium {{ request('type') === 'order' ? 'bg-green-premium text-white' : 'bg-cream border border-truffle-medium/30 text-truffle-extra-dark hover:bg-[#F5F2EA]' }}">
-                    Orders
+                    class="px-4 py-2 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all {{ request('type') === 'order' ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-paper/50' }}">
+                    Direct Orders
                 </a>
                 <a href="{{ route('admin.orders.index', ['type' => 'inquiry']) }}"
-                    class="px-3 py-1.5 rounded-lg text-sm font-medium {{ request('type') === 'inquiry' ? 'bg-green-premium text-white' : 'bg-cream border border-truffle-medium/30 text-truffle-extra-dark hover:bg-[#F5F2EA]' }}">
-                    Inquiries
+                    class="px-4 py-2 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all {{ request('type') === 'inquiry' ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-paper/50' }}">
+                    Quote Inquiries
                 </a>
             </div>
             <a href="{{ route('admin.orders.create') }}"
-                class="inline-flex items-center gap-2 px-4 py-2 bg-green-premium hover:bg-green-800 text-white text-sm font-medium rounded-lg transition-colors">
+                class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold rounded-xl shadow-xs hover:shadow transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
@@ -37,20 +37,20 @@
 
         {{-- Filters --}}
         <form method="GET" action="{{ route('admin.orders.index') }}"
-            class="bg-cream rounded-xl border border-truffle-medium/30 p-4 flex flex-wrap gap-3 items-end">
+            class="bg-card rounded-2xl border border-border p-5 flex flex-wrap gap-4 items-end shadow-xs">
             @if(request('type'))
                 <input type="hidden" name="type" value="{{ request('type') }}">
             @endif
             <div class="flex-1 min-w-[180px]">
-                <label class="block text-xs font-medium text-truffle-extra-dark mb-1">Search</label>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Search</label>
                 <input type="text" name="search" value="{{ request('search') }}"
                     placeholder="Order #, client name, buyer ID..."
-                    class="w-full border border-truffle-medium/30 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                    class="w-full bg-paper/50 border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition">
             </div>
-            <div class="min-w-[140px]">
-                <label class="block text-xs font-medium text-truffle-extra-dark mb-1">Status</label>
+            <div class="min-w-[150px]">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Status</label>
                 <select name="status"
-                    class="w-full border border-truffle-medium/30 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                    class="w-full bg-paper/50 border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition">
                     <option value="">All Statuses</option>
                     @foreach($statuses as $val => $label)
                         <option value="{{ $val }}" {{ request('status') === $val ? 'selected' : '' }}>{{ $label }}</option>
@@ -58,22 +58,22 @@
                 </select>
             </div>
             <div class="min-w-[130px]">
-                <label class="block text-xs font-medium text-truffle-extra-dark mb-1">From</label>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">From</label>
                 <input type="date" name="date_from" value="{{ request('date_from') }}"
-                    class="w-full border border-truffle-medium/30 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                    class="w-full bg-paper/50 border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition">
             </div>
             <div class="min-w-[130px]">
-                <label class="block text-xs font-medium text-truffle-extra-dark mb-1">To</label>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">To</label>
                 <input type="date" name="date_to" value="{{ request('date_to') }}"
-                    class="w-full border border-truffle-medium/30 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                    class="w-full bg-paper/50 border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition">
             </div>
             <button type="submit"
-                class="px-4 py-2 bg-gray-800 text-white rounded-lg text-sm hover:bg-gray-700 transition-colors">
+                class="px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-sm font-semibold transition shadow-xs">
                 Filter
             </button>
             @if(request()->hasAny(['search', 'status', 'date_from', 'date_to']))
                 <a href="{{ route('admin.orders.index', array_filter(['type' => request('type')])) }}"
-                    class="px-4 py-2 bg-[#F5F2EA] text-truffle-extra-dark rounded-lg text-sm hover:bg-[#E8E2D2] transition-colors">
+                    class="px-4 py-2.5 bg-paper/60 text-muted-foreground hover:text-foreground rounded-xl text-sm font-medium transition">
                     Clear
                 </a>
             @endif

@@ -13,48 +13,27 @@
     @stack('head')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link
-        href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Noto+Serif:wght@400;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&display=swap"
         rel="stylesheet">
     <style>
-        :root {
-            --color-primary: {{ $siteSettings['color_primary'] }};
-            --color-secondary: {{ $siteSettings['color_secondary'] }};
-            --color-accent: {{ $siteSettings['color_accent'] }};
-            --color-background: {{ $siteSettings['color_background'] }};
-            --color-text: {{ $siteSettings['color_text'] }};
-            
-            /* Map legacy names to new variables for compatibility */
-            --color-truffle-dark: var(--color-accent);
-            --color-truffle-medium: var(--color-secondary);
-            --color-truffle-light: var(--color-background);
-            --color-truffle-extra-dark: var(--color-primary);
-            --color-green-premium: var(--color-primary);
-            --color-gold: var(--color-secondary);
-            --color-cream: #F5F5EA; /* Keep cream stable unless needed */
-        }
-
-        body {
-            font-family: 'Manrope', sans-serif;
-            background-color: var(--color-background);
-            color: var(--color-text);
-        }
-
         .site-header {
-            background-color: var(--color-background);
-            border-color: color-mix(in srgb, var(--color-primary) 20%, transparent);
+            background-color: rgba(253, 251, 247, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-color: var(--color-border);
         }
 
         .site-footer {
-            background-color: var(--color-accent);
-            color: #fff;
+            background-color: var(--color-foreground);
+            color: var(--color-background);
         }
 
         .site-footer-muted {
-            color: rgba(255, 255, 255, 0.78);
+            color: rgba(250, 247, 242, 0.72);
         }
 
         .site-footer-divider {
-            border-color: rgba(255, 255, 255, 0.16);
+            border-color: rgba(250, 247, 242, 0.14);
         }
 
         h1,
@@ -62,11 +41,12 @@
         h3,
         .serif {
             font-family: 'Noto Serif', serif;
+            text-wrap: balance;
         }
     </style>
 </head>
 
-<body class="bg-truffle-light text-truffle-extra-dark flex flex-col min-h-screen m-0 p-0">
+<body class="bg-background text-foreground flex flex-col min-h-screen m-0 p-0 selection:bg-primary/25 selection:text-foreground">
 
     <!-- Header -->
     <header class="site-header sticky top-0 z-50 border-b-2 shadow-sm">
@@ -87,21 +67,13 @@
                 <!-- Mobile quick actions -->
                 <div class="flex items-center gap-4 md:hidden">
                     <a href="{{ route('cart.index') }}"
-                        class="relative text-truffle-extra-dark hover:text-truffle-medium flex items-center gap-1.5 transition-colors duration-200"
+                        class="relative text-foreground hover:text-primary flex items-center gap-1.5 transition-colors duration-200"
                         aria-label="Cart">
                         <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                                 d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
                         </svg>
-                        <span class="text-sm font-serif font-medium">My Cart</span>
-                    </a>
-
-                    <a href="{{ route('admin.dashboard') }}" class="text-truffle-extra-dark/60 hover:text-truffle-medium"
-                        title="Admin Dashboard" aria-label="Admin">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                        </svg>
+                        <span class="text-sm font-serif font-medium">Cart</span>
                     </a>
                 </div>
             </div>
@@ -111,11 +83,11 @@
                 <!-- Search Bar -->
                 <div class="w-full max-w-2xl">
                     <form action="{{ route('home') }}" method="GET" class="relative">
-                        <input type="text" name="search" placeholder="Search products..."
+                        <input type="text" name="search" placeholder="Search handcrafted masterworks..."
                             value="{{ request('search') }}"
-                            class="w-full bg-cream border-2 border-truffle-extra-dark/20 rounded-full py-2.5 sm:py-3 pl-5 pr-12 text-sm sm:text-base text-truffle-extra-dark placeholder-truffle-extra-dark/40 focus:outline-none focus:border-truffle-medium transition-all duration-200">
+                            class="w-full bg-card border border-border rounded-full py-2.5 sm:py-3 pl-5 pr-12 text-sm sm:text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200 shadow-xs">
                         <button type="submit"
-                            class="absolute right-4 top-1/2 transform -translate-y-1/2 text-truffle-extra-dark/40 hover:text-truffle-medium transition-colors">
+                            class="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -125,26 +97,17 @@
                 </div>
             </div>
 
-            <!-- Cart & Admin -->
+            <!-- Cart -->
             <div class="hidden md:flex items-center justify-end space-x-6 w-full md:w-auto">
                 <!-- Cart -->
                 <a href="{{ route('cart.index') }}"
-                    class="relative text-truffle-extra-dark hover:text-truffle-medium flex items-center gap-2 transition-colors duration-200 group">
+                    class="relative text-foreground hover:text-primary flex items-center gap-2 transition-colors duration-200 group">
                     <svg class="w-6 h-6 transform group-hover:scale-110 transition-transform duration-200" fill="none"
                         stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                             d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
                     </svg>
                     <span class="text-[15px] font-serif font-semibold tracking-tight">My Cart</span>
-                </a>
-
-                <!-- Admin Link -->
-                <a href="{{ route('admin.dashboard') }}" class="text-truffle-extra-dark/60 hover:text-truffle-medium"
-                    title="Admin Dashboard">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                    </svg>
                 </a>
             </div>
         </div>
@@ -166,23 +129,27 @@
     <footer class="site-footer py-12">
         <div class="container mx-auto px-4 sm:px-6">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div>
-                    @if(!empty($siteSettings['footer_logo_url']))
-                        <img src="{{ $siteSettings['footer_logo_url'] }}"
-                            alt="{{ $siteSettings['site_name'] }}" class="h-16 w-auto object-contain mb-4">
-                    @else
-                        <h3 class="text-xl font-serif mb-4">{{ $siteSettings['site_name'] }}</h3>
-                    @endif
-                    <p class="site-footer-muted text-sm">Premium curated products for your lifestyle.</p>
-                </div>
+                <!-- About Column -->
+                <div class="md:col-span-2">
+                    <div class="flex items-center space-x-3 mb-4">
+                        @if(!empty($siteSettings['footer_logo_url']))
+                            <img src="{{ $siteSettings['footer_logo_url'] }}"
+                                alt="{{ $siteSettings['site_name'] }}" class="h-10 w-auto object-contain">
+                        @else
+                            <span class="text-xl font-bold font-serif tracking-wide">
+                                {{ $siteSettings['site_name'] }}
+                            </span>
+                        @endif
+                    </div>
+                    <p class="site-footer-muted text-sm mb-4 max-w-sm">
+                        Curated collection of exquisite handicrafts directly from authentic artisan cooperatives.
+                    </p>
 
-                <!-- Contact Info Column -->
-                <div>
-                    <h4 class="font-bold mb-4">Contact Us</h4>
-                    <ul class="site-footer-muted space-y-3 text-sm">
+                    <!-- Contact Details -->
+                    <ul class="site-footer-muted space-y-2 text-sm">
                         @if($siteSettings['footer_address'])
                             <li class="flex items-start gap-2">
-                                <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor"
+                                <svg class="w-4 h-4 mt-1 flex-shrink-0" fill="none" stroke="currentColor"
                                     viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -265,7 +232,6 @@
             </div>
         </div>
     </footer>
-
 </body>
 
 </html>

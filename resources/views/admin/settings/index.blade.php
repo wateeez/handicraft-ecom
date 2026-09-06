@@ -317,80 +317,10 @@
                     @enderror
                     <p class="mt-2 text-xs text-truffle-extra-dark">You can use plain text. Each new line will be preserved when displayed.</p>
                 </div>
-            </div>
-
-            <!-- Theme Colors Section -->
-            <div class="p-6 border-b border-truffle-medium/30">
-                <h3 class="text-lg font-semibold text-truffle-extra-dark mb-4">Theme Colors</h3>
-                <p class="text-sm text-truffle-extra-dark mb-4">Customize the appearance of your website frontend.</p>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Primary Color -->
-                    <div>
-                        <label class="block text-sm font-medium text-truffle-extra-dark mb-2">Primary Color (Buttons, Highlights)</label>
-                        <div class="flex items-center gap-3">
-                            <input type="color" name="color_primary" 
-                                value="{{ old('color_primary', $colorPrimary->value ?? '#2D4B36') }}"
-                                class="h-10 w-20 p-1 rounded border border-truffle-medium/30">
-                            <input type="text" value="{{ old('color_primary', $colorPrimary->value ?? '#2D4B36') }}" 
-                                class="flex-1 px-4 py-2 border border-truffle-medium/30 rounded-lg text-sm" readonly>
-                        </div>
-                    </div>
-
-                    <!-- Secondary Color -->
-                    <div>
-                        <label class="block text-sm font-medium text-truffle-extra-dark mb-2">Secondary Color (Muted Elements)</label>
-                        <div class="flex items-center gap-3">
-                            <input type="color" name="color_secondary" 
-                                value="{{ old('color_secondary', $colorSecondary->value ?? '#C5A059') }}"
-                                class="h-10 w-20 p-1 rounded border border-truffle-medium/30">
-                            <input type="text" value="{{ old('color_secondary', $colorSecondary->value ?? '#C5A059') }}" 
-                                class="flex-1 px-4 py-2 border border-truffle-medium/30 rounded-lg text-sm" readonly>
-                        </div>
-                    </div>
-
-                    <!-- Accent Color -->
-                    <div>
-                        <label class="block text-sm font-medium text-truffle-extra-dark mb-2">Accent Color (Badges, Alerts)</label>
-                        <div class="flex items-center gap-3">
-                            <input type="color" name="color_accent" 
-                                value="{{ old('color_accent', $colorAccent->value ?? '#1A3326') }}"
-                                class="h-10 w-20 p-1 rounded border border-truffle-medium/30">
-                            <input type="text" value="{{ old('color_accent', $colorAccent->value ?? '#1A3326') }}" 
-                                class="flex-1 px-4 py-2 border border-truffle-medium/30 rounded-lg text-sm" readonly>
-                        </div>
-                    </div>
-
-                    <!-- Background Color -->
-                    <div>
-                        <label class="block text-sm font-medium text-truffle-extra-dark mb-2">Background Color</label>
-                        <div class="flex items-center gap-3">
-                            <input type="color" name="color_background" 
-                                value="{{ old('color_background', $colorBackground->value ?? '#E8E2D2') }}"
-                                class="h-10 w-20 p-1 rounded border border-truffle-medium/30">
-                            <input type="text" value="{{ old('color_background', $colorBackground->value ?? '#E8E2D2') }}" 
-                                class="flex-1 px-4 py-2 border border-truffle-medium/30 rounded-lg text-sm" readonly>
-                        </div>
-                    </div>
-
-                    <!-- Text Color -->
-                    <div>
-                        <label class="block text-sm font-medium text-truffle-extra-dark mb-2">Primary Text Color</label>
-                        <div class="flex items-center gap-3">
-                            <input type="color" name="color_text" 
-                                value="{{ old('color_text', $colorText->value ?? '#2D4B36') }}"
-                                class="h-10 w-20 p-1 rounded border border-truffle-medium/30">
-                            <input type="text" value="{{ old('color_text', $colorText->value ?? '#2D4B36') }}" 
-                                class="flex-1 px-4 py-2 border border-truffle-medium/30 rounded-lg text-sm" readonly>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Submit Button -->
-            <div class="p-6 bg-[#F5F2EA]">
+            <div class="p-6 bg-paper/60 border-t border-border flex justify-end">
                 <button type="submit" 
-                    class="px-6 py-2 bg-green-premium text-white rounded-lg hover:bg-green-800 transition-colors font-medium">
+                    class="px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl transition-colors font-semibold shadow-xs">
                     Save Settings
                 </button>
             </div>

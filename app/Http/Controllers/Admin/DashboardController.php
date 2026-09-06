@@ -19,13 +19,33 @@ class DashboardController extends Controller
             $totalProducts = Schema::hasTable('products') ? Product::count() : 0;
             $totalCategories = Schema::hasTable('categories') ? \App\Models\Category::count() : 0;
             $totalInquiries = Schema::hasTable('orders') ? \App\Models\Order::where('type', 'inquiry')->count() : 0;
+            $totalOrders = Schema::hasTable('orders') ? \App\Models\Order::where('type', 'order')->count() : 0;
+            $totalClients = Schema::hasTable('clients') ? \App\Models\Client::count() : 0;
+            $recentOrders = Schema::hasTable('orders') 
+                ? \App\Models\Order::with('client')->latest()->take(6)->get() 
+                : collect();
+            $recentInquiries = Schema::hasTable('orders')
+                ? \App\Models\Order::where('type', 'inquiry')->with('client')->latest()->take(5)->get()
+                : collect();
         } catch (\Exception $e) {
             $totalProducts = 0;
             $totalCategories = 0;
             $totalInquiries = 0;
+            $totalOrders = 0;
+            $totalClients = 0;
+            $recentOrders = collect();
+            $recentInquiries = collect();
         }
 
-        return view('admin.dashboard', compact('totalProducts', 'totalCategories', 'totalInquiries'));
+        return view('admin.dashboard', compact(
+            'totalProducts', 
+            'totalCategories', 
+            'totalInquiries',
+            'totalOrders',
+            'totalClients',
+            'recentOrders',
+            'recentInquiries'
+        ));
     }
 
     public function toggleMaintenance(Request $request)

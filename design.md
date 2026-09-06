@@ -1,68 +1,45 @@
-@import 'tailwindcss';
-
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
-@source '../**/*.js';
-
-@theme {
-    --font-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-serif: 'Noto Serif', Georgia, Cambria, 'Times New Roman', Times, serif;
-
-    /* Theme color bindings from design.md */
-    --color-background: var(--background);
-    --color-foreground: var(--foreground);
-    --color-card: var(--card);
-    --color-card-foreground: var(--card-foreground);
-    --color-popover: var(--popover);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-primary: var(--primary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-secondary: var(--secondary);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-muted: var(--muted);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-accent: var(--accent);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-destructive: var(--destructive);
-    --color-border: var(--border);
-    --color-input: var(--input);
-    --color-ring: var(--ring);
-
-    --color-sidebar: var(--sidebar);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-ring: var(--sidebar-ring);
-
-    --color-chart-1: var(--chart-1);
-    --color-chart-2: var(--chart-2);
-    --color-chart-3: var(--chart-3);
-    --color-chart-4: var(--chart-4);
-    --color-chart-5: var(--chart-5);
-
-    /* Backwards-compatibility mapped colors to prevent breakages in existing views */
-    --color-cream: oklch(0.985 0.008 75);
-    --color-beige: oklch(0.95 0.015 80);
-    --color-gold: oklch(0.70 0.13 75);
-    --color-green-premium: oklch(0.45 0.13 32);
-    --color-truffle-dark: oklch(0.22 0.02 40);
-    --color-truffle-medium: oklch(0.55 0.10 35);
-    --color-truffle-light: oklch(0.985 0.008 75);
-    --color-truffle-extra-dark: oklch(0.22 0.02 40);
-}
-
-/* Earthy, artisanal palette — terracotta, saffron, deep forest, warm cream from design.md */
-:root {
-  --radius: 0.625rem;
+ --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+}
 
+/* Earthy, artisanal palette — terracotta, saffron, deep forest, cream */
+:root {
+  --radius: 0.625rem;
   --background: oklch(0.985 0.008 75);          /* warm cream */
   --foreground: oklch(0.22 0.02 40);            /* deep umber */
   --card: oklch(1 0.004 75);
@@ -86,14 +63,13 @@
   --chart-3: oklch(0.70 0.13 75);   /* saffron */
   --chart-4: oklch(0.50 0.08 220);  /* teal */
   --chart-5: oklch(0.45 0.15 12);   /* ruby */
-
-  --sidebar: oklch(0.20 0.02 40);               /* deep rich umber for admin sidebar */
-  --sidebar-foreground: oklch(0.96 0.01 75);
-  --sidebar-primary: oklch(0.55 0.13 32);
+  --sidebar: oklch(0.985 0.008 75);
+  --sidebar-foreground: oklch(0.22 0.02 40);
+  --sidebar-primary: oklch(0.45 0.13 32);
   --sidebar-primary-foreground: oklch(0.985 0.008 75);
-  --sidebar-accent: oklch(0.26 0.02 40);
-  --sidebar-accent-foreground: oklch(0.985 0.008 75);
-  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-accent: oklch(0.92 0.02 75);
+  --sidebar-accent-foreground: oklch(0.30 0.02 40);
+  --sidebar-border: oklch(0.90 0.015 70);
   --sidebar-ring: oklch(0.55 0.10 35);
 }
 
@@ -133,11 +109,10 @@
 
 @layer base {
   * {
-    border-color: var(--border);
+    @apply border-border outline-ring/50;
   }
   body {
-    background-color: var(--background);
-    color: var(--foreground);
+    @apply bg-background text-foreground;
     font-feature-settings: "ss01", "cv11";
   }
 }
@@ -283,7 +258,7 @@
 }
 
 /* Smooth color transitions for dark mode */
-body, .bg-paper, .text-gradient-warm, header, footer {
+body, .bg-paper, .text-gradient-warm, header, footer, card {
   transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
@@ -429,9 +404,3 @@ img {
 [data-state="active"] {
   transition: all 0.2s ease;
 }
-
-/* Hide number input spinners */
-input[type=number]::-webkit-inner-spin-button,
-input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-input[type=number] { -moz-appearance: textfield; }
-

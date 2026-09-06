@@ -3,23 +3,22 @@
 @section('content')
     <div class="container mx-auto px-4 sm:px-6 py-12">
 
-        <div class="flex flex-col md:flex-row gap-12 bg-cream p-8 rounded-2xl shadow-sm">
+        <div class="flex flex-col md:flex-row gap-12 bg-card border border-border p-8 rounded-3xl shadow-sm">
             <!-- Image Section -->
             <div class="md:w-1/2">
                 <!-- Main Image Display -->
-                <!-- Main Image Display -->
                 <div class="relative z-10">
-                    <div id="imageContainer" class="rounded-xl overflow-hidden mb-4 bg-[#F5F2EA] h-[50vh] md:h-[90vh] flex items-center justify-center relative cursor-crosshair">
+                    <div id="imageContainer" class="rounded-2xl overflow-hidden mb-4 bg-muted/60 border border-border h-[50vh] md:h-[75vh] flex items-center justify-center relative cursor-crosshair card-lift">
                         @if($product->main_image)
                             <img src="{{ $product->main_image }}" alt="{{ $product->name }}"
-                                class="max-h-full max-w-full object-contain" id="mainProductImage">
+                                class="max-h-full max-w-full object-contain transition-transform duration-300" id="mainProductImage">
                         @else
-                            <span class="text-truffle-extra-dark/70 text-lg">No Image</span>
+                            <span class="text-muted-foreground text-lg">No Image</span>
                         @endif
                     </div>
                 
                     <!-- Zoom Result Container (Side View) -->
-                    <div id="zoomResult" class="hidden fixed md:absolute left-0 md:left-[105%] top-0 md:top-0 w-full md:w-[500px] h-[500px] bg-cream border border-truffle-medium/30 shadow-2xl z-50 rounded-lg overflow-hidden"></div>
+                    <div id="zoomResult" class="hidden fixed md:absolute left-0 md:left-[105%] top-0 md:top-0 w-full md:w-[500px] h-[500px] bg-card border border-border shadow-2xl z-50 rounded-2xl overflow-hidden glass"></div>
                 </div>
 
                 <script>
@@ -289,9 +288,12 @@
 
         <!-- Long Description Section -->
         @if($product->long_description)
-            <div class="mt-12 bg-cream p-8 rounded-2xl shadow-sm">
-                <h2 class="text-3xl font-serif font-bold text-truffle-extra-dark mb-6 border-b pb-4">Product Details</h2>
-                <div class="prose prose-lg max-w-none text-truffle-extra-dark">
+            <div class="mt-12 bg-card border border-border p-8 sm:p-10 rounded-3xl shadow-xs">
+                <div class="flex items-center gap-3 mb-6 border-b border-border pb-4">
+                    <span class="w-2.5 h-6 rounded-full bg-primary inline-block"></span>
+                    <h2 class="text-2xl sm:text-3xl font-serif font-bold text-foreground">Artisan Notes & Craft Details</h2>
+                </div>
+                <div class="prose prose-lg max-w-none text-foreground/80 leading-relaxed font-sans">
                     {!! nl2br(e($product->long_description)) !!}
                 </div>
             </div>
@@ -299,31 +301,45 @@
 
         <!-- Related Products -->
         @if($relatedProducts->count() > 0)
-            <div class="mt-20">
-                <h2 class="text-3xl font-serif font-bold text-truffle-extra-dark mb-8 border-b pb-4">You May Also Like</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="mt-16">
+                <div class="flex items-center justify-between mb-8 border-b border-border pb-4">
+                    <div>
+                        <h2 class="text-2xl sm:text-3xl font-serif font-bold text-foreground">You May Also Admire</h2>
+                        <p class="text-xs text-muted-foreground mt-1">Hand-picked companions from the same craft collection.</p>
+                    </div>
+                    <a href="{{ route('home', ['category' => $product->category->slug ?? '']) }}" class="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
+                        Explore Collection
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     @foreach($relatedProducts as $relProduct)
-                        <!-- Simple Card -->
-                        <a href="{{ route('products.show', $relProduct->slug ?? $relProduct->id) }}" class="group block">
-                            <div class="bg-[#F5F2EA] aspect-[3/4] rounded-lg overflow-hidden mb-4">
+                        <a href="{{ route('products.show', $relProduct->slug ?? $relProduct->id) }}"
+                            class="group bg-card rounded-2xl overflow-hidden border border-border card-lift shimmer-sweep shadow-xs flex flex-col justify-between block transition-all">
+                            <div class="bg-muted aspect-[3/4] overflow-hidden relative">
                                 @if($relProduct->main_image)
-                                    <img src="{{ $relProduct->main_image }}" alt="{{ $relProduct->name }}" class="w-full h-full object-cover">
+                                    <img src="{{ $relProduct->main_image }}" alt="{{ $relProduct->name }}"
+                                        loading="lazy"
+                                        class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
                                 @else
-                                    <div class="w-full h-full flex items-center justify-center text-truffle-extra-dark/70">
-                                        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                        </svg>
+                                    <div class="w-full h-full flex items-center justify-center text-muted-foreground text-xs">No Image</div>
+                                @endif
+                                @if($relProduct->discount_price)
+                                    <div class="absolute top-2.5 right-2.5">
+                                        <span class="bg-destructive text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-xs">Sale</span>
                                     </div>
                                 @endif
                             </div>
-                            <h3 class="font-bold text-lg group-hover:text-green-premium">{{ $relProduct->name }}</h3>
-                            <div class="text-green-premium font-bold">
-                                @if($relProduct->discount_price)
-                                    <span class="text-truffle-extra-dark/70 line-through text-sm mr-2">${{ number_format($relProduct->price, 2) }}</span>
-                                    <span>${{ number_format($relProduct->discount_price, 2) }}</span>
-                                @else
-                                    <span>${{ number_format($relProduct->price, 2) }}</span>
-                                @endif
+                            <div class="p-4 text-center">
+                                <h3 class="font-serif font-bold text-sm text-foreground group-hover:text-primary transition-colors truncate mb-1">{{ $relProduct->name }}</h3>
+                                <div class="text-primary font-bold text-sm font-serif">
+                                    @if($relProduct->discount_price)
+                                        <span class="text-muted-foreground line-through text-xs mr-1 font-normal">${{ number_format($relProduct->price, 2) }}</span>
+                                        <span>${{ number_format($relProduct->discount_price, 2) }}</span>
+                                    @else
+                                        <span>${{ number_format($relProduct->price, 2) }}</span>
+                                    @endif
+                                </div>
                             </div>
                         </a>
                     @endforeach

@@ -55,12 +55,12 @@ class AppServiceProvider extends ServiceProvider
                         'footer_phone'       => rescue(fn() => SiteSetting::get('footer_phone', ''), ''),
                         'footer_email'       => rescue(fn() => SiteSetting::get('footer_email', ''), ''),
                         'footer_hours'       => rescue(fn() => SiteSetting::get('footer_hours', ''), ''),
-                        // Theme Colors
-                        'color_primary'      => rescue(fn() => SiteSetting::get('color_primary', '#2D4B36'), '#2D4B36'),
-                        'color_secondary'    => rescue(fn() => SiteSetting::get('color_secondary', '#C5A059'), '#C5A059'),
-                        'color_accent'       => rescue(fn() => SiteSetting::get('color_accent', '#1A3326'), '#1A3326'),
-                        'color_background'   => rescue(fn() => SiteSetting::get('color_background', '#E8E2D2'), '#E8E2D2'),
-                        'color_text'         => rescue(fn() => SiteSetting::get('color_text', '#2D4B36'), '#2D4B36'),
+                        // Theme Colors (Earthy, artisanal palette from design.md)
+                        'color_primary'      => rescue(fn() => SiteSetting::get('color_primary', '#9B4522'), '#9B4522'),
+                        'color_secondary'    => rescue(fn() => SiteSetting::get('color_secondary', '#C98B32'), '#C98B32'),
+                        'color_accent'       => rescue(fn() => SiteSetting::get('color_accent', '#243427'), '#243427'),
+                        'color_background'   => rescue(fn() => SiteSetting::get('color_background', '#FAF7F2'), '#FAF7F2'),
+                        'color_text'         => rescue(fn() => SiteSetting::get('color_text', '#2A2421'), '#2A2421'),
                     ]);
                 } else {
                     throw new \Exception('Table not ready');

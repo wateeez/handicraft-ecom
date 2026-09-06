@@ -49,3 +49,4 @@ class InquiryController extends Controller
         return back()->with('success', 'Checkout link generated: ' . $link);
     }
 }
+

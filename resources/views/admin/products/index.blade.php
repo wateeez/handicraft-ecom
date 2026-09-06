@@ -1,4 +1,4 @@
-﻿@extends('admin.layout')
+@extends('admin.layout')
 
 @section('header')
     <h2 class="font-semibold text-xl text-truffle-extra-dark leading-tight">
@@ -8,21 +8,27 @@
 
 @section('content')
     <div class="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-6">
-        <h3 class="text-lg font-medium">All Products</h3>
+        <div>
+            <h3 class="text-xl font-serif font-bold text-foreground">Catalog & Inventory</h3>
+            <p class="text-xs text-muted-foreground mt-0.5">Manage handicraft listings, pricing, and dimensional weights</p>
+        </div>
         <a href="{{ route('admin.products.create') }}"
-            class="bg-green-premium hover:bg-green-800 text-white font-bold py-2 px-4 rounded text-center w-full sm:w-auto">
-            + Add New Product
+            class="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2.5 px-5 rounded-xl shadow-sm hover:shadow transition-all text-center w-full sm:w-auto inline-flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Add New Product
         </a>
     </div>
 
     @if(session('success'))
-    <div class="bg-green-premium/20 border border-green-400 text-green-premium px-4 py-3 rounded mb-6">
+    <div class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 px-4 py-3 rounded-xl mb-6 flex items-center gap-2 text-sm">
+        <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
         {{ session('success') }}
     </div>
     @endif
 
     @if(session('error'))
-    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+    <div class="bg-red-500/10 border border-red-500/30 text-red-700 px-4 py-3 rounded-xl mb-6 flex items-center gap-2 text-sm">
+        <svg class="w-4 h-4 text-red-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
         {{ session('error') }}
     </div>
     @endif
@@ -119,17 +125,17 @@
     </div>
 
     <!-- Search & Filter -->
-    <div class="bg-[#F5F2EA] p-4 rounded-lg mb-6 border border-truffle-medium/30">
+    <div class="bg-card p-5 rounded-2xl mb-6 border border-border shadow-xs">
         <form method="GET" class="flex flex-col md:flex-row gap-4 items-end">
             <div class="flex-1 w-full">
-                <label class="block text-sm font-medium text-truffle-extra-dark mb-1">Search</label>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Search Products</label>
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Product Name or SKU"
-                    class="w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2">
+                    class="w-full px-4 py-2.5 bg-paper/50 border border-border rounded-xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition">
             </div>
             <div class="w-full md:w-64">
-                <label class="block text-sm font-medium text-truffle-extra-dark mb-1">Category</label>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Category</label>
                 <select name="category_id"
-                    class="w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2">
+                    class="w-full px-4 py-2.5 bg-paper/50 border border-border rounded-xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition">
                     <option value="">All Categories</option>
                     @foreach($categories as $category)
                         <option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>
@@ -138,82 +144,74 @@
                     @endforeach
                 </select>
             </div>
-            <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700 transition">Filter</button>
+            <button type="submit" class="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-5 py-2.5 rounded-xl text-sm transition shadow-xs">Filter</button>
             @if(request()->anyFilled(['search', 'category_id']))
-                <a href="{{ route('admin.products.index') }}" class="text-truffle-extra-dark hover:text-truffle-extra-dark px-4 py-2">Clear</a>
+                <a href="{{ route('admin.products.index') }}" class="text-muted-foreground hover:text-foreground text-sm font-medium px-4 py-2.5 transition">Clear</a>
             @endif
         </form>
     </div>
 
-    <div class="bg-cream rounded-lg shadow overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-[#F5F2EA]">
+    <div class="bg-card rounded-2xl border border-border shadow-xs overflow-x-auto">
+        <table class="min-w-full divide-y divide-border">
+            <thead class="bg-paper/60">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-truffle-extra-dark uppercase tracking-wider">Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-truffle-extra-dark uppercase tracking-wider">Category</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-truffle-extra-dark uppercase tracking-wider">Price</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-truffle-extra-dark uppercase tracking-wider">Dimensions (L
-                        x W x H)</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-truffle-extra-dark uppercase tracking-wider">Weight</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-truffle-extra-dark uppercase tracking-wider">Material</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-truffle-extra-dark uppercase tracking-wider">SKU</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-truffle-extra-dark uppercase tracking-wider">Order Now
-                    </th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-truffle-extra-dark uppercase tracking-wider">Actions</th>
+                    <th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Name</th>
+                    <th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Category</th>
+                    <th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Price</th>
+                    <th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Dimensions</th>
+                    <th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Weight</th>
+                    <th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">SKU</th>
+                    <th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Direct Order</th>
+                    <th class="px-6 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</th>
                 </tr>
             </thead>
-            <tbody class="bg-cream divide-y divide-gray-200">
+            <tbody class="bg-card divide-y divide-border/60">
                 @foreach($products as $product)
-                    <tr>
+                    <tr class="hover:bg-paper/30 transition-colors">
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
                                 @if($product->main_image)
-                                    <img class="h-10 w-10 rounded-full object-cover mr-3" src="{{ $product->main_image }}" alt="">
+                                    <img class="h-10 w-10 rounded-lg object-cover mr-3 border border-border shadow-xs" src="{{ $product->main_image }}" alt="">
                                 @else
-                                    <div
-                                        class="h-10 w-10 rounded-full bg-[#E8E2D2] text-truffle-extra-dark flex items-center justify-center mr-3 text-xs">
+                                    <div class="h-10 w-10 rounded-lg bg-paper text-muted-foreground border border-border flex items-center justify-center mr-3 text-[10px] font-mono">
                                         No Img</div>
                                 @endif
-                                <div class="text-sm font-medium text-truffle-extra-dark">{{ $product->name }}</div>
+                                <div class="text-sm font-medium text-foreground">{{ $product->name }}</div>
                             </div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-truffle-extra-dark">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                             {{ $product->category->name ?? 'Uncategorized' }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-truffle-extra-dark">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
                             @if($product->discount_price)
-                                <span class="text-truffle-extra-dark/70 line-through text-xs mr-1">${{ number_format($product->price, 2) }}</span>
-                                <span class="font-bold">${{ number_format($product->discount_price, 2) }}</span>
+                                <span class="text-muted-foreground line-through text-xs mr-1.5">${{ number_format($product->price, 2) }}</span>
+                                <span class="font-bold text-primary">${{ number_format($product->discount_price, 2) }}</span>
                             @else
-                                ${{ number_format($product->price, 2) }}
+                                <span class="font-semibold text-foreground">${{ number_format($product->price, 2) }}</span>
                             @endif
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-truffle-extra-dark">
-                            {{ $product->length }} x {{ $product->width }} x {{ $product->height }} cm
+                        <td class="px-6 py-4 whitespace-nowrap text-xs text-muted-foreground font-mono">
+                            {{ $product->length }} &times; {{ $product->width }} &times; {{ $product->height }} cm
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-truffle-extra-dark">
+                        <td class="px-6 py-4 whitespace-nowrap text-xs text-muted-foreground font-mono">
                             {{ $product->weight }} kg
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-truffle-extra-dark">
-                            {{ $product->material ?? '-' }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-truffle-extra-dark">
+                        <td class="px-6 py-4 whitespace-nowrap text-xs text-muted-foreground font-mono">
                             {{ $product->sku ?? '-' }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span
-                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $product->is_order_now_enabled ? 'bg-green-premium/20 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                {{ $product->is_order_now_enabled ? 'Enabled' : 'Disabled' }}
+                            <span class="px-2.5 py-1 inline-flex text-xs leading-4 font-semibold rounded-full {{ $product->is_order_now_enabled ? 'bg-emerald-500/10 text-emerald-800 border border-emerald-500/20' : 'bg-muted/50 text-muted-foreground border border-border' }}">
+                                {{ $product->is_order_now_enabled ? 'Enabled' : 'Quote Only' }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
                             <a href="{{ route('admin.products.edit', $product) }}"
-                                class="text-indigo-600 hover:text-indigo-900 mr-4">Edit</a>
+                                class="text-primary hover:underline font-semibold">Edit</a>
                             <form action="{{ route('admin.products.destroy', $product) }}" method="POST" class="inline-block"
                                 onsubmit="event.preventDefault(); openDeleteModal(this, 'Enter your password to delete this product.');">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
+                                <button type="submit" class="text-red-600 hover:underline">Delete</button>
                             </form>
                         </td>
                     </tr>
@@ -221,7 +219,7 @@
             </tbody>
         </table>
     </div>
-    <div class="mt-4">
+    <div class="mt-5">
         {{ $products->links() }}
     </div>
 @endsection

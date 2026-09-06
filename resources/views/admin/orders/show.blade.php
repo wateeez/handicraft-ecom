@@ -322,7 +322,7 @@
                                 </p>
                                 <select name="status"
                                     class="w-full mt-2 text-sm border-red-300 rounded-lg text-red-900 focus:border-red-500 focus:ring-red-500"
-                                    x-show="nextStatus === ''">
+                                    x-bind:disabled="nextStatus !== ''">
                                     @foreach(\App\Models\Order::STATUSES as $sk)
                                         <option value="{{ $sk }}" {{ $sk === $order->status ? 'disabled' : '' }}>
                                             {{ \App\Models\Order::STATUS_LABELS[$sk] }}

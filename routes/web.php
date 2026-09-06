@@ -45,7 +45,9 @@ Route::post('/cart/remove', [CartController::class, 'removeItem'])->name('cart.r
 Route::get('/checkout/{token?}', [CartController::class, 'checkout'])->name('checkout'); // Token for inquiries
 Route::post('/checkout/calculate-shipping', [CartController::class, 'calculateShipping'])->name('checkout.calculate-shipping');
 Route::post('/checkout/init-order', [CartController::class, 'initOrder'])->name('checkout.init-order');
+Route::post('/checkout/submit-quote', [CartController::class, 'submitQuote'])->name('checkout.submit-quote');
 Route::get('/checkout/success/{orderNumber}', [CartController::class, 'orderSuccess'])->name('checkout.success');
+Route::get('/quote/success', fn() => view('frontend.cart.quote-success'))->name('quote.success');
 
 // Inquiry
 Route::post('/products/{product}/inquire', [FrontendInquiryController::class, 'store'])->name('inquiry.store');

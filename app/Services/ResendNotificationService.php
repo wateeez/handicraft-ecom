@@ -24,8 +24,11 @@ class ResendNotificationService
 
     public function sendAdminInquiryAlert(Order $order): void
     {
+        $adminEmail = (string) config('services.resend.admin_alert_email');
+        \Illuminate\Support\Facades\Log::info('Attempting to send Admin Inquiry Alert', ['admin_email' => $adminEmail, 'order_id' => $order->id]);
+
         $this->send(
-            [(string) config('services.resend.admin_alert_email')],
+            [$adminEmail],
             'New Inquiry Alert #' . $order->order_number,
             view('emails.resend.admin-inquiry-alert', ['order' => $order])->render()
         );
@@ -48,6 +51,40 @@ class ResendNotificationService
         );
     }
 
+    public function sendCustomerInquiryConfirmation(Order $order): void
+    {
+        $order->loadMissing('client');
+
+        $email = $order->client?->email ?? ($order->client_snapshot['email'] ?? null);
+
+        if (!$email) {
+            return;
+        }
+
+        $this->send(
+            [$email],
+            'Inquiry Received #' . $order->order_number,
+            view('emails.resend.customer-inquiry-confirmation', ['order' => $order])->render()
+        );
+    }
+
+    public function sendCustomerOrderCreated(Order $order): void
+    {
+        $order->loadMissing('client');
+
+        $email = $order->client?->email ?? ($order->client_snapshot['email'] ?? null);
+
+        if (!$email) {
+            return;
+        }
+
+        $this->send(
+            [$email],
+            'Order Created #' . $order->order_number,
+            view('emails.resend.customer-order-created', ['order' => $order])->render()
+        );
+    }
+
     /**
      * Send a single email through Resend.
      */
@@ -57,20 +94,23 @@ class ResendNotificationService
         $from = (string) config('services.resend.from');
 
         if (empty($apiKey) || empty($from) || empty($to[0])) {
+            \Illuminate\Support\Facades\Log::warning('Resend send skipped due to empty config', ['apiKey_set' => !empty($apiKey), 'from' => $from, 'to' => $to]);
             return;
         }
 
         try {
             $resend = $this->createClient($apiKey);
 
-            $resend->emails->send([
+            $response = $resend->emails->send([
                 'from' => $from,
                 'to' => $to,
                 'subject' => $subject,
                 'html' => $html,
             ]);
+            
+            \Illuminate\Support\Facades\Log::info('Resend email sent successfully', ['to' => $to, 'subject' => $subject, 'response' => json_encode($response)]);
         } catch (\Throwable $e) {
-            Log::warning('Resend email send failed', [
+            \Illuminate\Support\Facades\Log::warning('Resend email send failed', [
                 'subject' => $subject,
                 'to' => $to,
                 'error' => $e->getMessage(),

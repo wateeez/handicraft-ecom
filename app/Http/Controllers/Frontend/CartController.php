@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
+use App\Mail\CartQuoteMail;
 use App\Models\Client;
 use App\Models\Inquiry;
 use App\Models\Order;
@@ -11,6 +12,7 @@ use App\Models\ShippingZone;
 use App\Services\OrderService;
 use App\Services\ShippingService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class CartController extends Controller
 {
@@ -309,6 +311,75 @@ class CartController extends Controller
             ->firstOrFail();
 
         return view('frontend.cart.order-success', compact('order'));
+    }
+
+    public function submitQuote(Request $request)
+    {
+        $validated = $request->validate([
+            'name'              => ['required', 'string', 'max:255'],
+            'email'             => ['required', 'email', 'max:255'],
+            'phone'             => ['nullable', 'string', 'max:50'],
+            'address'           => ['required', 'string', 'max:500'],
+            'city'              => ['required', 'string', 'max:100'],
+            'zip_code'          => ['nullable', 'string', 'max:20'],
+            'country'           => ['required', 'string', 'max:10'],
+            'shipping_cost'     => ['required', 'numeric', 'min:0'],
+            'shipping_provider' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $cartItems = $this->buildSessionCartItems();
+
+        if (empty($cartItems)) {
+            return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
+        }
+
+        $subtotal         = collect($cartItems)->sum('subtotal');
+        $shippingCost     = (float) $validated['shipping_cost'];
+        $shippingProvider = $validated['shipping_provider'] ?? '';
+
+        // ── 1. Find or create the client profile ─────────────────────────────
+        $client = Client::firstOrCreate(
+            ['email' => $validated['email']],
+            [
+                'buyer_id'     => Client::generateBuyerId(),
+                'name'         => $validated['name'],
+                'phone'        => $validated['phone'] ?? null,
+                'address_line' => $validated['address'],
+                'city'         => $validated['city'],
+                'zip_code'     => $validated['zip_code'] ?? null,
+                'country'      => $validated['country'],
+            ]
+        );
+
+        // ── 2. Build items array for OrderService ─────────────────────────────
+        $items = [];
+        foreach ($cartItems as $cartItem) {
+            $product = $cartItem['product'];
+            $items[] = [
+                'product_id'         => $product->id,
+                'quantity'           => $cartItem['quantity'],
+                'unit_price'         => $cartItem['unit_price'],
+                'weight_kg'          => $product->weight ?? 0,
+                'item_discount_type' => 'none',
+                'item_discount_value'=> 0,
+            ];
+        }
+
+        // ── 3. Save as an Inquiry order in the DB ─────────────────────────────
+        $order = $this->orderService->createOrder([
+            'type'          => Order::TYPE_INQUIRY,
+            'client_id'     => $client->id,
+            'shipping_cost' => $shippingCost,
+            'notes'         => "Cart quote request. Shipping provider: {$shippingProvider}",
+            'items'         => $items,
+        ]);
+
+        // Admin and customer notification emails are automatically dispatched by OrderService via afterCommit hook.
+
+        // ── 4. Clear the cart and redirect ────────────────────────────────────
+        session()->forget('cart');
+
+        return redirect()->route('quote.success');
     }
 
     protected function getCartLines(): array
