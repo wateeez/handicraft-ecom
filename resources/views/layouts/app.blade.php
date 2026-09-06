@@ -20,12 +20,12 @@
             background-color: rgba(253, 251, 247, 0.85);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border-color: var(--color-border);
+            border-color: var(--border, #e5e0d8);
         }
 
         .site-footer {
-            background-color: var(--color-foreground);
-            color: var(--color-background);
+            background-color: var(--foreground, #2b231d);
+            color: var(--background, #fdfbf7);
         }
 
         .site-footer-muted {
