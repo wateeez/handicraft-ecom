@@ -293,6 +293,14 @@
                             this.shippingError = 'Over Weight';
                         } else if (data.rates && data.rates.length > 0) {
                             this.rates = data.rates;
+
+                            const defaultRate = this.rates.find(rate => rate.provider_name && rate.provider_name.toLowerCase() === 'standard shipping') || this.rates[0];
+                            if (defaultRate) {
+                                this.selectedProvider = defaultRate.provider_name;
+                                this.shippingCost = Number(defaultRate.price || 0);
+                                document.getElementById('shipping_cost_input').value = this.shippingCost;
+                                document.getElementById('shipping_provider_input').value = defaultRate.provider_name;
+                            }
                         } else {
                             this.shippingError = 'No shipping rates found for this location.';
                         }

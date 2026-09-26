@@ -207,7 +207,7 @@
                                     class="w-full border-truffle-medium/30 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500">
                                     <option value="">Select Provider...</option>
                                     @foreach($shippingProviders as $p)
-                                        <option value="{{ $p->id }}">{{ $p->name }}</option>
+                                        <option value="{{ $p->id }}" {{ strtolower($p->name) === 'standard shipping' ? 'selected' : '' }}>{{ $p->name }}</option>
                                     @endforeach
                                 </select>
                             </div>

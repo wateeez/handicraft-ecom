@@ -118,6 +118,7 @@ class OrderController extends Controller
     {
         $clients = Client::orderBy('name')->get();
         $products = Product::orderBy('name')->get();
+        ShippingProvider::ensureDefaultProvider();
         $shippingProviders = ShippingProvider::orderBy('name')->get();
 
         return view('admin.orders.create', compact('clients', 'products', 'shippingProviders'));
@@ -168,6 +169,9 @@ class OrderController extends Controller
         $data['order_discount_type'] = $data['order_discount_type'] ?? 'none';
         $data['order_discount_value'] = $data['order_discount_value'] ?? 0;
         $data['shipping_cost'] = $data['shipping_cost'] ?? 0;
+        $data['shipping_provider_id'] = $request->filled('shipping_provider_id')
+            ? $request->shipping_provider_id
+            : ShippingProvider::getDefaultProviderId();
 
         $order = $this->orderService->createOrder($data, auth()->user());
 
@@ -189,6 +193,7 @@ class OrderController extends Controller
             'sourceInquiry',
         ]);
 
+        ShippingProvider::ensureDefaultProvider();
         $shippingProviders = ShippingProvider::orderBy('name')->get();
         $statusColors = Order::STATUS_COLORS;
         $allowedTransitions = Order::ALLOWED_TRANSITIONS[$order->status] ?? [];
@@ -210,6 +215,7 @@ class OrderController extends Controller
 
         $clients = Client::orderBy('name')->get();
         $products = Product::orderBy('name')->get();
+        ShippingProvider::ensureDefaultProvider();
         $shippingProviders = ShippingProvider::orderBy('name')->get();
         $order->load('items.product', 'client');
 
@@ -258,6 +264,9 @@ class OrderController extends Controller
 
         $data['order_discount_type'] = $data['order_discount_type'] ?? 'none';
         $data['order_discount_value'] = $data['order_discount_value'] ?? 0;
+        $data['shipping_provider_id'] = $request->filled('shipping_provider_id')
+            ? $request->shipping_provider_id
+            : ShippingProvider::getDefaultProviderId();
 
         $this->orderService->updateOrder($order, $data, auth()->user());
 
@@ -389,6 +398,34 @@ class OrderController extends Controller
         try {
             $this->orderService->markItemReturned($item, (int) $request->quantity, $request->reason, auth()->user());
             return back()->with('success', 'Item return recorded.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function markAllReturned(Order $order)
+    {
+        if (!auth()->user()->hasPermission('manage_orders')) {
+            abort(403);
+        }
+
+        try {
+            $this->orderService->markAllItemsReturned($order, auth()->user());
+            return back()->with('success', 'All order items marked as returned.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function clearAllReturns(Order $order)
+    {
+        if (!auth()->user()->hasPermission('manage_orders')) {
+            abort(403);
+        }
+
+        try {
+            $this->orderService->clearAllItemReturns($order, auth()->user());
+            return back()->with('success', 'All return records cleared.');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }

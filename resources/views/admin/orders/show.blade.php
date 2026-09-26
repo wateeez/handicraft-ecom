@@ -43,7 +43,7 @@
                 class="bg-cream rounded-xl shadow-sm border border-truffle-medium/30 p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <p class="text-sm text-truffle-extra-dark mb-1">Current Status</p>
-                    <div class="flex items-center gap-2">
+                    <div class="flex flex-wrap items-center gap-2">
                         <span
                             class="px-3 py-1 rounded-full text-sm font-semibold 
                                                 {{ $statusColors[$order->status] === 'gray' ? 'bg-[#F5F2EA] text-truffle-extra-dark' : '' }}
@@ -55,6 +55,36 @@
                                                 {{ $statusColors[$order->status] === 'indigo' ? 'bg-indigo-100 text-indigo-700' : '' }}">
                             {{ $order->status_label }}
                         </span>
+
+                        @if($order->isReturnEligible() || $order->hasReturnedItems())
+                            <span class="px-3 py-1 rounded-full text-sm font-semibold
+                                {{ $order->return_summary_color === 'gray' ? 'bg-[#F5F2EA] text-truffle-extra-dark' : '' }}
+                                {{ $order->return_summary_color === 'amber' ? 'bg-amber-100 text-amber-700' : '' }}
+                                {{ $order->return_summary_color === 'red' ? 'bg-red-100 text-red-700' : '' }}">
+                                Return: {{ $order->return_summary_label }}
+                            </span>
+
+                            @if(auth()->user()->hasPermission('manage_orders'))
+                                @if($order->isReturnEligible())
+                                    <form action="{{ route('admin.orders.mark-all-returned', $order) }}" method="POST" class="inline">
+                                        @csrf
+                                        <button type="submit" class="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100">
+                                            Mark all returned
+                                        </button>
+                                    </form>
+                                @endif
+
+                                @if($order->hasReturnedItems())
+                                    <form action="{{ route('admin.orders.clear-all-returns', $order) }}" method="POST" class="inline" onsubmit="return confirm('Clear all return records for this order?')">
+                                        @csrf
+                                        <button type="submit" class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200">
+                                            Clear returns
+                                        </button>
+                                    </form>
+                                @endif
+                            @endif
+                        @endif
+
                         @if($order->is_merged)
                             <span
                                 class="px-2 py-1 bg-amber-100 text-amber-800 text-xs rounded font-medium flex items-center gap-1">

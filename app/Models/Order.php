@@ -286,6 +286,46 @@ class Order extends Model
     }
 
     /**
+     * A single order-level summary for return visibility in the admin UI.
+     */
+    public function getReturnSummaryLabelAttribute(): string
+    {
+        if ($this->items->isEmpty()) {
+            return OrderItem::RETURN_STATUS_LABELS[OrderItem::RETURN_STATUS_NONE];
+        }
+
+        $hasAnyReturn = $this->items->contains(fn (OrderItem $item) => $item->return_status !== OrderItem::RETURN_STATUS_NONE);
+        if (!$hasAnyReturn) {
+            return OrderItem::RETURN_STATUS_LABELS[OrderItem::RETURN_STATUS_NONE];
+        }
+
+        $allReturned = $this->items->every(fn (OrderItem $item) => $item->return_status === OrderItem::RETURN_STATUS_RETURNED);
+        if ($allReturned) {
+            return OrderItem::RETURN_STATUS_LABELS[OrderItem::RETURN_STATUS_RETURNED];
+        }
+
+        return OrderItem::RETURN_STATUS_LABELS[OrderItem::RETURN_STATUS_PARTIAL];
+    }
+
+    /**
+     * Matching style for the admin return summary badge.
+     */
+    public function getReturnSummaryColorAttribute(): string
+    {
+        $label = $this->return_summary_label;
+
+        if ($label === OrderItem::RETURN_STATUS_LABELS[OrderItem::RETURN_STATUS_RETURNED]) {
+            return 'red';
+        }
+
+        if ($label === OrderItem::RETURN_STATUS_LABELS[OrderItem::RETURN_STATUS_PARTIAL]) {
+            return 'amber';
+        }
+
+        return 'gray';
+    }
+
+    /**
      * Scope: only orders (not inquiries)
      */
     public function scopeOrders($query)

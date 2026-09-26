@@ -28,6 +28,8 @@ class OrderService
         return DB::transaction(function () use ($data, $creator) {
             $type = $data['type'] ?? Order::TYPE_INQUIRY;
 
+            $shippingProviderId = $data['shipping_provider_id'] ?? ShippingProvider::getDefaultProviderId();
+
             $order = Order::create([
                 'order_number' => Order::generateOrderNumber(),
                 'type' => $type,
@@ -38,7 +40,7 @@ class OrderService
                 'order_discount_type' => $data['order_discount_type'] ?? 'none',
                 'order_discount_value' => $data['order_discount_value'] ?? 0,
                 'shipping_cost' => $data['shipping_cost'] ?? 0,
-                'shipping_provider_id' => $data['shipping_provider_id'] ?? null,
+                'shipping_provider_id' => $shippingProviderId,
                 'delivery_period_days' => $data['delivery_period_days'] ?? 14,
                 'source_inquiry_id' => $data['source_inquiry_id'] ?? null,
                 'notes' => $data['notes'] ?? null,
@@ -442,6 +444,58 @@ class OrderService
         );
 
         return $item;
+    }
+
+    /**
+     * Mark every item on an order as fully returned in one bulk action.
+     */
+    public function markAllItemsReturned(Order $order, User $user): void
+    {
+        if (!$order->isReturnEligible()) {
+            throw new \Exception('Returns can only be recorded once the order has been dispatched or delivered.');
+        }
+
+        foreach ($order->items as $item) {
+            $item->returned_quantity = $item->quantity;
+            $item->return_status = OrderItem::RETURN_STATUS_RETURNED;
+            $item->return_reason = $item->return_reason ?? 'Bulk return update';
+            $item->returned_at = $item->returned_at ?? now();
+            $item->returned_by = $user->id;
+            $item->save();
+        }
+
+        AuditLogService::logSimple(
+            'order_all_items_returned',
+            $order,
+            "All items on order #{$order->order_number} were marked as returned.",
+            $user
+        );
+    }
+
+    /**
+     * Clear all return records for the order in one bulk action.
+     */
+    public function clearAllItemReturns(Order $order, User $user): void
+    {
+        foreach ($order->items as $item) {
+            if ($item->return_status === OrderItem::RETURN_STATUS_NONE) {
+                continue;
+            }
+
+            $item->returned_quantity = 0;
+            $item->return_status = OrderItem::RETURN_STATUS_NONE;
+            $item->return_reason = null;
+            $item->returned_at = null;
+            $item->returned_by = null;
+            $item->save();
+        }
+
+        AuditLogService::logSimple(
+            'order_all_item_returns_cleared',
+            $order,
+            "All return records were cleared for order #{$order->order_number}.",
+            $user
+        );
     }
 
     /**
