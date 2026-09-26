@@ -13,7 +13,7 @@
  * @see https://github.com/barryvdh/laravel-ide-helper
  */
 namespace Illuminate\Support\Facades {
-    /**
+    //**
      * @see \Illuminate\Foundation\Application
      */
     class App {
