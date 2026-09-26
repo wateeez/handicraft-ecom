@@ -48,6 +48,91 @@ class ShippingServiceTest extends TestCase
         return [$zone1, $zone2, $provider];
     }
 
+    private function seedZoneWithWeightLimit(float $maxWeight): ShippingZone
+    {
+        $zone = ShippingZone::create(['name' => 'Weight Limit Zone', 'countries' => ['NP']]);
+        $provider = ShippingProvider::create(['name' => 'TestCourier', 'is_active' => true]);
+
+        ShippingRate::create([
+            'shipping_provider_id' => $provider->id,
+            'shipping_zone_id' => $zone->id,
+            'min_weight' => 0,
+            'max_weight' => $maxWeight,
+            'price' => 15.00,
+        ]);
+
+        return $zone;
+    }
+
+    public function test_over_weight_is_false_when_under_admin_limit()
+    {
+        $this->seedZoneWithWeightLimit(10);
+        $service = new ShippingService();
+
+        $result = $service->checkOverWeight([$this->makeItem(8.0)], 'NP');
+
+        $this->assertFalse($result['over_weight']);
+    }
+
+    public function test_over_weight_is_false_when_exactly_equal_to_admin_limit()
+    {
+        $this->seedZoneWithWeightLimit(10);
+        $service = new ShippingService();
+
+        $result = $service->checkOverWeight([$this->makeItem(10.0)], 'NP');
+
+        $this->assertFalse($result['over_weight']);
+    }
+
+    public function test_over_weight_is_true_when_slightly_above_admin_limit()
+    {
+        $this->seedZoneWithWeightLimit(10);
+        $service = new ShippingService();
+
+        $result = $service->checkOverWeight([$this->makeItem(10.1)], 'NP');
+
+        $this->assertTrue($result['over_weight']);
+    }
+
+    public function test_over_weight_is_true_when_well_above_admin_limit()
+    {
+        $this->seedZoneWithWeightLimit(10);
+        $service = new ShippingService();
+
+        $result = $service->checkOverWeight([$this->makeItem(12.0)], 'NP');
+
+        $this->assertTrue($result['over_weight']);
+    }
+
+    public function test_over_weight_is_false_for_matching_decimal_limit()
+    {
+        $this->seedZoneWithWeightLimit(10.5);
+        $service = new ShippingService();
+
+        $result = $service->checkOverWeight([$this->makeItem(10.5)], 'NP');
+
+        $this->assertFalse($result['over_weight']);
+    }
+
+    public function test_over_weight_is_true_for_decimal_above_limit()
+    {
+        $this->seedZoneWithWeightLimit(10.5);
+        $service = new ShippingService();
+
+        $result = $service->checkOverWeight([$this->makeItem(10.6)], 'NP');
+
+        $this->assertTrue($result['over_weight']);
+    }
+
+    public function test_over_weight_is_false_when_no_zone_matches()
+    {
+        $service = new ShippingService();
+
+        $result = $service->checkOverWeight([$this->makeItem(999.0)], 'ZZ-UNKNOWN');
+
+        $this->assertFalse($result['over_weight']);
+    }
+
     public function test_matches_zone_when_country_is_name()
     {
         [$zone1, $zone2] = $this->seedZonesAndRates();

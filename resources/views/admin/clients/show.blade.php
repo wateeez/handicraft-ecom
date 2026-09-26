@@ -49,12 +49,17 @@
                     </div>
 
                     <div class="pt-4 border-t border-gray-100">
-                        <h4 class="font-medium text-truffle-extra-dark mb-2">Primary Address</h4>
+                        <h4 class="font-medium text-truffle-extra-dark mb-2">Primary Address (Shipping)</h4>
                         <address
                             class="not-italic text-right text-truffle-extra-dark leading-relaxed font-medium bg-[#F5F2EA] p-3 rounded border border-gray-100">
                             {!! nl2br(e($client->full_address)) !!}
                             @if(!$client->full_address) <span class="text-truffle-extra-dark/70 italic">No address recorded</span> @endif
                         </address>
+                    </div>
+
+                    <div class="flex justify-between items-start">
+                        <span class="font-medium text-truffle-extra-dark">Shipping Country</span>
+                        <span class="text-right">{{ $client->country_name ?? '-' }}</span>
                     </div>
 
                     @if($client->notes)
@@ -83,11 +88,14 @@
                     <table class="w-full text-left text-sm">
                         <thead>
                             <tr class="bg-[#F5F2EA] border-b text-truffle-extra-dark">
-                                <th class="px-6 py-3 font-semibold">Number</th>
+                                <th class="px-6 py-3 font-semibold">Reference #</th>
                                 <th class="px-6 py-3 font-semibold">Type</th>
                                 <th class="px-6 py-3 font-semibold">Date</th>
+                                <th class="px-6 py-3 font-semibold">Products</th>
+                                <th class="px-6 py-3 font-semibold">Shipping</th>
                                 <th class="px-6 py-3 font-semibold">Status</th>
-                                <th class="px-6 py-3 font-semibold text-right">Total</th>
+                                <th class="px-6 py-3 font-semibold text-right">Amount</th>
+                                <th class="px-6 py-3 font-semibold text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
@@ -99,26 +107,62 @@
                                         @if($o->is_paid) <span
                                             class="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.2 ml-1 rounded">PAID</span>
                                         @endif
+                                        @if($o->hasReturnedItems())
+                                            <span
+                                                class="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.2 ml-1 rounded">RETURN</span>
+                                        @endif
+                                        @if($o->type === 'inquiry' && $o->convertedOrder)
+                                            <div class="text-[10px] text-indigo-600 mt-0.5">
+                                                &rarr; Converted to
+                                                <a href="{{ route('admin.orders.show', $o->convertedOrder) }}" class="hover:underline font-mono">{{ $o->convertedOrder->order_number }}</a>
+                                            </div>
+                                        @elseif($o->type === 'order' && $o->sourceInquiry)
+                                            <div class="text-[10px] text-amber-600 mt-0.5">
+                                                &larr; From inquiry
+                                                <a href="{{ route('admin.orders.show', $o->sourceInquiry) }}" class="hover:underline font-mono">{{ $o->sourceInquiry->order_number }}</a>
+                                            </div>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4">
                                         <span
                                             class="text-xs {{ $o->type === 'order' ? 'text-indigo-600 bg-indigo-50' : 'text-amber-600 bg-amber-50' }} px-2 py-0.5 rounded-full font-medium">{{ ucfirst($o->type) }}</span>
                                     </td>
                                     <td class="px-6 py-4 text-truffle-extra-dark">{{ $o->created_at->format('d M Y') }}</td>
+                                    <td class="px-6 py-4 text-truffle-extra-dark">
+                                        @php $firstItem = $o->items->first(); @endphp
+                                        @if($firstItem)
+                                            <div>{{ $firstItem->product_name }}</div>
+                                            @if($o->items->count() > 1)
+                                                <div class="text-xs text-truffle-extra-dark/70">+{{ $o->items->count() - 1 }} more item(s)</div>
+                                            @endif
+                                        @else
+                                            <span class="text-truffle-extra-dark/70 italic">No items</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-truffle-extra-dark">{{ $o->shipping_country ?? '—' }}</div>
+                                        <div class="text-xs text-truffle-extra-dark/70">{{ $o->shipping_provider_name ?? 'No provider' }}</div>
+                                    </td>
                                     <td class="px-6 py-4">
                                         @php
                                             $c = \App\Models\Order::STATUS_COLORS[$o->status] ?? 'gray';
-                                            $map = ['gray' => 'bg-[#F5F2EA] text-truffle-extra-dark', 'blue' => 'bg-blue-100 text-blue-700', 'yellow' => 'bg-yellow-100 text-yellow-700', 'purple' => 'bg-purple-100 text-purple-700', 'green' => 'bg-green-premium/20 text-green-premium', 'red' => 'bg-red-100 text-red-700'];
+                                            $map = ['gray' => 'bg-[#F5F2EA] text-truffle-extra-dark', 'blue' => 'bg-blue-100 text-blue-700', 'yellow' => 'bg-yellow-100 text-yellow-700', 'purple' => 'bg-purple-100 text-purple-700', 'green' => 'bg-green-premium/20 text-green-premium', 'red' => 'bg-red-100 text-red-700', 'indigo' => 'bg-indigo-100 text-indigo-700'];
                                         @endphp
                                         <span
                                             class="inline-block px-2.5 py-1 rounded-full text-xs font-semibold {{ $map[$c] }}">{{ $o->status_label }}</span>
                                     </td>
                                     <td class="px-6 py-4 text-right font-medium text-truffle-extra-dark">
                                         ${{ number_format($o->grand_total, 2) }}</td>
+                                    <td class="px-6 py-4 text-right">
+                                        <a href="{{ route('admin.orders.show', $o) }}"
+                                            class="inline-flex items-center gap-1 px-3 py-1.5 bg-green-premium/10 text-green-premium rounded-lg text-xs font-medium hover:bg-green-premium/20 transition-colors">
+                                            View
+                                        </a>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-6 py-12 text-center text-truffle-extra-dark">This client has no orders or
+                                    <td colspan="8" class="px-6 py-12 text-center text-truffle-extra-dark">This client has no orders or
                                         inquiries yet.</td>
                                 </tr>
                             @endforelse

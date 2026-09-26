@@ -38,7 +38,9 @@ class OrderService
                 'order_discount_type' => $data['order_discount_type'] ?? 'none',
                 'order_discount_value' => $data['order_discount_value'] ?? 0,
                 'shipping_cost' => $data['shipping_cost'] ?? 0,
+                'shipping_provider_id' => $data['shipping_provider_id'] ?? null,
                 'delivery_period_days' => $data['delivery_period_days'] ?? 14,
+                'source_inquiry_id' => $data['source_inquiry_id'] ?? null,
                 'notes' => $data['notes'] ?? null,
             ]);
 
@@ -296,7 +298,30 @@ class OrderService
             $user
         );
 
+        $this->onPaymentConfirmed($order, $user);
+
         return $order;
+    }
+
+    /**
+     * Post-payment bookkeeping shared by every path that confirms a customer paid
+     * (online PayPal capture, or an admin manually marking an order as paid):
+     * advance the order workflow past "unprocessed", and — if this order was
+     * checked out from a quote inquiry — mark that source inquiry as converted so
+     * it no longer looks unattended in the admin Inquiries list.
+     */
+    public function onPaymentConfirmed(Order $order, ?User $user = null): void
+    {
+        if ($order->canTransitionTo(Order::STATUS_PROCESSED)) {
+            $this->changeStatus($order, Order::STATUS_PROCESSED, $user, [], true);
+        }
+
+        if ($order->source_inquiry_id) {
+            $inquiry = $order->sourceInquiry ?? Order::find($order->source_inquiry_id);
+            if ($inquiry && !in_array($inquiry->status, [Order::STATUS_CANCELLED, Order::STATUS_CONVERTED], true)) {
+                $this->changeStatus($inquiry, Order::STATUS_CONVERTED, $user, [], true);
+            }
+        }
     }
 
     /**
@@ -380,6 +405,74 @@ class OrderService
             $user
         );
         $order->delete();
+    }
+
+    /**
+     * Mark a quantity of a line item as returned, tracked independently of the
+     * order's normal fulfilment status.
+     */
+    public function markItemReturned(OrderItem $item, int $quantity, ?string $reason, User $user): OrderItem
+    {
+        $order = $item->order;
+
+        if (!$order || !$order->isReturnEligible()) {
+            throw new \Exception('Items can only be returned once the order has been dispatched or delivered.');
+        }
+
+        if ($quantity < 1 || $quantity > $item->returnable_quantity) {
+            throw new \Exception("Return quantity must be between 1 and {$item->returnable_quantity}.");
+        }
+
+        $item->returned_quantity += $quantity;
+        $item->return_status = $item->returned_quantity >= $item->quantity
+            ? OrderItem::RETURN_STATUS_RETURNED
+            : OrderItem::RETURN_STATUS_PARTIAL;
+        $item->return_reason = $reason;
+        $item->returned_at = now();
+        $item->returned_by = $user->id;
+        $item->save();
+
+        AuditLogService::logSimple(
+            'item_returned',
+            $order,
+            "{$quantity} x \"{$item->product_name}\" marked as returned on order #{$order->order_number}."
+                . ($reason ? " Reason: {$reason}" : ''),
+            $user,
+            ['order_item_id' => $item->id, 'returned_quantity' => $item->returned_quantity]
+        );
+
+        return $item;
+    }
+
+    /**
+     * Undo a previously recorded return for a line item, resetting it back to
+     * "not returned".
+     */
+    public function undoItemReturn(OrderItem $item, User $user): OrderItem
+    {
+        if ($item->return_status === OrderItem::RETURN_STATUS_NONE) {
+            throw new \Exception('This item has no return recorded.');
+        }
+
+        $order = $item->order;
+        $previouslyReturned = $item->returned_quantity;
+
+        $item->returned_quantity = 0;
+        $item->return_status = OrderItem::RETURN_STATUS_NONE;
+        $item->return_reason = null;
+        $item->returned_at = null;
+        $item->returned_by = null;
+        $item->save();
+
+        AuditLogService::logSimple(
+            'item_return_undone',
+            $order,
+            "Return of {$previouslyReturned} x \"{$item->product_name}\" was reversed on order #{$order->order_number}.",
+            $user,
+            ['order_item_id' => $item->id]
+        );
+
+        return $item;
     }
 
     /**

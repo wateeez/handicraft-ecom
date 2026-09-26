@@ -19,6 +19,8 @@ class Order extends Model
     const STATUS_DISPATCHED = 'dispatched';
     const STATUS_DELIVERED = 'delivered';
     const STATUS_CANCELLED = 'cancelled';
+    // System-only status: set automatically when a quote inquiry is checked out and paid as a real order.
+    const STATUS_CONVERTED = 'converted';
 
     const TYPE_INQUIRY = 'inquiry';
     const TYPE_ORDER = 'order';
@@ -30,6 +32,7 @@ class Order extends Model
         self::STATUS_DISPATCHED,
         self::STATUS_DELIVERED,
         self::STATUS_CANCELLED,
+        self::STATUS_CONVERTED,
     ];
 
     const STATUS_LABELS = [
@@ -39,6 +42,7 @@ class Order extends Model
         self::STATUS_DISPATCHED => 'Dispatched',
         self::STATUS_DELIVERED => 'Delivered',
         self::STATUS_CANCELLED => 'Cancelled',
+        self::STATUS_CONVERTED => 'Converted to Order',
     ];
 
     const STATUS_COLORS = [
@@ -48,6 +52,7 @@ class Order extends Model
         self::STATUS_DISPATCHED => 'purple',
         self::STATUS_DELIVERED => 'green',
         self::STATUS_CANCELLED => 'red',
+        self::STATUS_CONVERTED => 'indigo',
     ];
 
     // Allowed forward transitions (excluding override)
@@ -58,6 +63,8 @@ class Order extends Model
         self::STATUS_DISPATCHED => [self::STATUS_DELIVERED, self::STATUS_CANCELLED],
         self::STATUS_DELIVERED => [],
         self::STATUS_CANCELLED => [],
+        // Converted is only ever set automatically (via override) when an inquiry's checkout is paid.
+        self::STATUS_CONVERTED => [],
     ];
 
     protected $fillable = [
@@ -86,6 +93,7 @@ class Order extends Model
         'merged_into_order_id',
         'is_merged',
         'merged_order_ids',
+        'source_inquiry_id',
         'notes',
         'cancelled_at',
         'cancelled_by',
@@ -162,6 +170,22 @@ class Order extends Model
         return $this->belongsTo(Order::class, 'merged_into_order_id');
     }
 
+    /**
+     * The inquiry this order was checked out / converted from, if any.
+     */
+    public function sourceInquiry(): BelongsTo
+    {
+        return $this->belongsTo(Order::class, 'source_inquiry_id');
+    }
+
+    /**
+     * The order that was created when this inquiry was checked out, if any.
+     */
+    public function convertedOrder(): HasOne
+    {
+        return $this->hasOne(Order::class, 'source_inquiry_id');
+    }
+
     // ==================== BUSINESS LOGIC ====================
 
     /**
@@ -190,6 +214,17 @@ class Order extends Model
     }
 
     /**
+     * Whether goods on this order have actually shipped, meaning individual line
+     * items can be marked as returned. Deliberately based on fulfilment status
+     * rather than `type` — admins routinely track and fulfil real sales as
+     * "inquiry" records without ever running them through online checkout.
+     */
+    public function isReturnEligible(): bool
+    {
+        return in_array($this->status, [self::STATUS_DISPATCHED, self::STATUS_DELIVERED], true);
+    }
+
+    /**
      * Check if a status transition is allowed
      */
     public function canTransitionTo(string $newStatus): bool
@@ -205,7 +240,7 @@ class Order extends Model
      */
     public function isCancellable(): bool
     {
-        return !in_array($this->status, [self::STATUS_DELIVERED, self::STATUS_CANCELLED]);
+        return !in_array($this->status, [self::STATUS_DELIVERED, self::STATUS_CANCELLED, self::STATUS_CONVERTED]);
     }
 
     /**
@@ -213,7 +248,7 @@ class Order extends Model
      */
     public function canBeMerged(): bool
     {
-        if (in_array($this->status, [self::STATUS_CANCELLED, self::STATUS_DELIVERED])) {
+        if (in_array($this->status, [self::STATUS_CANCELLED, self::STATUS_DELIVERED, self::STATUS_CONVERTED])) {
             return false;
         }
         if ($this->is_merged) {
@@ -240,6 +275,14 @@ class Order extends Model
     public function getStatusColorAttribute(): string
     {
         return self::STATUS_COLORS[$this->status] ?? 'gray';
+    }
+
+    /**
+     * Whether any line item on this order has an active return recorded against it.
+     */
+    public function hasReturnedItems(): bool
+    {
+        return $this->items->contains(fn (OrderItem $item) => $item->return_status !== OrderItem::RETURN_STATUS_NONE);
     }
 
     /**
@@ -283,33 +326,63 @@ class Order extends Model
     }
     /**
      * Virtual attributes to proxy client_snapshot for frontend consistency
+     * Falls back to the live client relation when no snapshot has been captured yet.
      */
     public function getNameAttribute()
     {
-        return $this->client_snapshot['name'] ?? null;
+        return $this->client_snapshot['name'] ?? $this->client?->name;
     }
     public function getEmailAttribute()
     {
-        return $this->client_snapshot['email'] ?? null;
+        return $this->client_snapshot['email'] ?? $this->client?->email;
     }
     public function getPhoneAttribute()
     {
-        return $this->client_snapshot['phone'] ?? null;
+        return $this->client_snapshot['phone'] ?? $this->client?->phone;
     }
     public function getCityAttribute()
     {
-        return $this->client_snapshot['city'] ?? null;
+        return $this->client_snapshot['city'] ?? $this->client?->city;
     }
     public function getAddressLineAttribute()
     {
-        return $this->client_snapshot['address'] ?? null;
+        return $this->client_snapshot['address'] ?? $this->client?->address_line;
     }
     public function getZipCodeAttribute()
     {
-        return $this->client_snapshot['zip_code'] ?? null;
+        return $this->client_snapshot['zip_code'] ?? $this->client?->zip_code;
     }
     public function getCountryAttribute()
     {
-        return $this->client_snapshot['country'] ?? null;
+        return $this->client_snapshot['country'] ?? $this->client?->country;
+    }
+
+    /**
+     * Shipping destination country as its full display name (customer-provided, via snapshot or live client)
+     */
+    public function getShippingCountryAttribute()
+    {
+        return country_name($this->getCountryAttribute());
+    }
+
+    /**
+     * Full shipping address string (customer-provided, via snapshot or live client)
+     */
+    public function getShippingAddressAttribute()
+    {
+        return collect([
+            $this->getAddressLineAttribute(),
+            $this->getCityAttribute(),
+            $this->client_snapshot['state'] ?? $this->client?->state,
+            $this->getZipCodeAttribute(),
+        ])->filter()->implode(', ');
+    }
+
+    /**
+     * Name of the shipping provider selected/assigned for this order, if any
+     */
+    public function getShippingProviderNameAttribute(): ?string
+    {
+        return $this->shippingProvider?->name;
     }
 }

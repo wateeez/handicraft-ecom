@@ -278,7 +278,15 @@
                                         </span>
                                     </button>
                                 </div>
-                                <div x-show="shippingError" class="text-red-500 text-xs mt-1" x-text="shippingError"></div>
+                                <div x-show="shippingError === 'Over Weight'" x-cloak
+                                    class="flex items-center gap-2 mt-2 px-3 py-2 rounded-md border-2 border-[#8f3222] bg-[#8f3222]/[0.08]">
+                                    <svg class="w-4 h-4 text-[#8f3222] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                                    </svg>
+                                    <span class="text-xs font-bold uppercase tracking-wide text-[#8f3222]">Over Weight</span>
+                                </div>
+                                <div x-show="shippingError && shippingError !== 'Over Weight'" class="text-red-500 text-xs mt-1" x-text="shippingError"></div>
                                 <div x-show="shippingSuccess" class="text-green-premium text-xs mt-1">Shipping updated via
                                     calculator!</div>
                             </div>

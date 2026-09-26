@@ -17,4 +17,12 @@ class Inquiry extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /**
+     * Get the country's full display name instead of its ISO code
+     */
+    public function getCountryNameAttribute(): ?string
+    {
+        return country_name($this->country);
+    }
 }

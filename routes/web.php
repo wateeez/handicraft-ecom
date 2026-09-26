@@ -97,6 +97,8 @@ Route::middleware(['auth', 'viewer.readonly'])->prefix('admin')->name('admin.')-
     Route::post('orders/{order}/mark-paid', [OrderController::class, 'markPaid'])->name('orders.mark-paid');
     Route::post('orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
     Route::post('orders/{order}/generate-checkout-link', [OrderController::class, 'generateCheckoutLink'])->name('orders.generate-checkout-link');
+    Route::post('orders/{order}/items/{item}/return', [OrderController::class, 'returnItem'])->name('orders.items.return');
+    Route::post('orders/{order}/items/{item}/undo-return', [OrderController::class, 'undoItemReturn'])->name('orders.items.undo-return');
 
     // Invoices
     Route::post('orders/{order}/invoices', [InvoiceController::class, 'store'])->name('invoices.store');

@@ -16,6 +16,9 @@
         body {
             font-family: 'Manrope', sans-serif;
         }
+        [x-cloak] {
+            display: none !important;
+        }
     </style>
 </head>
 
@@ -34,8 +37,8 @@
             <div class="h-16 flex items-center justify-between gap-3 border-b border-sidebar-border px-5 min-w-0 bg-sidebar">
                 <div class="flex items-center gap-3 min-w-0">
                     <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2.5 min-w-0 group">
-                        @if(!empty($siteSettings['navbar_logo_url']))
-                            <img src="{{ $siteSettings['navbar_logo_url'] }}"
+                        @if(!empty($siteSettings['footer_logo_url']))
+                            <img src="{{ $siteSettings['footer_logo_url'] }}"
                                 alt="{{ $siteSettings['site_name'] ?? 'Ecom' }} Admin"
                                 class="h-9 w-auto max-w-[140px] md:max-w-[160px] object-contain transition-transform group-hover:scale-105">
                         @else

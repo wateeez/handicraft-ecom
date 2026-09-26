@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolesAndPermissionsSeeder::class,
             DemoUsersSeeder::class,
+            OmsSeeder::class,
         ]);
 
         if (!User::where('email', 'admin@ecom.com')->exists()) {

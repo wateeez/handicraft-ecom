@@ -20,7 +20,7 @@
             <p class="mt-4"><strong>Address:</strong></p>
             <p>{{ $inquiry->address_line }}</p>
             <p>{{ $inquiry->city }}, {{ $inquiry->zip_code }}</p>
-            <p>{{ $inquiry->country }}</p>
+            <p>{{ $inquiry->country_name }}</p>
         </div>
 
         <!-- Product Info -->

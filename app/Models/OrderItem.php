@@ -7,6 +7,22 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OrderItem extends Model
 {
+    const RETURN_STATUS_NONE = 'none';
+    const RETURN_STATUS_PARTIAL = 'partially_returned';
+    const RETURN_STATUS_RETURNED = 'returned';
+
+    const RETURN_STATUS_LABELS = [
+        self::RETURN_STATUS_NONE => 'Not Returned',
+        self::RETURN_STATUS_PARTIAL => 'Partially Returned',
+        self::RETURN_STATUS_RETURNED => 'Returned',
+    ];
+
+    const RETURN_STATUS_COLORS = [
+        self::RETURN_STATUS_NONE => 'gray',
+        self::RETURN_STATUS_PARTIAL => 'amber',
+        self::RETURN_STATUS_RETURNED => 'red',
+    ];
+
     protected $fillable = [
         'order_id',
         'product_id',
@@ -18,6 +34,11 @@ class OrderItem extends Model
         'item_discount_value',
         'item_discount_amount',
         'line_total',
+        'return_status',
+        'returned_quantity',
+        'return_reason',
+        'returned_at',
+        'returned_by',
     ];
 
     protected $casts = [
@@ -28,6 +49,8 @@ class OrderItem extends Model
         'item_discount_value' => 'decimal:2',
         'item_discount_amount' => 'decimal:2',
         'line_total' => 'decimal:2',
+        'returned_quantity' => 'integer',
+        'returned_at' => 'datetime',
     ];
 
     public function order(): BelongsTo
@@ -38,6 +61,29 @@ class OrderItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function returnedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'returned_by');
+    }
+
+    /**
+     * How many units of this line item have not (yet) been returned.
+     */
+    public function getReturnableQuantityAttribute(): int
+    {
+        return max(0, $this->quantity - $this->returned_quantity);
+    }
+
+    public function getReturnStatusLabelAttribute(): string
+    {
+        return self::RETURN_STATUS_LABELS[$this->return_status] ?? ucfirst($this->return_status);
+    }
+
+    public function getReturnStatusColorAttribute(): string
+    {
+        return self::RETURN_STATUS_COLORS[$this->return_status] ?? 'gray';
     }
 
     /**

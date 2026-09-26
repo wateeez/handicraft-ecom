@@ -8,6 +8,7 @@ use App\Models\Client;
 use App\Models\Inquiry;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\ShippingProvider;
 use App\Models\ShippingZone;
 use App\Services\OrderService;
 use App\Services\ShippingService;
@@ -160,8 +161,9 @@ class CartController extends Controller
         }
 
         $rates = $this->shippingService->calculateShipping($items, $country);
+        $overWeight = $this->shippingService->checkOverWeight($items, $country);
 
-        return response()->json(['rates' => $rates]);
+        return response()->json(['rates' => $rates, 'over_weight' => $overWeight['over_weight']]);
     }
 
     public function updateQuantity(Request $request)
@@ -216,11 +218,13 @@ class CartController extends Controller
 
         $token = $validated['token'] ?? null;
         $items = [];
+        $sourceInquiryId = null;
 
         if ($token) {
             $omsOrder = Order::where('checkout_token', $token)->where('type', 'inquiry')->first();
 
             if ($omsOrder) {
+                $sourceInquiryId = $omsOrder->id;
                 $omsOrder->load('items.product');
                 foreach ($omsOrder->items as $item) {
                     $items[] = [
@@ -294,6 +298,7 @@ class CartController extends Controller
             'type' => Order::TYPE_ORDER,
             'client_id' => $client->id,
             'shipping_cost' => $validated['shipping_cost'],
+            'source_inquiry_id' => $sourceInquiryId,
             'items' => $items,
         ]);
 
@@ -336,6 +341,9 @@ class CartController extends Controller
         $subtotal         = collect($cartItems)->sum('subtotal');
         $shippingCost     = (float) $validated['shipping_cost'];
         $shippingProvider = $validated['shipping_provider'] ?? '';
+        $shippingProviderId = $shippingProvider !== ''
+            ? ShippingProvider::where('name', $shippingProvider)->value('id')
+            : null;
 
         // ── 1. Find or create the client profile ─────────────────────────────
         $client = Client::firstOrCreate(
@@ -367,11 +375,12 @@ class CartController extends Controller
 
         // ── 3. Save as an Inquiry order in the DB ─────────────────────────────
         $order = $this->orderService->createOrder([
-            'type'          => Order::TYPE_INQUIRY,
-            'client_id'     => $client->id,
-            'shipping_cost' => $shippingCost,
-            'notes'         => "Cart quote request. Shipping provider: {$shippingProvider}",
-            'items'         => $items,
+            'type'                => Order::TYPE_INQUIRY,
+            'client_id'           => $client->id,
+            'shipping_cost'       => $shippingCost,
+            'shipping_provider_id'=> $shippingProviderId,
+            'notes'               => 'Cart quote request.',
+            'items'               => $items,
         ]);
 
         // Admin and customer notification emails are automatically dispatched by OrderService via afterCommit hook.

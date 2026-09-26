@@ -22,10 +22,10 @@ class DashboardController extends Controller
             $totalOrders = Schema::hasTable('orders') ? \App\Models\Order::where('type', 'order')->count() : 0;
             $totalClients = Schema::hasTable('clients') ? \App\Models\Client::count() : 0;
             $recentOrders = Schema::hasTable('orders') 
-                ? \App\Models\Order::with('client')->latest()->take(6)->get() 
+                ? \App\Models\Order::with(['client', 'shippingProvider'])->latest()->take(6)->get() 
                 : collect();
             $recentInquiries = Schema::hasTable('orders')
-                ? \App\Models\Order::where('type', 'inquiry')->with('client')->latest()->take(5)->get()
+                ? \App\Models\Order::where('type', 'inquiry')->with(['client', 'shippingProvider'])->latest()->take(5)->get()
                 : collect();
         } catch (\Exception $e) {
             $totalProducts = 0;

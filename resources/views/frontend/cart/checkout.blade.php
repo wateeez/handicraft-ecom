@@ -103,7 +103,7 @@
                                         @endforeach
                                     </select>
                                 @endif
-                                <p class="text-xs text-red-500 mt-1.5" x-show="shippingError" x-text="shippingError"></p>
+                                <p class="text-xs text-red-500 mt-1.5" x-show="shippingError && shippingError !== 'Over Weight'" x-text="shippingError"></p>
                             </div>
                         </div>
                     </div>
@@ -115,6 +115,21 @@
                             <h2 class="text-xl font-serif font-bold text-foreground">Shipping Method</h2>
                         </div>
 
+                        <!-- Over Weight banner -->
+                        <div x-show="shippingError === 'Over Weight'" x-cloak
+                            class="flex items-start gap-4 p-5 rounded-xl border-2 border-[#8f3222] bg-[#8f3222]/[0.08]">
+                            <div class="shrink-0 w-11 h-11 rounded-full bg-[#8f3222] text-white flex items-center justify-center">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-lg font-serif font-bold text-[#8f3222] tracking-wide">Over Weight</p>
+                                <p class="text-sm text-[#8f3222] mt-1">This order exceeds the maximum weight we can ship to this destination. Please reduce the quantity or contact us for a custom freight quote.</p>
+                            </div>
+                        </div>
+
                         <!-- Loading state -->
                         <div x-show="loadingRates" class="flex items-center gap-3 text-sm text-muted-foreground py-3">
                             <svg class="animate-spin h-5 w-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -124,7 +139,7 @@
                             Calculating precise courier rates...
                         </div>
 
-                        <div class="space-y-3" x-show="rates.length > 0">
+                        <div class="space-y-3" x-show="rates.length > 0 && shippingError !== 'Over Weight'">
                             <template x-for="rate in rates" :key="rate.provider_name + rate.price">
                                 <label class="flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all duration-200"
                                     :class="selectedProvider === rate.provider_name ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'border-border bg-card hover:bg-paper/40'">
@@ -274,7 +289,9 @@
 
                         const data = await response.json();
 
-                        if (data.rates && data.rates.length > 0) {
+                        if (data.over_weight) {
+                            this.shippingError = 'Over Weight';
+                        } else if (data.rates && data.rates.length > 0) {
                             this.rates = data.rates;
                         } else {
                             this.shippingError = 'No shipping rates found for this location.';

@@ -181,8 +181,10 @@
                     <p style="margin: 10px 0 0 0; font-size: 11px; color: #6b7280;">Date:
                         {{ ($invoice->issued_at ?? $invoice->created_at)->format('M d, Y') }}
                     </p>
-                    <p style="margin: 2px 0 0 0; font-size: 11px; color: #6b7280;">Reference: Order
-                        #{{ $invoice->order->order_number }}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 11px; color: #6b7280;">
+                        {{ ($invoice->financial_snapshot['order_type'] ?? $invoice->order->type) === 'inquiry' ? 'Inquiry' : 'Order' }}
+                        Reference: #{{ $invoice->financial_snapshot['order_number'] ?? $invoice->order->order_number }}
+                    </p>
                 </td>
             </tr>
         </table>
@@ -195,12 +197,14 @@
                     <div class="section-title">Billed To</div>
                     <p class="info-text">
                         <strong>{{ $c['name'] ?? 'Walk-in Customer' }}</strong><br>
+                        @if(!empty($c['buyer_id'])) <span style="color: #6b7280; font-size: 11px;">Buyer ID:
+                            {{ $c['buyer_id'] }}</span><br> @endif
                         @if(!empty($c['company'])) {{ $c['company'] }}<br> @endif
                         @if(!empty($c['address']))
                             {{ $c['address'] }}<br>
                             {{ $c['city'] ?? '' }} {{ $c['state'] ? ', ' . $c['state'] : '' }}
                             {{ $c['zip_code'] ?? '' }}<br>
-                            {{ $c['country'] ?? '' }}
+                            {{ country_name($c['country'] ?? null) }}
                         @endif
                     </p>
                 </td>
@@ -219,6 +223,25 @@
         @php $fin = $invoice->financial_snapshot; @endphp
 
         <table border="0" cellpadding="0" cellspacing="0" width="100%"
+            style="border-collapse: collapse; margin-bottom: 30px;">
+            <tr>
+                <td width="55%" style="vertical-align: top;">
+                    <div class="section-title">Ship To</div>
+                    <p class="info-text">
+                        @if(!empty($fin['shipping_address'])) {{ $fin['shipping_address'] }}<br> @endif
+                        @if(!empty($fin['shipping_country'])) {{ $fin['shipping_country'] }} @endif
+                    </p>
+                </td>
+                <td width="45%" style="vertical-align: top;">
+                    @if(!empty($fin['shipping_provider_name']))
+                        <div class="section-title">Shipping Provider</div>
+                        <p class="info-text">{{ $fin['shipping_provider_name'] }}</p>
+                    @endif
+                </td>
+            </tr>
+        </table>
+
+        <table border="0" cellpadding="0" cellspacing="0" width="100%"
             style="border-collapse: collapse; margin-bottom: 20px;">
             <thead>
                 <tr>
@@ -230,6 +253,8 @@
                     <th style="background-color: #f9fafb; border-bottom: 1px solid #e5e7eb; padding: 10px; text-align: right; font-size: 11px; font-weight: bold;"
                         width="80">Unit Price</th>
                     <th style="background-color: #f9fafb; border-bottom: 1px solid #e5e7eb; padding: 10px; text-align: right; font-size: 11px; font-weight: bold;"
+                        width="80">Subtotal</th>
+                    <th style="background-color: #f9fafb; border-bottom: 1px solid #e5e7eb; padding: 10px; text-align: right; font-size: 11px; font-weight: bold;"
                         width="80">Discount</th>
                     <th style="background-color: #f9fafb; border-bottom: 1px solid #e5e7eb; padding: 10px; text-align: right; font-size: 11px; font-weight: bold;"
                         width="90">Total</th>
@@ -240,6 +265,9 @@
                     <tr>
                         <td style="padding: 10px; border-bottom: 1px solid #f3f4f6;">
                             <strong>{{ $item['product_name'] }}</strong>
+                            @if(!empty($item['variant'])) <span
+                                style="color: #6b7280; font-size: 10px; display: block;">Variant:
+                            {{ $item['variant'] }}</span> @endif
                             @if($item['product_sku']) <span style="color: #6b7280; font-size: 10px; display: block;">SKU:
                             {{ $item['product_sku'] }}</span> @endif
 
@@ -251,19 +279,15 @@
                             {{ $item['quantity'] }}
                         </td>
                         <td style="padding: 10px; border-bottom: 1px solid #f3f4f6; text-align: right;">
-                            @php
-                                $netUnitPrice = $item['quantity'] > 0 ? $item['line_total'] / $item['quantity'] : $item['unit_price'];
-                            @endphp
-                            ${{ number_format($netUnitPrice, 2) }}
+                            ${{ number_format($item['unit_price'], 2) }}
+                        </td>
+                        <td style="padding: 10px; border-bottom: 1px solid #f3f4f6; text-align: right;">
+                            ${{ number_format($item['item_subtotal'] ?? ($item['unit_price'] * $item['quantity']), 2) }}
                         </td>
                         <td
                             style="padding: 10px; border-bottom: 1px solid #f3f4f6; text-align: right; color: #dc2626; font-size: 11px;">
                             @if($item['item_discount_amount'] > 0)
-                                <span style="display: block;">Ref:
-                                    -${{ number_format($item['item_discount_amount'], 2) }}</span>
-                                <span
-                                    style="color: #9ca3af; font-size: 9px; display: block;">(${{ number_format($item['unit_price'], 2) }}
-                                    orig.)</span>
+                                -${{ number_format($item['item_discount_amount'], 2) }}
                             @else
                                 -
                             @endif
@@ -281,10 +305,17 @@
                 <td width="40%">
                     <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
                         <tr>
-                            <td style="padding: 4px 0; color: #6b7280;">Subtotal (Net)</td>
-                            <td style="padding: 4px 0; text-align: right;">${{ number_format($fin['subtotal'], 2) }}
-                            </td>
+                            <td style="padding: 4px 0; color: #6b7280;">Subtotal</td>
+                            <td style="padding: 4px 0; text-align: right;">
+                                ${{ number_format(collect($fin['items'])->sum(fn($i) => $i['item_subtotal'] ?? ($i['unit_price'] * $i['quantity'])), 2) }}</td>
                         </tr>
+                        @if($fin['item_discount_total'] > 0)
+                            <tr>
+                                <td style="padding: 4px 0; color: #dc2626;">Item Discounts</td>
+                                <td style="padding: 4px 0; text-align: right; color: #dc2626;">
+                                    -${{ number_format($fin['item_discount_total'], 2) }}</td>
+                            </tr>
+                        @endif
                         @if($fin['order_discount_amount'] > 0)
                             <tr>
                                 <td style="padding: 4px 0; color: #dc2626;">Order Discount</td>
@@ -312,6 +343,7 @@
                 </td>
             </tr>
         </table>
+
 
         <div class="footer">
             <p style="margin: 0; margin-bottom: 5px;">Thank you for your business!</p>

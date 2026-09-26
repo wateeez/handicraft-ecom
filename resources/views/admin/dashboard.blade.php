@@ -215,6 +215,9 @@
                                     <span class="text-xs text-muted-foreground block truncate">
                                         {{ $order->client?->name ?? 'Guest Buyer' }} &bull; {{ $order->created_at->diffForHumans() }}
                                     </span>
+                                    <span class="text-[11px] text-muted-foreground/80 block truncate">
+                                        Ships to {{ $order->shipping_country ?? 'N/A' }} &bull; {{ $order->shipping_provider_name ?? 'No provider' }}
+                                    </span>
                                 </div>
                             </div>
                             <div class="text-right flex-shrink-0 ml-3">
@@ -262,6 +265,9 @@
                                     </a>
                                     <span class="text-xs text-muted-foreground block truncate">
                                         {{ $inquiry->client?->name ?? 'Prospect' }} &bull; {{ $inquiry->created_at->diffForHumans() }}
+                                    </span>
+                                    <span class="text-[11px] text-muted-foreground/80 block truncate">
+                                        Ships to {{ $inquiry->shipping_country ?? 'N/A' }} &bull; {{ $inquiry->shipping_provider_name ?? 'No provider' }}
                                     </span>
                                 </div>
                             </div>

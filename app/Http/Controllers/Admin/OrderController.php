@@ -11,6 +11,7 @@ use App\Services\OrderService;
 use App\Services\ShippingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class OrderController extends Controller
 {
@@ -65,6 +66,11 @@ class OrderController extends Controller
         $selectedRate = collect($rates)->firstWhere('provider_name', $provider->name);
 
         if (!$selectedRate) {
+            $overWeight = $shippingService->checkOverWeight($items, $client->country);
+            if ($overWeight['over_weight']) {
+                return response()->json(['error' => 'Over Weight'], 422);
+            }
+
             $msg = empty($rates)
                 ? "No shipping service found delivering to '{$client->country}'."
                 : "The provider '{$provider->name}' does not have a rate for this weight/zone.";
@@ -76,7 +82,7 @@ class OrderController extends Controller
 
     public function index(Request $request)
     {
-        $query = Order::with(['client', 'creator', 'latestInvoice'])
+        $query = Order::with(['client', 'creator', 'latestInvoice', 'shippingProvider', 'items'])
             ->whereNull('merged_into_order_id');
 
         // Filters
@@ -179,6 +185,8 @@ class OrderController extends Controller
             'shippingProvider',
             'auditLogs.user',
             'cancelledBy',
+            'convertedOrder',
+            'sourceInquiry',
         ]);
 
         $shippingProviders = ShippingProvider::orderBy('name')->get();
@@ -260,11 +268,13 @@ class OrderController extends Controller
     public function updateStatus(Request $request, Order $order)
     {
         $request->validate([
-            'status' => 'required|in:' . implode(',', Order::STATUSES),
+            'status' => ['required', 'in:' . implode(',', Order::STATUSES), Rule::notIn([Order::STATUS_CONVERTED])],
             'tracking_number' => 'nullable|string',
             'shipping_provider_id' => 'nullable|exists:shipping_providers,id',
             'dispatched_at' => 'nullable|date',
             'override' => 'nullable|boolean',
+        ], [
+            'status.not_in' => 'The "Converted to Order" status is set automatically and cannot be chosen manually.',
         ]);
 
         $user = auth()->user();
@@ -359,6 +369,47 @@ class OrderController extends Controller
         return back()
             ->with('checkout_link', $link)
             ->with('success', 'Payment link generated. Copy it and share with the customer.');
+    }
+
+    public function returnItem(Request $request, Order $order, \App\Models\OrderItem $item)
+    {
+        if (!auth()->user()->hasPermission('manage_orders')) {
+            abort(403);
+        }
+
+        if ($item->order_id !== $order->id) {
+            abort(404);
+        }
+
+        $request->validate([
+            'quantity' => ['required', 'integer', 'min:1'],
+            'reason' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        try {
+            $this->orderService->markItemReturned($item, (int) $request->quantity, $request->reason, auth()->user());
+            return back()->with('success', 'Item return recorded.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function undoItemReturn(Order $order, \App\Models\OrderItem $item)
+    {
+        if (!auth()->user()->hasPermission('manage_orders')) {
+            abort(403);
+        }
+
+        if ($item->order_id !== $order->id) {
+            abort(404);
+        }
+
+        try {
+            $this->orderService->undoItemReturn($item, auth()->user());
+            return back()->with('success', 'Item return reversed.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 
     public function destroy(Order $order)

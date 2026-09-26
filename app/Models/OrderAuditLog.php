@@ -65,6 +65,8 @@ class OrderAuditLog extends Model
             'invoice_voided' => 'Invoice Voided',
             'auto_delivered' => 'Auto-marked Delivered',
             'client_updated' => 'Client Updated',
+            'item_returned' => 'Item Returned',
+            'item_return_undone' => 'Item Return Reversed',
             default => ucwords(str_replace('_', ' ', $this->action_type)),
         };
     }
@@ -91,6 +93,8 @@ class OrderAuditLog extends Model
             'invoice_issued',
             'invoice_voided' => '🧾',
             'auto_delivered' => '🤖',
+            'item_returned',
+            'item_return_undone' => '↩️',
             default => '📝',
         };
     }

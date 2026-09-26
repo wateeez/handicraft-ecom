@@ -17,6 +17,17 @@
             <p class="text-sm text-truffle-extra-dark">
                 Created {{ $order->created_at->format('M d, Y H:i') }} by {{ $order->creator?->name ?? 'System' }}
             </p>
+            @if($order->type === 'inquiry' && $order->convertedOrder)
+                <p class="text-xs text-indigo-600 mt-0.5">
+                    &rarr; Converted to order
+                    <a href="{{ route('admin.orders.show', $order->convertedOrder) }}" class="font-mono font-semibold hover:underline">{{ $order->convertedOrder->order_number }}</a>
+                </p>
+            @elseif($order->type === 'order' && $order->sourceInquiry)
+                <p class="text-xs text-amber-600 mt-0.5">
+                    &larr; Converted from inquiry
+                    <a href="{{ route('admin.orders.show', $order->sourceInquiry) }}" class="font-mono font-semibold hover:underline">{{ $order->sourceInquiry->order_number }}</a>
+                </p>
+            @endif
         </div>
     </div>
 @endsection
@@ -40,7 +51,8 @@
                                                 {{ $statusColors[$order->status] === 'yellow' ? 'bg-yellow-100 text-yellow-700' : '' }}
                                                 {{ $statusColors[$order->status] === 'purple' ? 'bg-purple-100 text-purple-700' : '' }}
                                                 {{ $statusColors[$order->status] === 'green' ? 'bg-green-premium/20 text-green-premium' : '' }}
-                                                {{ $statusColors[$order->status] === 'red' ? 'bg-red-100 text-red-700' : '' }}">
+                                                {{ $statusColors[$order->status] === 'red' ? 'bg-red-100 text-red-700' : '' }}
+                                                {{ $statusColors[$order->status] === 'indigo' ? 'bg-indigo-100 text-indigo-700' : '' }}">
                             {{ $order->status_label }}
                         </span>
                         @if($order->is_merged)
@@ -123,6 +135,9 @@
                                 <th class="px-6 py-3 font-medium text-center">Qty</th>
                                 <th class="px-6 py-3 font-medium text-right">Discount</th>
                                 <th class="px-6 py-3 font-medium text-right">Total</th>
+                                @if($order->isReturnEligible())
+                                    <th class="px-6 py-3 font-medium text-center">Return</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 text-truffle-extra-dark">
@@ -162,6 +177,61 @@
                                     </td>
                                     <td class="px-6 py-4 text-right font-semibold text-truffle-extra-dark">
                                         ${{ number_format($item->line_total, 2) }}</td>
+                                    @if($order->isReturnEligible())
+                                        <td class="px-6 py-4 text-center" x-data="{ open: false }">
+                                            @php
+                                                $returnColorMap = ['gray' => 'bg-[#F5F2EA] text-truffle-extra-dark', 'amber' => 'bg-amber-100 text-amber-700', 'red' => 'bg-red-100 text-red-700'];
+                                                $returnBadge = $returnColorMap[$item->return_status_color] ?? 'bg-[#F5F2EA] text-truffle-extra-dark';
+                                            @endphp
+                                            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-semibold {{ $returnBadge }}">
+                                                {{ $item->return_status_label }}
+                                            </span>
+                                            @if($item->returned_quantity > 0)
+                                                <div class="text-[10px] text-truffle-extra-dark/70 mt-0.5">{{ $item->returned_quantity }}/{{ $item->quantity }} returned</div>
+                                            @endif
+
+                                            @if(auth()->user()->hasPermission('manage_orders'))
+                                                <div class="mt-1.5 flex items-center justify-center gap-1">
+                                                    @if($item->returnable_quantity > 0)
+                                                        <button type="button" @click="open = !open"
+                                                            class="text-xs px-2 py-1 bg-amber-50 text-amber-700 rounded hover:bg-amber-100 font-medium">
+                                                            Mark Return
+                                                        </button>
+                                                    @endif
+                                                    @if($item->return_status !== 'none')
+                                                        <form action="{{ route('admin.orders.items.undo-return', [$order, $item]) }}" method="POST"
+                                                            onsubmit="return confirm('Reverse this return record?')">
+                                                            @csrf
+                                                            <button type="submit"
+                                                                class="text-xs px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100 font-medium">
+                                                                Undo
+                                                            </button>
+                                                        </form>
+                                                    @endif
+                                                </div>
+
+                                                <form x-show="open" x-cloak action="{{ route('admin.orders.items.return', [$order, $item]) }}"
+                                                    method="POST" class="mt-2 p-2 bg-amber-50 border border-amber-100 rounded-lg text-left space-y-1.5">
+                                                    @csrf
+                                                    <div>
+                                                        <label class="block text-[10px] font-semibold text-amber-700">Qty (max {{ $item->returnable_quantity }})</label>
+                                                        <input type="number" name="quantity" min="1" max="{{ $item->returnable_quantity }}"
+                                                            value="{{ $item->returnable_quantity }}"
+                                                            class="w-full text-xs border-amber-300 rounded">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-[10px] font-semibold text-amber-700">Reason</label>
+                                                        <input type="text" name="reason" placeholder="e.g. damaged in transit"
+                                                            class="w-full text-xs border-amber-300 rounded">
+                                                    </div>
+                                                    <button type="submit"
+                                                        class="w-full text-xs px-2 py-1 bg-amber-600 text-white rounded hover:bg-amber-700 font-medium">
+                                                        Confirm Return
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </td>
+                                    @endif
                                 </tr>
                             @endforeach
                         </tbody>
@@ -223,8 +293,20 @@
                             <address class="text-truffle-extra-dark not-italic">
                                 {{ $c['address'] }}<br>
                                 {{ $c['city'] }} {{ $c['state'] ? ', ' . $c['state'] : '' }} {{ $c['zip_code'] }}<br>
-                                {{ $c['country'] }}
+                                {{ country_name($c['country'] ?? null) }}
                             </address>
+                        </div>
+                        <div>
+                            <p class="text-xs text-truffle-extra-dark mb-1">Shipping Country</p>
+                            <p class="text-truffle-extra-dark font-medium">{{ country_name($c['country'] ?? null) ?? 'Not specified' }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-truffle-extra-dark mb-1">Shipping Provider</p>
+                            @if($order->shippingProvider)
+                                <p class="text-truffle-extra-dark font-medium">{{ $order->shippingProvider->name }}</p>
+                            @else
+                                <p class="text-truffle-extra-dark/70 italic">Not yet assigned</p>
+                            @endif
                         </div>
                     </div>
                 @else
@@ -265,7 +347,19 @@
                     </h3>
 
                     @if($order->invoices->isEmpty())
-                        <p class="text-sm text-truffle-extra-dark italic">No invoices generated yet.</p>
+                        <p class="text-sm text-truffle-extra-dark italic mb-3">No invoices generated yet.</p>
+                        @if(auth()->user()->hasPermission('manage_invoices'))
+                            <form action="{{ route('admin.invoices.store', $order) }}" method="POST">
+                                @csrf
+                                <button type="submit"
+                                    class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Generate Invoice
+                                </button>
+                            </form>
+                        @endif
                     @else
                         <ul class="space-y-3">
                             @foreach($order->invoices as $inv)
@@ -324,9 +418,11 @@
                                     class="w-full mt-2 text-sm border-red-300 rounded-lg text-red-900 focus:border-red-500 focus:ring-red-500"
                                     x-bind:disabled="nextStatus !== ''">
                                     @foreach(\App\Models\Order::STATUSES as $sk)
-                                        <option value="{{ $sk }}" {{ $sk === $order->status ? 'disabled' : '' }}>
-                                            {{ \App\Models\Order::STATUS_LABELS[$sk] }}
-                                        </option>
+                                        @if($sk !== \App\Models\Order::STATUS_CONVERTED)
+                                            <option value="{{ $sk }}" {{ $sk === $order->status ? 'disabled' : '' }}>
+                                                {{ \App\Models\Order::STATUS_LABELS[$sk] }}
+                                            </option>
+                                        @endif
                                     @endforeach
                                 </select>
                             </div>

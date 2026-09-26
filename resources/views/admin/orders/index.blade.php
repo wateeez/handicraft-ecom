@@ -89,6 +89,7 @@
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-truffle-extra-dark uppercase">Order #</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-truffle-extra-dark uppercase">Type</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-truffle-extra-dark uppercase">Client</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-truffle-extra-dark uppercase">Shipping</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-truffle-extra-dark uppercase">Status</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-truffle-extra-dark uppercase">Total</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-truffle-extra-dark uppercase">Invoice</th>
@@ -107,6 +108,7 @@
                                         'purple' => 'bg-purple-100 text-purple-700',
                                         'green' => 'bg-green-premium/20 text-green-premium',
                                         'red' => 'bg-red-100 text-red-700',
+                                        'indigo' => 'bg-indigo-100 text-indigo-700',
                                     ];
                                     $badgeClass = $colorMap[$color] ?? 'bg-[#F5F2EA] text-truffle-extra-dark';
                                 @endphp
@@ -119,6 +121,10 @@
                                         @if($order->is_paid)
                                             <span
                                                 class="ml-1 text-xs bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-medium">PAID</span>
+                                        @endif
+                                        @if($order->hasReturnedItems())
+                                            <span
+                                                class="ml-1 text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-medium">RETURN</span>
                                         @endif
                                     </td>
                                     <td class="px-4 py-3">
@@ -137,6 +143,10 @@
                                         @else
                                             <span class="text-sm text-truffle-extra-dark/70 italic">No client</span>
                                         @endif
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="text-sm text-truffle-extra-dark">{{ $order->shipping_country ?? '—' }}</div>
+                                        <div class="text-xs text-truffle-extra-dark/70">{{ $order->shipping_provider_name ?? 'No provider' }}</div>
                                     </td>
                                     <td class="px-4 py-3">
                                         <span class="inline-block px-2.5 py-1 rounded-full text-xs font-semibold {{ $badgeClass }}">
@@ -173,6 +183,15 @@
                                                 <span
                                                     class="copy-feedback absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 transition-opacity whitespace-nowrap pointer-events-none z-50">Copied!</span>
                                             </button>
+                                        @endif
+                                        @if(!$order->hasActiveInvoice() && auth()->user()->hasPermission('manage_invoices'))
+                                            <form action="{{ route('admin.invoices.store', $order) }}" method="POST">
+                                                @csrf
+                                                <button type="submit"
+                                                    class="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors">
+                                                    Generate Invoice
+                                                </button>
+                                            </form>
                                         @endif
                                         <a href="{{ route('admin.orders.show', $order) }}"
                                             class="inline-flex items-center gap-1 px-3 py-1.5 bg-green-premium/10 text-green-premium rounded-lg text-xs font-medium hover:bg-green-premium/20 transition-colors">

@@ -27,7 +27,7 @@
     <div class="max-w-4xl mx-auto space-y-6">
 
         {{-- Top Action Bar --}}
-        <div class="bg-cream rounded-xl shadow-sm border border-truffle-medium/30 p-4 flex justify-between items-center">
+        <div class="no-print bg-cream rounded-xl shadow-sm border border-truffle-medium/30 p-4 flex justify-between items-center">
             <div class="text-sm text-truffle-extra-dark">
                 <strong>Generated on:</strong> {{ $invoice->created_at->format('d M Y, H:i') }} by
                 {{ $invoice->generatedBy?->name ?? 'System' }}
@@ -40,6 +40,14 @@
                 @endif
             </div>
             <div class="flex gap-2">
+                <button type="button" onclick="window.print()"
+                    class="px-4 py-2 border border-truffle-medium/30 text-truffle-extra-dark rounded-lg hover:bg-[#F5F2EA] font-medium text-sm flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a1 1 0 001-1v-4a1 1 0 00-1-1H9a1 1 0 00-1 1v4a1 1 0 001 1zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    Print
+                </button>
                 <a href="{{ route('admin.invoices.download', $invoice) }}"
                     class="px-4 py-2 border border-truffle-medium/30 text-truffle-extra-dark rounded-lg hover:bg-[#F5F2EA] font-medium text-sm flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -80,6 +88,9 @@
                     <h4 class="text-truffle-extra-dark/70 font-semibold mb-2">Billed To</h4>
                     <div class="text-truffle-extra-dark text-sm">
                         <strong>{{ $invoice->client_snapshot['name'] ?? 'Walk-in Customer' }}</strong><br>
+                        @if(!empty($invoice->client_snapshot['buyer_id']))
+                            <span class="text-xs text-truffle-extra-dark/70">Buyer ID: {{ $invoice->client_snapshot['buyer_id'] }}</span><br>
+                        @endif
                         @if(isset($invoice->client_snapshot['company']) && $invoice->client_snapshot['company'])
                             {{ $invoice->client_snapshot['company'] }}<br>
                         @endif
@@ -88,7 +99,7 @@
                             {{ $invoice->client_snapshot['city'] ?? '' }}
                             {{ $invoice->client_snapshot['state'] ? ', ' . $invoice->client_snapshot['state'] : '' }}
                             {{ $invoice->client_snapshot['zip_code'] ?? '' }}<br>
-                            {{ $invoice->client_snapshot['country'] ?? '' }}
+                            {{ country_name($invoice->client_snapshot['country'] ?? null) }}
                         @endif
                     </div>
                 </div>
@@ -97,10 +108,29 @@
                     <div class="text-truffle-extra-dark text-sm">
                         <strong>Invoice #:</strong> {{ $invoice->invoice_number }}<br>
                         <strong>Date:</strong> {{ ($invoice->issued_at ?? $invoice->created_at)->format('d M Y') }}<br>
-                        <strong>Order Ref:</strong> {{ $invoice->order->order_number }}
+                        <strong>{{ ($invoice->financial_snapshot['order_type'] ?? $invoice->order->type) === 'inquiry' ? 'Inquiry' : 'Order' }} Ref:</strong>
+                        {{ $invoice->financial_snapshot['order_number'] ?? $invoice->order->order_number }}
                     </div>
                 </div>
             </div>
+
+            @if(!empty($invoice->financial_snapshot['shipping_address']) || !empty($invoice->financial_snapshot['shipping_provider_name']))
+                <div class="grid grid-cols-2 gap-8 mb-8">
+                    <div>
+                        <h4 class="text-truffle-extra-dark/70 font-semibold mb-2">Ship To</h4>
+                        <div class="text-truffle-extra-dark text-sm">
+                            @if(!empty($invoice->financial_snapshot['shipping_address'])) {{ $invoice->financial_snapshot['shipping_address'] }}<br> @endif
+                            @if(!empty($invoice->financial_snapshot['shipping_country'])) {{ $invoice->financial_snapshot['shipping_country'] }} @endif
+                        </div>
+                    </div>
+                    @if(!empty($invoice->financial_snapshot['shipping_provider_name']))
+                        <div class="text-right">
+                            <h4 class="text-truffle-extra-dark/70 font-semibold mb-2">Shipping Provider</h4>
+                            <div class="text-truffle-extra-dark text-sm">{{ $invoice->financial_snapshot['shipping_provider_name'] }}</div>
+                        </div>
+                    @endif
+                </div>
+            @endif
 
             <table class="w-full text-left text-sm mb-6 border-collapse">
                 <thead>
@@ -108,6 +138,7 @@
                         <th class="py-2">Description</th>
                         <th class="py-2 text-right">Qty</th>
                         <th class="py-2 text-right">Unit Price</th>
+                        <th class="py-2 text-right">Subtotal</th>
                         <th class="py-2 text-right">Discount</th>
                         <th class="py-2 text-right">Total</th>
                     </tr>
@@ -117,12 +148,15 @@
                         <tr>
                             <td class="py-3">
                                 <span class="font-medium text-truffle-extra-dark">{{ $item['product_name'] }}</span>
+                                @if(!empty($item['variant']))
+                                <div class="text-xs text-truffle-extra-dark/70">Variant: {{ $item['variant'] }}</div> @endif
                                 @if($item['product_sku'])
                                 <div class="text-xs text-truffle-extra-dark/70">SKU: {{ $item['product_sku'] }}</div> @endif
 
                             </td>
                             <td class="py-3 text-right">{{ $item['quantity'] }}</td>
                             <td class="py-3 text-right">${{ number_format($item['unit_price'], 2) }}</td>
+                            <td class="py-3 text-right">${{ number_format($item['item_subtotal'] ?? ($item['unit_price'] * $item['quantity']), 2) }}</td>
                             <td class="py-3 text-right text-xs">
                                 @if($item['item_discount_amount'] > 0)
                                     -${{ number_format($item['item_discount_amount'], 2) }}

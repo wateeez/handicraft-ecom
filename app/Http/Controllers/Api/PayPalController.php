@@ -166,15 +166,10 @@ class PayPalController extends Controller
             ]);
         }
 
-        // Transition status → processed (payment received online)
+        // Transition status → processed (payment received online), and mark the
+        // source inquiry (if any) as converted so the admin panel reflects it.
         try {
-            $this->orderService->changeStatus(
-                $order,
-                Order::STATUS_PROCESSED,
-                null, // system action – no logged-in user
-                [],
-                true  // override any transition guard
-            );
+            $this->orderService->onPaymentConfirmed($order);
         } catch (\Exception $e) {
             Log::warning('PayPal: could not transition order status after payment', [
                 'order_id' => $order->id,

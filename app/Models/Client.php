@@ -55,7 +55,15 @@ class Client extends Model
             $this->city,
             $this->state,
             $this->zip_code,
-            $this->country,
+            $this->country_name,
         ])->filter()->implode(', ');
+    }
+
+    /**
+     * Get the country's full display name instead of its ISO code
+     */
+    public function getCountryNameAttribute(): ?string
+    {
+        return country_name($this->country);
     }
 }

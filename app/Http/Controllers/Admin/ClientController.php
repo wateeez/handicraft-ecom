@@ -60,7 +60,7 @@ class ClientController extends Controller
 
     public function show(Client $client)
     {
-        $client->load(['orders' => fn($q) => $q->latest()]);
+        $client->load(['orders' => fn($q) => $q->latest()->with(['shippingProvider', 'items', 'convertedOrder', 'sourceInquiry'])]);
         return view('admin.clients.show', compact('client'));
     }
 

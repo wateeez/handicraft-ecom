@@ -362,8 +362,8 @@ h1, h2, h3 {
   text-wrap: balance;
 }
 
-/* Smooth image loading */
-img {
+/* Smooth image loading placeholder (skip logos/transparent PNGs that use object-contain) */
+img:not(.object-contain) {
   background-color: var(--muted);
 }
 

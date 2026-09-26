@@ -128,7 +128,7 @@ class InvoiceService
      */
     public function buildFinancialSnapshot(Order $order): array
     {
-        $order->load('items');
+        $order->load('items', 'shippingProvider');
 
         $items = $order->items->map(function ($item) {
             $dims = null;
@@ -138,9 +138,10 @@ class InvoiceService
             return [
                 'product_name' => $item->product_name,
                 'product_sku' => $item->product_sku,
-
+                'variant' => $item->product_snapshot['variant'] ?? null,
                 'quantity' => $item->quantity,
                 'unit_price' => $item->unit_price,
+                'item_subtotal' => $item->unit_price * $item->quantity,
                 'weight_kg' => $item->weight_kg,
                 'dimensions' => $dims,
                 'item_discount_type' => $item->item_discount_type,
@@ -151,6 +152,8 @@ class InvoiceService
         })->toArray();
 
         return [
+            'order_number' => $order->order_number,
+            'order_type' => $order->type,
             'items' => $items,
             'subtotal' => $order->subtotal,
             'item_discount_total' => $order->item_discount_total,
@@ -161,6 +164,9 @@ class InvoiceService
             'total_weight_kg' => $order->total_weight_kg,
             'grand_total' => $order->grand_total,
             'currency' => 'USD',
+            'shipping_address' => $order->shipping_address,
+            'shipping_country' => $order->shipping_country,
+            'shipping_provider_name' => $order->shippingProvider?->name,
         ];
     }
 }
