@@ -1,7 +1,7 @@
 @extends('admin.layout')
 
 @section('header')
-    <h2 class="text-2xl font-semibold text-truffle-extra-dark">Site Settings</h2>
+    <h2 class="text-xl font-semibold text-foreground leading-tight">Site Settings</h2>
 @endsection
 
 @section('content')

@@ -1,7 +1,7 @@
 ﻿@extends('admin.layout')
 
 @section('header')
-    <h2 class="font-semibold text-xl text-truffle-extra-dark leading-tight">
+    <h2 class="text-xl font-semibold text-foreground leading-tight">
         Manage Categories
     </h2>
 @endsection

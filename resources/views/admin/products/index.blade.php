@@ -1,17 +1,16 @@
 @extends('admin.layout')
 
 @section('header')
-    <h2 class="font-semibold text-xl text-truffle-extra-dark leading-tight">
+    <div>
+    <h2 class="text-xl font-semibold text-foreground leading-tight">
         Manage Products
     </h2>
+    <p class="text-xs text-muted-foreground mt-0.5">Manage handicraft listings, pricing, and dimensional weights</p>
+    </div>
 @endsection
 
 @section('content')
-    <div class="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-6">
-        <div>
-            <h3 class="text-xl font-serif font-bold text-foreground">Catalog & Inventory</h3>
-            <p class="text-xs text-muted-foreground mt-0.5">Manage handicraft listings, pricing, and dimensional weights</p>
-        </div>
+    <div class="flex justify-end mb-6">
         <a href="{{ route('admin.products.create') }}"
             class="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2.5 px-5 rounded-xl shadow-sm hover:shadow transition-all text-center w-full sm:w-auto inline-flex items-center justify-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>

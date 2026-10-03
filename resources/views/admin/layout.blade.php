@@ -243,6 +243,20 @@
                         @endif
                     </ul>
                 </div>
+                <div>
+                    <div class="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/40 font-sans">
+                        Finance
+                    </div>
+                    <ul class="space-y-1">
+                        <li>
+                            <a href="{{ route('admin.finance.index') }}"
+                                class="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.finance.*') ? 'bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm' : 'text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent' }}">
+                                <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-2 0-3.5.8-3.5 2s1.5 2 3.5 2 3.5.8 3.5 2-1.5 2-3.5 2m0-8V6m0 12v-2m8-4a8 8 0 11-16 0 8 8 0 0116 0z"/></svg>
+                                <span>Finance</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </nav>
 
             <!-- Sidebar footer / quick live store link -->
@@ -263,7 +277,7 @@
         <!-- Main Content Area -->
         <main class="flex-1 min-w-0 flex flex-col overflow-hidden bg-background">
             <!-- Header -->
-            <header class="h-16 bg-card/80 backdrop-blur-md border-b border-border flex items-center justify-between px-4 sm:px-6 sticky top-0 z-20">
+            <header class="min-h-16 shrink-0 bg-card/80 backdrop-blur-md border-b border-border flex items-center justify-between px-4 sm:px-6 md:px-8 py-2 sticky top-0 z-20">
                 <div class="flex items-center gap-3 min-w-0">
                     <label for="adminSidebarToggle"
                         class="md:hidden inline-flex items-center justify-center h-9 w-9 rounded-lg border border-border bg-card text-foreground hover:bg-muted cursor-pointer transition-colors shadow-xs"
@@ -274,7 +288,7 @@
                         </svg>
                     </label>
 
-                    <div class="min-w-0">
+                    <div class="min-w-0 min-h-10 flex flex-col justify-center">
                         @yield('header')
                     </div>
                 </div>
@@ -482,5 +496,4 @@
 </body>
 
 </html>
-
 

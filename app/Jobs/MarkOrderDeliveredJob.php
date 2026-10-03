@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Order;
+use App\Models\OrderDeliverySchedule;
 use App\Services\AuditLogService;
 use App\Services\NotificationService;
 use Illuminate\Bus\Queueable;
@@ -38,12 +39,19 @@ class MarkOrderDeliveredJob implements ShouldQueue
             }
 
             // Only auto-deliver if still dispatched
-            if ($order->status !== Order::STATUS_DISPATCHED) {
+            $schedule = OrderDeliverySchedule::lockForUpdate()
+                ->where('order_id', $order->id)
+                ->where('status', 'pending')
+                ->first();
+
+            if (!$schedule || $order->status !== Order::STATUS_DISPATCHED || $schedule->expected_delivery_at->isFuture()) {
                 return null; // Already transitioned by another process
             }
 
             $order->status = Order::STATUS_DELIVERED;
+            $order->delivered_at = now();
             $order->save();
+            $schedule->update(['status' => 'completed', 'completed_at' => now()]);
 
             AuditLogService::log(
                 'auto_delivered',

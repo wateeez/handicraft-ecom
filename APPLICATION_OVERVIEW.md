@@ -126,10 +126,15 @@ This is the core **Order Management System (OMS)**.
 #### Order Lifecycle (Status Workflow)
 ```
 Unprocessed → Quotation Sent → Processed → Dispatched → Delivered
-                                                       ↘ Cancelled
+Delivered → Returned → Refunded
+Delivered → Refunded
+Cancelled → Refunded
 ```
 - Admins can only move forward in the workflow (no skipping) unless they have the `override_order_status` permission.
 - Cancellation is available from most statuses.
+- **Returned** and **Refunded** are order-level statuses available through the admin status controls. Delivered orders can be marked Returned or Refunded; Returned and Cancelled orders can subsequently be marked Refunded. Admin override can be used for other status changes.
+- Setting an order to **Refunded** records its status and audit history only; it does not issue a refund through PayPal or another payment provider.
+- Order-level status is separate from item-level returns. Individual item return status, quantities, reasons, and timestamps are tracked on order items.
 
 #### Order Fields
 - Order number (auto-generated, e.g., `ORD-2026-00001`)
@@ -147,6 +152,7 @@ Unprocessed → Quotation Sent → Processed → Dispatched → Delivered
 - Create orders manually (select client, products, shipping provider).
 - Calculate shipping cost on-the-fly within the order form.
 - Update order status with email notifications sent to the client at key transitions.
+- Record order-level Returned and Refunded status changes; status badges are shown in order and client order-history views.
 - Mark an order as paid.
 - Cancel an order with a reason.
 - **Merge orders** — combine multiple orders from the same client into a single consolidated order.

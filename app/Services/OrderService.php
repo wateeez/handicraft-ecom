@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\OrderDeliverySchedule;
 use App\Models\Client;
 use App\Models\ShippingProvider;
 use App\Models\User;
@@ -252,10 +253,7 @@ class OrderService
             $order->dispatched_at = $context['dispatched_at'] ?? now();
             $deliveryDays = $order->delivery_period_days ?: 14;
             $order->expected_delivery_at = Carbon::parse($order->dispatched_at)->addDays($deliveryDays);
-
-            // Schedule auto-delivery
-            MarkOrderDeliveredJob::dispatch($order->id)
-                ->delay($order->expected_delivery_at);
+            $order->delivered_at = null;
         }
 
         if ($newStatus === Order::STATUS_CANCELLED) {
@@ -265,6 +263,34 @@ class OrderService
         }
 
         $order->save();
+
+        if ($newStatus === Order::STATUS_DISPATCHED) {
+            OrderDeliverySchedule::updateOrCreate(
+                ['order_id' => $order->id],
+                [
+                    'expected_delivery_at' => $order->expected_delivery_at,
+                    'status' => 'pending',
+                    'scheduled_at' => now(),
+                    'completed_at' => null,
+                    'cancelled_at' => null,
+                    'cancellation_reason' => null,
+                ]
+            );
+        }
+
+        if (in_array($newStatus, [Order::STATUS_DELIVERED, Order::STATUS_CANCELLED], true)) {
+            $schedule = $order->deliverySchedule;
+            if ($schedule && $schedule->status === 'pending') {
+                $schedule->update([
+                    'status' => $newStatus === Order::STATUS_DELIVERED ? 'completed' : 'cancelled',
+                    'completed_at' => $newStatus === Order::STATUS_DELIVERED ? now() : null,
+                    'cancelled_at' => $newStatus === Order::STATUS_CANCELLED ? now() : null,
+                    'cancellation_reason' => $newStatus === Order::STATUS_CANCELLED
+                        ? $order->cancellation_reason
+                        : null,
+                ]);
+            }
+        }
 
         AuditLogService::logStatusChange(
             $order,

@@ -51,6 +51,11 @@ class Invoice extends Model
         return $this->hasMany(OrderAuditLog::class);
     }
 
+    public function financeInvoice(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(FinanceInvoice::class);
+    }
+
     /**
      * Generate next invoice number: INV-YYYY-NNNNN
      */

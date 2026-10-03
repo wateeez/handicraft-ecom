@@ -13,12 +13,15 @@ class OrderNotification extends Model
         'channel',
         'event_type',
         'status',
+        'provider_message_id',
         'sent_at',
+        'failed_at',
         'error_message',
     ];
 
     protected $casts = [
         'sent_at' => 'datetime',
+        'failed_at' => 'datetime',
     ];
 
     public function order(): BelongsTo

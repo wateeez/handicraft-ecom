@@ -1,19 +1,18 @@
 ﻿@extends('admin.layout')
 
 @section('header')
-    <div class="flex justify-between items-center">
-        <div>
-            <h2 class="text-xl font-bold text-truffle-extra-dark">Client Management</h2>
-            <p class="text-sm text-truffle-extra-dark">Manage buyers, wholesale clients, and contact details</p>
-        </div>
-        <a href="{{ route('admin.clients.create') }}"
-            class="px-4 py-2 bg-green-premium text-white rounded-lg text-sm font-medium hover:bg-green-800 transition-colors">+
-            New Client</a>
+    <div>
+        <h2 class="text-xl font-semibold text-foreground leading-tight">Client Management</h2>
+        <p class="text-xs text-muted-foreground mt-0.5">Manage buyers, wholesale clients, and contact details</p>
     </div>
 @endsection
 
 @section('content')
     <div class="space-y-4">
+        <div class="flex justify-end">
+            <a href="{{ route('admin.clients.create') }}"
+                class="px-4 py-2 bg-green-premium text-white rounded-lg text-sm font-medium hover:bg-green-800 transition-colors">+ New Client</a>
+        </div>
         <form method="GET" action="{{ route('admin.clients.index') }}"
             class="bg-cream p-4 rounded-xl border border-truffle-medium/30 flex gap-4 items-end">
             <div class="flex-1">

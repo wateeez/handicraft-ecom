@@ -146,7 +146,7 @@
                                     <td class="px-6 py-4">
                                         @php
                                             $c = \App\Models\Order::STATUS_COLORS[$o->status] ?? 'gray';
-                                            $map = ['gray' => 'bg-[#F5F2EA] text-truffle-extra-dark', 'blue' => 'bg-blue-100 text-blue-700', 'yellow' => 'bg-yellow-100 text-yellow-700', 'purple' => 'bg-purple-100 text-purple-700', 'green' => 'bg-green-premium/20 text-green-premium', 'red' => 'bg-red-100 text-red-700', 'indigo' => 'bg-indigo-100 text-indigo-700'];
+                                            $map = ['gray' => 'bg-[#F5F2EA] text-truffle-extra-dark', 'blue' => 'bg-blue-100 text-blue-700', 'yellow' => 'bg-yellow-100 text-yellow-700', 'purple' => 'bg-purple-100 text-purple-700', 'green' => 'bg-green-premium/20 text-green-premium', 'orange' => 'bg-orange-100 text-orange-700', 'red' => 'bg-red-100 text-red-700', 'indigo' => 'bg-indigo-100 text-indigo-700'];
                                         @endphp
                                         <span
                                             class="inline-block px-2.5 py-1 rounded-full text-xs font-semibold {{ $map[$c] }}">{{ $o->status_label }}</span>

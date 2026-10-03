@@ -14,7 +14,7 @@
  */
 namespace Illuminate\Support\Facades {
     //**
-     * @see \Illuminate\Foundation\Application
+      @see \Illuminate\Foundation\Application
      */
     class App {
         /**

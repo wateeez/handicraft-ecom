@@ -1,20 +1,14 @@
 ﻿@extends('admin.layout')
 
 @section('header')
-    <nav class="text-sm text-truffle-extra-dark">
-        <a href="{{ route('admin.shipping.index') }}" class="hover:text-truffle-extra-dark">Shipping</a>
-        <span class="mx-2">&gt;</span>
-        <span class="font-medium text-truffle-extra-dark">Provider Settings</span>
-    </nav>
+    <div>
+        <h2 class="text-xl font-semibold text-foreground leading-tight">Provider Settings</h2>
+        <p class="text-xs text-muted-foreground mt-0.5">Manage shipping carriers and providers</p>
+    </div>
 @endsection
 
 @section('content')
 <div class="p-6">
-    <div class="mb-6">
-        <h1 class="text-3xl font-bold text-truffle-extra-dark">Shipping Provider Settings</h1>
-        <p class="text-truffle-extra-dark mt-1">Manage shipping carriers and providers</p>
-    </div>
-
     @if(session('success'))
     <div class="bg-green-premium/20 border border-green-400 text-green-premium px-4 py-3 rounded mb-6">
         {{ session('success') }}

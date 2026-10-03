@@ -42,9 +42,7 @@ class InvoiceController extends Controller
 
     public function issue(Invoice $invoice)
     {
-        if (!auth()->user()->hasPermission('manage_invoices')) {
-            abort(403);
-        }
+        $this->authorize('issue', $invoice);
 
         try {
             $this->invoiceService->issueInvoice($invoice, auth()->user());
@@ -56,9 +54,7 @@ class InvoiceController extends Controller
 
     public function void(Request $request, Invoice $invoice)
     {
-        if (!auth()->user()->hasPermission('void_invoices')) {
-            abort(403, 'You do not have permission to void invoices.');
-        }
+        $this->authorize('void', $invoice);
 
         $request->validate(['void_reason' => 'required|string|min:5']);
 

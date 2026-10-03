@@ -51,6 +51,7 @@
                                                 {{ $statusColors[$order->status] === 'yellow' ? 'bg-yellow-100 text-yellow-700' : '' }}
                                                 {{ $statusColors[$order->status] === 'purple' ? 'bg-purple-100 text-purple-700' : '' }}
                                                 {{ $statusColors[$order->status] === 'green' ? 'bg-green-premium/20 text-green-premium' : '' }}
+                                                {{ $statusColors[$order->status] === 'orange' ? 'bg-orange-100 text-orange-700' : '' }}
                                                 {{ $statusColors[$order->status] === 'red' ? 'bg-red-100 text-red-700' : '' }}
                                                 {{ $statusColors[$order->status] === 'indigo' ? 'bg-indigo-100 text-indigo-700' : '' }}">
                             {{ $order->status_label }}
@@ -361,6 +362,129 @@
 
             {{-- Right Column (Sidebar) --}}
             <div class="space-y-6">
+
+                @if(auth()->user()->hasPermission('view_finance') || auth()->user()->hasPermission('record_payments') || auth()->user()->hasPermission('confirm_payments'))
+                    @php
+                        $financePayments = $order->payments()->with(['recordedBy', 'confirmedBy'])->latest()->get();
+                        $canRecordPayments = auth()->user()->hasPermission('record_payments');
+                        $canConfirmPayments = auth()->user()->hasPermission('confirm_payments');
+                    @endphp
+                    <section class="overflow-hidden rounded-xl border border-truffle-medium/30 bg-cream shadow-sm">
+                        <div class="flex items-start justify-between gap-3 border-b border-truffle-medium/20 bg-[#F5F2EA] px-5 py-4">
+                            <div>
+                                <h3 class="font-bold text-truffle-extra-dark">Payments</h3>
+                                <p class="mt-1 text-xs text-truffle-extra-dark/70">Order total: {{ $order->currency ?? 'USD' }} {{ number_format((float) $order->grand_total, 2) }}</p>
+                            </div>
+                            <span class="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-truffle-extra-dark">{{ $financePayments->count() }} records</span>
+                        </div>
+
+                        @if($financePayments->isEmpty())
+                            <p class="px-5 py-4 text-sm italic text-truffle-extra-dark/70">No payment records yet.</p>
+                        @else
+                            <ul class="divide-y divide-truffle-medium/20">
+                                @foreach($financePayments as $payment)
+                                    <li class="space-y-3 px-5 py-4">
+                                        <div class="flex flex-wrap items-start justify-between gap-2">
+                                            <div>
+                                                <p class="font-semibold text-truffle-extra-dark">{{ $payment->currency }} {{ number_format((float) $payment->amount, 2) }}</p>
+                                                <p class="mt-1 text-xs text-truffle-extra-dark/70">{{ ucfirst(str_replace('_', ' ', $payment->method)) }} · {{ $payment->received_on?->format('M d, Y') ?? 'Date unavailable' }}</p>
+                                                @if($payment->reference)
+                                                    <p class="mt-1 break-all text-xs text-truffle-extra-dark/70">Ref: {{ $payment->reference }}</p>
+                                                @endif
+                                            </div>
+                                            <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide {{ $payment->status === 'confirmed' ? 'bg-emerald-100 text-emerald-800' : ($payment->status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700') }}">{{ $payment->status }}</span>
+                                        </div>
+                                        <div class="text-xs text-truffle-extra-dark/70">
+                                            Reporting amount: {{ number_format((float) $payment->reporting_amount, 2) }}
+                                            <span class="mx-1">·</span>
+                                            Recorded by {{ $payment->recordedBy?->name ?? 'System' }}
+                                        </div>
+                                        @if($payment->notes)
+                                            <p class="whitespace-pre-wrap text-xs text-truffle-extra-dark/70">{{ $payment->notes }}</p>
+                                        @endif
+                                        @if($canConfirmPayments && $payment->status === 'pending')
+                                            <form action="{{ route('admin.finance.payments.confirm', $payment) }}" method="POST">
+                                                @csrf
+                                                <button type="submit" class="rounded-md bg-emerald-700 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-800">Confirm receipt</button>
+                                            </form>
+                                        @elseif($canConfirmPayments && $payment->status === 'confirmed')
+                                            <form action="{{ route('admin.finance.payments.reverse', $payment) }}" method="POST" class="space-y-2" onsubmit="return confirm('Reverse this confirmed payment? A correction entry will be added to the ledger.')">
+                                                @csrf
+                                                <label class="block text-xs font-semibold text-truffle-extra-dark" for="payment-reversal-reason-{{ $payment->id }}">Reversal reason</label>
+                                                <textarea id="payment-reversal-reason-{{ $payment->id }}" name="reason" rows="2" minlength="5" required class="w-full rounded-md border border-truffle-medium/40 bg-white text-sm focus:border-primary focus:ring-primary" placeholder="Explain why this payment is being reversed"></textarea>
+                                                <button type="submit" class="rounded-md border border-red-300 px-3 py-2 text-xs font-semibold text-red-800 transition-colors hover:bg-red-50">Reverse payment</button>
+                                            </form>
+                                        @endif
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+
+                        @if($canRecordPayments)
+                            <details class="border-t border-truffle-medium/20">
+                                <summary class="cursor-pointer list-none px-5 py-4 text-sm font-semibold text-green-premium hover:bg-[#F5F2EA]">Record a payment</summary>
+                                <form action="{{ route('admin.finance.payments.store', $order) }}" method="POST" class="space-y-3 px-5 pb-5" x-data="{ amount: @js(old('amount', '')), rate: @js(old('reporting_exchange_rate', '1')) }">
+                                    @csrf
+                                    <div>
+                                        <label for="payment-invoice-id" class="mb-1 block text-xs font-semibold text-truffle-extra-dark">Invoice</label>
+                                        <select id="payment-invoice-id" name="invoice_id" class="w-full rounded-md border border-truffle-medium/40 bg-white text-sm focus:border-primary focus:ring-primary">
+                                            <option value="">No invoice selected</option>
+                                            @foreach($order->invoices->where('status', '!=', 'voided') as $invoice)
+                                                <option value="{{ $invoice->id }}" @selected(old('invoice_id') == $invoice->id)>{{ $invoice->invoice_number }} · {{ ucfirst($invoice->status) }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label for="payment-amount" class="mb-1 block text-xs font-semibold text-truffle-extra-dark">Amount *</label>
+                                            <input id="payment-amount" name="amount" type="number" min="0.01" step="0.01" required x-model="amount" value="{{ old('amount') }}" class="w-full rounded-md border border-truffle-medium/40 bg-white text-sm focus:border-primary focus:ring-primary">
+                                            @error('amount')<p class="mt-1 text-xs text-red-700">{{ $message }}</p>@enderror
+                                        </div>
+                                        <div>
+                                            <label for="payment-currency" class="mb-1 block text-xs font-semibold text-truffle-extra-dark">Currency</label>
+                                            <input id="payment-currency" name="currency" type="text" maxlength="3" value="{{ old('currency', $order->currency ?? 'USD') }}" class="w-full rounded-md border border-truffle-medium/40 bg-white text-sm uppercase focus:border-primary focus:ring-primary">
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label for="payment-exchange-rate" class="mb-1 block text-xs font-semibold text-truffle-extra-dark">Reporting exchange rate *</label>
+                                            <input id="payment-exchange-rate" name="reporting_exchange_rate" type="number" min="0.00000001" step="0.00000001" required x-model="rate" value="{{ old('reporting_exchange_rate', '1') }}" class="w-full rounded-md border border-truffle-medium/40 bg-white text-sm focus:border-primary focus:ring-primary">
+                                            @error('reporting_exchange_rate')<p class="mt-1 text-xs text-red-700">{{ $message }}</p>@enderror
+                                        </div>
+                                        <div>
+                                            <label for="payment-reporting-amount" class="mb-1 block text-xs font-semibold text-truffle-extra-dark">Reporting amount *</label>
+                                            <input id="payment-reporting-amount" name="reporting_amount" type="number" min="0.01" step="0.01" required readonly x-bind:value="amount !== '' && rate !== '' ? (Number(amount) * Number(rate)).toFixed(2) : ''" class="w-full rounded-md border border-truffle-medium/40 bg-gray-50 text-sm focus:border-primary focus:ring-primary">
+                                            <p class="mt-1 text-[11px] text-truffle-extra-dark/70">Calculated from amount × exchange rate.</p>
+                                            @error('reporting_amount')<p class="mt-1 text-xs text-red-700">{{ $message }}</p>@enderror
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label for="payment-method" class="mb-1 block text-xs font-semibold text-truffle-extra-dark">Method *</label>
+                                            <input id="payment-method" name="method" type="text" maxlength="100" required value="{{ old('method') }}" placeholder="Bank transfer, cash..." class="w-full rounded-md border border-truffle-medium/40 bg-white text-sm focus:border-primary focus:ring-primary">
+                                            @error('method')<p class="mt-1 text-xs text-red-700">{{ $message }}</p>@enderror
+                                        </div>
+                                        <div>
+                                            <label for="payment-received-on" class="mb-1 block text-xs font-semibold text-truffle-extra-dark">Received on *</label>
+                                            <input id="payment-received-on" name="received_on" type="date" required value="{{ old('received_on', now()->toDateString()) }}" class="w-full rounded-md border border-truffle-medium/40 bg-white text-sm focus:border-primary focus:ring-primary">
+                                            @error('received_on')<p class="mt-1 text-xs text-red-700">{{ $message }}</p>@enderror
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label for="payment-reference" class="mb-1 block text-xs font-semibold text-truffle-extra-dark">Reference</label>
+                                        <input id="payment-reference" name="reference" type="text" maxlength="255" value="{{ old('reference') }}" class="w-full rounded-md border border-truffle-medium/40 bg-white text-sm focus:border-primary focus:ring-primary">
+                                    </div>
+                                    <div>
+                                        <label for="payment-notes" class="mb-1 block text-xs font-semibold text-truffle-extra-dark">Notes</label>
+                                        <textarea id="payment-notes" name="notes" rows="2" class="w-full rounded-md border border-truffle-medium/40 bg-white text-sm focus:border-primary focus:ring-primary">{{ old('notes') }}</textarea>
+                                    </div>
+                                    @error('invoice_id')<p class="text-xs text-red-700">{{ $message }}</p>@enderror
+                                    <button type="submit" class="w-full rounded-md bg-green-premium px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:opacity-90">Save payment for confirmation</button>
+                                </form>
+                            </details>
+                        @endif
+                    </section>
+                @endif
 
                 {{-- Invoices Panel --}}
                 <div class="bg-cream rounded-xl shadow-sm border border-truffle-medium/30 p-6">

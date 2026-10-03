@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Client extends Model
 {
@@ -25,14 +27,34 @@ class Client extends Model
         'created_by',
     ];
 
-    public function orders()
+    public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
     }
 
-    public function creator()
+    public function creator(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function financeInvoices(): HasMany
+    {
+        return $this->hasMany(FinanceInvoice::class);
+    }
+
+    public function loyaltyAssignments(): HasMany
+    {
+        return $this->hasMany(ClientLoyaltyAssignment::class);
+    }
+
+    public function currentLoyaltyAssignment(): HasOne
+    {
+        return $this->hasOne(ClientLoyaltyAssignment::class)->whereNull('ended_at')->latestOfMany('effective_at');
     }
 
     /**

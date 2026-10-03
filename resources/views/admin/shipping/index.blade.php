@@ -1,27 +1,21 @@
 ﻿@extends('admin.layout')
 
 @section('header')
-    <nav class="text-sm text-truffle-extra-dark">
-        <a href="{{ route('admin.shipping.index') }}" class="hover:text-truffle-extra-dark">Shipping</a>
-        <span class="mx-2">&gt;</span>
-        @php
-            $tabLabel = 'Settings';
-            if (($defaultTab ?? null) === 'zones') $tabLabel = 'Zone Settings';
-            elseif (($defaultTab ?? null) === 'providers') $tabLabel = 'Provider Settings';
-            elseif (($defaultTab ?? null) === 'rates') $tabLabel = 'Rates Settings';
-        @endphp
-        <span class="font-medium text-truffle-extra-dark">{{ $tabLabel }}</span>
-    </nav>
+    @php
+        $shippingHeader = isset($selectedProvider)
+            ? $selectedProvider->name
+            : ((($defaultTab ?? null) === 'rates') ? 'Rates Settings' : 'Shipping Settings');
+    @endphp
+    <div>
+        <h2 class="text-xl font-semibold text-foreground leading-tight">{{ $shippingHeader }}</h2>
+        <p class="text-xs text-muted-foreground mt-0.5">
+            {{ isset($selectedProvider) ? 'Manage shipping rates by zone' : 'Manage shipping zones, providers, and rates' }}
+        </p>
+    </div>
 @endsection
 
 @section('content')
 <div class="p-6">
-    <!-- Header -->
-    <div class="mb-6">
-        <h1 class="text-3xl font-bold text-truffle-extra-dark">Shipping Settings</h1>
-        <p class="text-truffle-extra-dark mt-1">Manage shipping zones, providers, and rates</p>
-    </div>
-
     <!-- Success/Error Messages -->
     @if(session('success'))
     <div class="bg-green-premium/20 border border-green-400 text-green-premium px-4 py-3 rounded mb-6">

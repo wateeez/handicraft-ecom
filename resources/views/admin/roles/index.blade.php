@@ -1,13 +1,16 @@
 ﻿@extends('admin.layout')
 
+@section('header')
+    <div>
+        <h2 class="text-xl font-semibold text-foreground leading-tight">Roles &amp; Permissions</h2>
+        <p class="text-xs text-muted-foreground mt-0.5">Manage roles and their associated permissions</p>
+    </div>
+@endsection
+
 @section('content')
 <div>
     <!-- Header -->
-    <div class="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-6">
-        <div>
-            <h1 class="text-3xl font-bold text-truffle-extra-dark">Roles & Permissions</h1>
-            <p class="text-truffle-extra-dark mt-1">Manage roles and their associated permissions</p>
-        </div>
+    <div class="flex justify-end mb-6">
         <a href="{{ route('admin.roles.create') }}"
             class="bg-green-premium text-white px-6 py-3 rounded-lg hover:bg-green-800 transition-colors flex items-center justify-center w-full sm:w-auto">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

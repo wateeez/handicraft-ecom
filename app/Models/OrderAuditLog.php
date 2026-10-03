@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class OrderAuditLog extends Model
 {
@@ -12,6 +13,8 @@ class OrderAuditLog extends Model
     protected $fillable = [
         'order_id',
         'invoice_id',
+        'subject_type',
+        'subject_id',
         'user_id',
         'action_type',
         'description',
@@ -39,6 +42,11 @@ class OrderAuditLog extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function subject(): MorphTo
+    {
+        return $this->morphTo();
     }
 
     /**

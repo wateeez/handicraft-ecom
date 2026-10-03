@@ -18,6 +18,10 @@ use App\Http\Controllers\Frontend\BlogController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\InvoiceController;
+use App\Http\Controllers\Admin\FinanceController;
+use App\Http\Controllers\Admin\FinancePaymentController;
+use App\Http\Controllers\Admin\DistributorPayoutController;
+use App\Http\Controllers\Admin\CommissionPayoutController;
 
 /*
 |--------------------------------------------------------------------------
@@ -62,6 +66,16 @@ Route::post('/logout', [\App\Http\Controllers\Auth\LoginController::class, 'logo
 // Admin
 Route::middleware(['auth', 'viewer.readonly'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::middleware('permission:view_finance')->get('finance', [FinanceController::class, 'index'])->name('finance.index');
+    Route::middleware('permission:view_finance')->get('finance/report-summary', [FinanceController::class, 'reportSummary'])->name('finance.report-summary');
+    Route::middleware('permission:view_finance')->get('finance/clients/{client}/summary', [FinanceController::class, 'clientSummary'])->name('finance.clients.summary');
+    Route::middleware('permission:manage_finance')->put('finance/settings', [FinanceController::class, 'updateSettings'])->name('finance.settings.update');
+    Route::middleware('permission:record_payments')->post('finance/orders/{order}/payments', [FinancePaymentController::class, 'store'])->name('finance.payments.store');
+    Route::middleware('permission:confirm_payments')->post('finance/payments/{payment}/confirm', [FinancePaymentController::class, 'confirm'])->name('finance.payments.confirm');
+    Route::middleware('permission:confirm_payments')->post('finance/payments/{payment}/reverse', [FinancePaymentController::class, 'reverse'])->name('finance.payments.reverse');
+    Route::middleware('permission:confirm_payments')->post('finance/refunds/{refund}/confirm', [FinancePaymentController::class, 'confirmRefund'])->name('finance.refunds.confirm');
+    Route::middleware('permission:manage_finance')->post('finance/distributor-payouts', [DistributorPayoutController::class, 'store'])->name('finance.distributor-payouts.store');
+    Route::middleware('permission:manage_finance')->post('finance/commission-payouts', [CommissionPayoutController::class, 'store'])->name('finance.commission-payouts.store');
     Route::post('/maintenance/toggle', [DashboardController::class, 'toggleMaintenance'])->name('maintenance.toggle');
     Route::post('/verify-password', [DashboardController::class, 'verifyPassword'])->name('verify-password');
 

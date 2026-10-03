@@ -2,7 +2,7 @@
 
 @section('header')
     <div class="flex flex-col">
-        <h2 class="font-serif font-bold text-2xl text-foreground tracking-tight">
+        <h2 class="text-xl font-semibold text-foreground leading-tight">
             Executive Overview
         </h2>
         <p class="text-xs text-muted-foreground mt-0.5">Welcome back, here is what is happening in your craft boutique today.</p>

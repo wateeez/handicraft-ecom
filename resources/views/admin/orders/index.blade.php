@@ -2,7 +2,7 @@
 
 @section('header')
     <div>
-        <h2 class="text-xl font-serif font-bold text-foreground">Order & Inquiry Management</h2>
+        <h2 class="text-xl font-semibold text-foreground leading-tight">Order & Inquiry Management</h2>
         <p class="text-xs text-muted-foreground mt-0.5">Track artisan quotations, invoices, and customer communications</p>
     </div>
 @endsection
@@ -107,6 +107,7 @@
                                         'yellow' => 'bg-yellow-100 text-yellow-700',
                                         'purple' => 'bg-purple-100 text-purple-700',
                                         'green' => 'bg-green-premium/20 text-green-premium',
+                                        'orange' => 'bg-orange-100 text-orange-700',
                                         'red' => 'bg-red-100 text-red-700',
                                         'indigo' => 'bg-indigo-100 text-indigo-700',
                                     ];

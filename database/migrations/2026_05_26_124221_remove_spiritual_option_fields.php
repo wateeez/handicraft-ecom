@@ -8,18 +8,22 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('products', function (Blueprint $table) {
-            $table->dropColumn([
-                'has_spiritual_options',
-                'price_filling_only',
-                'price_blessing_only',
-                'price_both',
-            ]);
-        });
+        if (Schema::hasColumn('products', 'has_spiritual_options')) {
+            Schema::table('products', function (Blueprint $table) {
+                $table->dropColumn([
+                    'has_spiritual_options',
+                    'price_filling_only',
+                    'price_blessing_only',
+                    'price_both',
+                ]);
+            });
+        }
 
-        Schema::table('order_items', function (Blueprint $table) {
-            $table->dropColumn(['purchase_type', 'spiritual_option', 'option_price']);
-        });
+        if (Schema::hasColumn('order_items', 'purchase_type')) {
+            Schema::table('order_items', function (Blueprint $table) {
+                $table->dropColumn(['purchase_type', 'spiritual_option', 'option_price']);
+            });
+        }
     }
 
     public function down(): void

@@ -18,6 +18,8 @@ class Order extends Model
     const STATUS_PROCESSED = 'processed';
     const STATUS_DISPATCHED = 'dispatched';
     const STATUS_DELIVERED = 'delivered';
+    const STATUS_RETURNED = 'returned';
+    const STATUS_REFUNDED = 'refunded';
     const STATUS_CANCELLED = 'cancelled';
     // System-only status: set automatically when a quote inquiry is checked out and paid as a real order.
     const STATUS_CONVERTED = 'converted';
@@ -31,6 +33,8 @@ class Order extends Model
         self::STATUS_PROCESSED,
         self::STATUS_DISPATCHED,
         self::STATUS_DELIVERED,
+        self::STATUS_RETURNED,
+        self::STATUS_REFUNDED,
         self::STATUS_CANCELLED,
         self::STATUS_CONVERTED,
     ];
@@ -41,6 +45,8 @@ class Order extends Model
         self::STATUS_PROCESSED => 'Processed',
         self::STATUS_DISPATCHED => 'Dispatched',
         self::STATUS_DELIVERED => 'Delivered',
+        self::STATUS_RETURNED => 'Returned',
+        self::STATUS_REFUNDED => 'Refunded',
         self::STATUS_CANCELLED => 'Cancelled',
         self::STATUS_CONVERTED => 'Converted to Order',
     ];
@@ -51,6 +57,8 @@ class Order extends Model
         self::STATUS_PROCESSED => 'yellow',
         self::STATUS_DISPATCHED => 'purple',
         self::STATUS_DELIVERED => 'green',
+        self::STATUS_RETURNED => 'orange',
+        self::STATUS_REFUNDED => 'red',
         self::STATUS_CANCELLED => 'red',
         self::STATUS_CONVERTED => 'indigo',
     ];
@@ -61,8 +69,10 @@ class Order extends Model
         self::STATUS_QUOTATION_SENT => [self::STATUS_PROCESSED, self::STATUS_CANCELLED],
         self::STATUS_PROCESSED => [self::STATUS_DISPATCHED, self::STATUS_CANCELLED],
         self::STATUS_DISPATCHED => [self::STATUS_DELIVERED, self::STATUS_CANCELLED],
-        self::STATUS_DELIVERED => [],
-        self::STATUS_CANCELLED => [],
+        self::STATUS_DELIVERED => [self::STATUS_RETURNED, self::STATUS_REFUNDED],
+        self::STATUS_RETURNED => [self::STATUS_REFUNDED],
+        self::STATUS_REFUNDED => [],
+        self::STATUS_CANCELLED => [self::STATUS_REFUNDED],
         // Converted is only ever set automatically (via override) when an inquiry's checkout is paid.
         self::STATUS_CONVERTED => [],
     ];
@@ -70,8 +80,10 @@ class Order extends Model
     protected $fillable = [
         'order_number',
         'type',
+        'currency',
         'checkout_token',
         'client_id',
+        'distributor_id',
         'created_by',
         'status',
         'subtotal',
@@ -88,6 +100,7 @@ class Order extends Model
         'tracking_number',
         'dispatched_at',
         'expected_delivery_at',
+        'delivered_at',
         'delivery_period_days',
         'client_snapshot',
         'merged_into_order_id',
@@ -108,6 +121,7 @@ class Order extends Model
         'financial_locked_at' => 'datetime',
         'dispatched_at' => 'datetime',
         'expected_delivery_at' => 'datetime',
+        'delivered_at' => 'datetime',
         'cancelled_at' => 'datetime',
         'subtotal' => 'decimal:2',
         'item_discount_total' => 'decimal:2',
@@ -123,6 +137,11 @@ class Order extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function distributor(): BelongsTo
+    {
+        return $this->belongsTo(Distributor::class);
     }
 
     public function creator(): BelongsTo
@@ -153,6 +172,69 @@ class Order extends Model
     public function notifications(): HasMany
     {
         return $this->hasMany(OrderNotification::class);
+    }
+
+    public function deliverySchedule(): HasOne
+    {
+        return $this->hasOne(OrderDeliverySchedule::class);
+    }
+
+    public function mergesAsTarget(): HasMany
+    {
+        return $this->hasMany(OrderMerge::class, 'target_order_id');
+    }
+
+    public function mergeMemberships(): HasMany
+    {
+        return $this->hasMany(OrderMergeMember::class, 'source_order_id');
+    }
+
+    public function financeSnapshot(): HasOne
+    {
+        return $this->hasOne(FinanceOrderSnapshot::class);
+    }
+
+    public function financeInvoice(): HasOne
+    {
+        return $this->hasOne(FinanceInvoice::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function refunds(): HasMany
+    {
+        return $this->hasMany(Refund::class);
+    }
+
+    public function distributorPayable(): HasOne
+    {
+        return $this->hasOne(DistributorPayable::class);
+    }
+
+    public function commissionEntries(): HasMany
+    {
+        return $this->hasMany(CommissionEntry::class);
+    }
+
+    public function financeAuditLogs(): HasMany
+    {
+        return $this->hasMany(FinanceAuditLog::class)->orderByDesc('created_at');
+    }
+
+    public function financialLedgerEntries(): HasMany
+    {
+        return $this->hasMany(FinancialLedgerEntry::class);
+    }
+
+    public function activityTimeline()
+    {
+        return $this->auditLogs()
+            ->getQuery()
+            ->union($this->financeAuditLogs()->getQuery())
+            ->orderByDesc('created_at');
     }
 
     public function shippingProvider(): BelongsTo
@@ -240,7 +322,7 @@ class Order extends Model
      */
     public function isCancellable(): bool
     {
-        return !in_array($this->status, [self::STATUS_DELIVERED, self::STATUS_CANCELLED, self::STATUS_CONVERTED]);
+        return !in_array($this->status, [self::STATUS_DELIVERED, self::STATUS_RETURNED, self::STATUS_REFUNDED, self::STATUS_CANCELLED, self::STATUS_CONVERTED]);
     }
 
     /**
@@ -248,7 +330,7 @@ class Order extends Model
      */
     public function canBeMerged(): bool
     {
-        if (in_array($this->status, [self::STATUS_CANCELLED, self::STATUS_DELIVERED, self::STATUS_CONVERTED])) {
+        if (in_array($this->status, [self::STATUS_CANCELLED, self::STATUS_DELIVERED, self::STATUS_RETURNED, self::STATUS_REFUNDED, self::STATUS_CONVERTED])) {
             return false;
         }
         if ($this->is_merged) {
