@@ -77,6 +77,11 @@ class RolesAndPermissionsSeeder extends Seeder
                 'display_name' => 'View Dashboard',
                 'description' => 'Access admin dashboard'
             ],
+            [
+                'name' => 'manage_blog',
+                'display_name' => 'Manage Blog',
+                'description' => 'Create, edit, and delete blog posts'
+            ],
         ];
 
         foreach ($permissions as $permissionData) {
@@ -136,6 +141,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'view_inquiries',
                 'view_shipping',
                 'view_dashboard',
+                'manage_blog',
             ])->pluck('id')
         );
 
@@ -148,6 +154,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'view_categories',
                 'view_inquiries',
                 'view_dashboard',
+                'manage_blog',
             ])->pluck('id')
         );
 

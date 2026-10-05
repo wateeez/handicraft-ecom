@@ -27,12 +27,6 @@ class CheckPermission
             return redirect()->route('login')->with('error', 'Your account has been deactivated.');
         }
 
-        // If a previous middleware marked this request as viewer read-only and
-        // the request is a safe method, let it pass without permission checks.
-        if ($request->attributes->get('viewer_readonly') && in_array($request->method(), ['GET', 'HEAD'])) {
-            return $next($request);
-        }
-
         if (!$user->hasAnyPermission($permissions)) {
             abort(403, 'Unauthorized. You do not have the required permission.');
         }

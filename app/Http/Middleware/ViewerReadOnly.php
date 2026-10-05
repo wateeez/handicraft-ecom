@@ -27,10 +27,7 @@ class ViewerReadOnly
 
         // Apply viewer-only behavior only to users who are exclusively viewers
         if ($user->hasRole('viewer') && !$user->hasAnyRole(['admin', 'editor', 'super_admin'])) {
-            // Allow safe methods to pass through as read-only
             if (in_array($request->method(), ['GET', 'HEAD'])) {
-                // Mark request so permission middleware can short-circuit if needed
-                $request->attributes->set('viewer_readonly', true);
                 return $next($request);
             }
 

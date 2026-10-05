@@ -41,8 +41,16 @@ class OmsSeeder extends Seeder
             ['display_name' => 'Finance', 'description' => 'Handles invoices and financial records']
         );
 
-        $rolePermissions['operations_staff'] = ['manage_orders', 'manage_clients'];
-        $rolePermissions['finance'] = ['manage_invoices', 'void_invoices', 'view_audit_logs'];
+        $rolePermissions['operations_staff'] = ['manage_orders', 'manage_clients', 'view_dashboard'];
+        $rolePermissions['finance'] = [
+            'manage_invoices',
+            'void_invoices',
+            'view_audit_logs',
+            'view_dashboard',
+            'view_finance',
+            'record_payments',
+            'confirm_payments',
+        ];
 
         foreach ($rolePermissions as $roleName => $perms) {
             $role = Role::where('name', $roleName)->first();
