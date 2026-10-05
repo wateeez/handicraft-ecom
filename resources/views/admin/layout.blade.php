@@ -243,20 +243,22 @@
                         @endif
                     </ul>
                 </div>
-                <div>
-                    <div class="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/40 font-sans">
-                        Finance
+                @if (Route::has('admin.finance.index'))
+                    <div>
+                        <div class="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/40 font-sans">
+                            Finance
+                        </div>
+                        <ul class="space-y-1">
+                            <li>
+                                <a href="{{ route('admin.finance.index') }}"
+                                    class="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.finance.*') ? 'bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm' : 'text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent' }}">
+                                    <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-2 0-3.5.8-3.5 2s1.5 2 3.5 2 3.5.8 3.5 2-1.5 2-3.5 2m0-8V6m0 12v-2m8-4a8 8 0 11-16 0 8 8 0 0116 0z"/></svg>
+                                    <span>Finance</span>
+                                </a>
+                            </li>
+                        </ul>
                     </div>
-                    <ul class="space-y-1">
-                        <li>
-                            <a href="{{ route('admin.finance.index') }}"
-                                class="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.finance.*') ? 'bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm' : 'text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent' }}">
-                                <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-2 0-3.5.8-3.5 2s1.5 2 3.5 2 3.5.8 3.5 2-1.5 2-3.5 2m0-8V6m0 12v-2m8-4a8 8 0 11-16 0 8 8 0 0116 0z"/></svg>
-                                <span>Finance</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+                @endif
             </nav>
 
             <!-- Sidebar footer / quick live store link -->
@@ -496,4 +498,3 @@
 </body>
 
 </html>
-
