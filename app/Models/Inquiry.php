@@ -23,6 +23,8 @@ class Inquiry extends Model
      */
     public function getCountryNameAttribute(): ?string
     {
-        return country_name($this->country);
+        return $this->country
+            ? config('countries.map.' . strtoupper($this->country), $this->country)
+            : null;
     }
 }

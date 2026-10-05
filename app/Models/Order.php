@@ -484,7 +484,9 @@ class Order extends Model
      */
     public function getShippingCountryAttribute()
     {
-        return country_name($this->getCountryAttribute());
+        $country = $this->getCountryAttribute();
+
+        return $country ? config('countries.map.' . strtoupper($country), $country) : null;
     }
 
     /**
