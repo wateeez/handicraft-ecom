@@ -10,7 +10,7 @@
         @if(count($cartItems) > 0)
             <div class="bg-card rounded-2xl shadow-xs border border-border overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-border">
+                    <table class="min-w-[700px] divide-y divide-border">
                         <thead class="bg-muted/50">
                             <tr>
                                 <th class="px-6 py-3.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Product</th>
@@ -91,7 +91,7 @@
                     &larr; Continue Exploring Products
                 </a>
 
-                <div class="w-full md:w-96 bg-card border border-border p-6 rounded-2xl shadow-xs">
+                <div class="w-full md:w-96 bg-card border border-border p-5 sm:p-6 rounded-2xl shadow-xs">
                     <h3 class="font-serif font-bold text-base text-foreground mb-4">Cart Summary</h3>
                     <div class="flex justify-between items-center mb-3 pb-3 border-b border-border text-sm">
                         <span class="text-muted-foreground">Subtotal Estimate</span>
@@ -110,7 +110,7 @@
                 </div>
             </div>
         @else
-            <div class="bg-card border border-border rounded-3xl p-16 text-center max-w-lg mx-auto shadow-xs">
+            <div class="bg-card border border-border rounded-3xl p-8 sm:p-16 text-center max-w-lg mx-auto shadow-xs">
                 <div class="w-16 h-16 mx-auto rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4">
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>

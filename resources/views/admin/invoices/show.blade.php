@@ -27,7 +27,7 @@
     <div class="max-w-4xl mx-auto space-y-6">
 
         {{-- Top Action Bar --}}
-        <div class="no-print bg-cream rounded-xl shadow-sm border border-truffle-medium/30 p-4 flex justify-between items-center">
+        <div class="no-print bg-cream rounded-xl shadow-sm border border-truffle-medium/30 p-4 flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
             <div class="text-sm text-truffle-extra-dark">
                 <strong>Generated on:</strong> {{ $invoice->created_at->format('d M Y, H:i') }} by
                 {{ $invoice->generatedBy?->name ?? 'System' }}
@@ -39,7 +39,7 @@
                         {{ $invoice->void_reason }}</span>
                 @endif
             </div>
-            <div class="flex gap-2">
+            <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                 <button type="button" onclick="window.print()"
                     class="px-4 py-2 border border-truffle-medium/30 text-truffle-extra-dark rounded-lg hover:bg-[#F5F2EA] font-medium text-sm flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -83,7 +83,7 @@
             <h3 class="text-sm font-semibold text-truffle-extra-dark uppercase tracking-wider mb-6 text-center border-b pb-4">Invoice
                 Preview (Snapshot Data)</h3>
 
-            <div class="grid grid-cols-2 gap-8 mb-8">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 mb-8">
                 <div>
                     <h4 class="text-truffle-extra-dark/70 font-semibold mb-2">Billed To</h4>
                     <div class="text-truffle-extra-dark text-sm">
@@ -103,7 +103,7 @@
                         @endif
                     </div>
                 </div>
-                <div class="text-right">
+                <div class="text-left sm:text-right">
                     <h4 class="text-truffle-extra-dark/70 font-semibold mb-2">Details</h4>
                     <div class="text-truffle-extra-dark text-sm">
                         <strong>Invoice #:</strong> {{ $invoice->invoice_number }}<br>
@@ -115,7 +115,7 @@
             </div>
 
             @if(!empty($invoice->financial_snapshot['shipping_address']) || !empty($invoice->financial_snapshot['shipping_provider_name']))
-                <div class="grid grid-cols-2 gap-8 mb-8">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 mb-8">
                     <div>
                         <h4 class="text-truffle-extra-dark/70 font-semibold mb-2">Ship To</h4>
                         <div class="text-truffle-extra-dark text-sm">
@@ -124,7 +124,7 @@
                         </div>
                     </div>
                     @if(!empty($invoice->financial_snapshot['shipping_provider_name']))
-                        <div class="text-right">
+                        <div class="text-left sm:text-right">
                             <h4 class="text-truffle-extra-dark/70 font-semibold mb-2">Shipping Provider</h4>
                             <div class="text-truffle-extra-dark text-sm">{{ $invoice->financial_snapshot['shipping_provider_name'] }}</div>
                         </div>
@@ -132,8 +132,9 @@
                 </div>
             @endif
 
-            <table class="w-full text-left text-sm mb-6 border-collapse">
-                <thead>
+            <div class="overflow-x-auto">
+                <table class="min-w-[680px] text-left text-sm mb-6 border-collapse">
+                    <thead>
                     <tr class="border-b-2 border-gray-800 text-truffle-extra-dark">
                         <th class="py-2">Description</th>
                         <th class="py-2 text-right">Qty</th>
@@ -142,8 +143,8 @@
                         <th class="py-2 text-right">Discount</th>
                         <th class="py-2 text-right">Total</th>
                     </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100 text-truffle-extra-dark">
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 text-truffle-extra-dark">
                     @foreach($invoice->financial_snapshot['items'] as $item)
                         <tr>
                             <td class="py-3">
@@ -168,8 +169,9 @@
                             </td>
                         </tr>
                     @endforeach
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
 
             <div class="flex justify-end border-t-2 border-gray-800 pt-4">
                 <div class="w-64 space-y-2 text-sm text-truffle-extra-dark">

@@ -54,12 +54,12 @@
             class="container mx-auto px-4 sm:px-6 py-4 flex flex-col gap-3 md:gap-6 md:flex-row md:justify-between md:items-center">
             <div class="flex items-center justify-between w-full md:w-auto">
                 <!-- Logo / Store Name -->
-                <a href="{{ route('home') }}" class="flex items-center space-x-3">
+                <a href="{{ route('home') }}" class="flex min-w-0 items-center space-x-3">
                     @if(!empty($siteSettings['navbar_logo_url']))
                         <img src="{{ $siteSettings['navbar_logo_url'] }}"
                             alt="{{ $siteSettings['site_name'] }}" class="h-12 w-auto object-contain">
                     @else
-                        <span class="text-2xl font-bold font-serif text-truffle-extra-dark tracking-wide">
+                        <span class="truncate text-2xl font-bold font-serif text-truffle-extra-dark tracking-wide">
                             {{ $siteSettings['site_name'] }}
                         </span>
                     @endif

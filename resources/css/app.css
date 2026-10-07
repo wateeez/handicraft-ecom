@@ -132,10 +132,22 @@
 }
 
 @layer base {
+  html {
+    overflow-x: hidden;
+  }
+
   * {
     border-color: var(--border);
   }
+  img,
+  svg,
+  video,
+  canvas {
+    max-width: 100%;
+  }
   body {
+    min-width: 320px;
+    overflow-x: hidden;
     background-color: var(--background);
     color: var(--foreground);
     font-feature-settings: "ss01", "cv11";
@@ -435,3 +447,11 @@ input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type=number] { -moz-appearance: textfield; }
 
+@media (max-width: 639px) {
+  input,
+  select,
+  textarea,
+  button {
+    max-width: 100%;
+  }
+}

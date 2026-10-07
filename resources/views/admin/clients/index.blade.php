@@ -11,10 +11,10 @@
     <div class="space-y-4">
         <div class="flex justify-end">
             <a href="{{ route('admin.clients.create') }}"
-                class="px-4 py-2 bg-green-premium text-white rounded-lg text-sm font-medium hover:bg-green-800 transition-colors">+ New Client</a>
+                class="w-full sm:w-auto px-4 py-2 text-center bg-green-premium text-white rounded-lg text-sm font-medium hover:bg-green-800 transition-colors">+ New Client</a>
         </div>
         <form method="GET" action="{{ route('admin.clients.index') }}"
-            class="bg-cream p-4 rounded-xl border border-truffle-medium/30 flex gap-4 items-end">
+            class="bg-cream p-4 rounded-xl border border-truffle-medium/30 flex flex-col sm:flex-row gap-4 sm:items-end">
             <div class="flex-1">
                 <label class="block text-xs font-semibold text-truffle-extra-dark mb-1">Search Clients</label>
                 <input type="text" name="search" value="{{ request('search') }}"
@@ -22,15 +22,15 @@
                     class="w-full border-truffle-medium/30 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500">
             </div>
             <button type="submit"
-                class="px-6 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gray-800 hover:bg-gray-900">Search</button>
+                class="w-full sm:w-auto px-6 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gray-800 hover:bg-gray-900">Search</button>
             @if(request('search'))
                 <a href="{{ route('admin.clients.index') }}"
-                    class="px-4 py-2 text-sm font-medium text-truffle-extra-dark bg-[#F5F2EA] rounded-lg hover:bg-[#E8E2D2]">Clear</a>
+                    class="w-full sm:w-auto px-4 py-2 text-center text-sm font-medium text-truffle-extra-dark bg-[#F5F2EA] rounded-lg hover:bg-[#E8E2D2]">Clear</a>
             @endif
         </form>
 
-        <div class="bg-cream rounded-xl shadow-sm border border-truffle-medium/30 overflow-hidden">
-            <table class="w-full text-left text-sm">
+        <div class="bg-cream rounded-xl shadow-sm border border-truffle-medium/30 overflow-x-auto">
+            <table class="min-w-[700px] text-left text-sm">
                 <thead>
                     <tr class="bg-[#F5F2EA] border-b">
                         <th class="px-6 py-3 font-semibold text-truffle-extra-dark">Client / Company</th>
