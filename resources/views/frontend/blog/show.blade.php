@@ -12,10 +12,11 @@
 {{ $post->meta_keywords }}
 @endsection
 
+@section('canonical', route('blog.show', $post->slug))
+
 @push('head')
     <!-- SEO Meta Tags -->
     <meta name="author" content="{{ $post->author->name ?? $siteSettings['site_name'] }}">
-    <link rel="canonical" href="{{ route('blog.show', $post->slug) }}">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="article">

@@ -2,6 +2,9 @@
 
 @section('title', 'Blog - ' . $siteSettings['site_name'])
 @section('meta_description', 'Read our latest blog posts, tips, and insights.')
+@if(request()->filled('search') || request()->filled('page'))
+    @section('robots', 'noindex, follow')
+@endif
 
 @section('content')
 <div class="container mx-auto px-4 sm:px-6 py-12">

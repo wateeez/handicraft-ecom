@@ -2,11 +2,37 @@
 <html lang="en">
 
 <head>
+    @php
+        $defaultTitle = trim($__env->yieldContent('title')) ?: $siteSettings['site_name'] . ' | Handmade Handicrafts';
+        $defaultDescription = trim($__env->yieldContent('meta_description')) ?: 'Discover distinctive handicraft items from Nepal.';
+        $isPrivatePage = request()->routeIs('cart.*', 'checkout*', 'quote.success', 'login', 'register', 'password.*', 'verification.*');
+        $socialProfiles = preg_split('/\r\n|\r|\n/', $siteSettings['social_profiles'] ?? '') ?: [];
+        $socialProfiles = array_values(array_filter($socialProfiles, fn ($url) => filter_var(trim($url), FILTER_VALIDATE_URL)));
+        $organizationSchema = array_filter([
+            '@context' => 'https://schema.org',
+            '@type' => 'Organization',
+            '@id' => url('/') . '/#organization',
+            'name' => $siteSettings['site_name'],
+            'url' => url('/'),
+            'logo' => $siteSettings['navbar_logo_url'] ?? null,
+            'description' => 'Handicraft items from Nepal for international buyers.',
+            'email' => $siteSettings['footer_email'] ?: null,
+            'telephone' => $siteSettings['footer_phone'] ?: null,
+            'sameAs' => $socialProfiles ?: null,
+        ], fn ($value) => $value !== null && $value !== '');
+    @endphp
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', $siteSettings['site_name'] . ' - Premium Ecommerce')</title>
-    <meta name="description" content="@yield('meta_description', 'Premium curated products for your lifestyle')">
-    <meta name="keywords" content="@yield('meta_keywords', 'ecommerce, products, shopping')">
+    <title>{{ $defaultTitle }}</title>
+    <meta name="description" content="{{ $defaultDescription }}">
+    <meta name="robots" content="@yield('robots', $isPrivatePage ? 'noindex, nofollow' : 'index, follow')">
+    <link rel="canonical" href="@yield('canonical', url()->current())">
+    <meta property="og:site_name" content="{{ $siteSettings['site_name'] }}">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:title" content="{{ $defaultTitle }}">
+    <meta property="og:description" content="{{ $defaultDescription }}">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <script type="application/ld+json">{!! json_encode($organizationSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
     @if(!empty($siteSettings['favicon_url']))
         <link rel="icon" type="image/x-icon" href="{{ $siteSettings['favicon_url'] }}">
     @endif
@@ -196,6 +222,12 @@
                     <h4 class="font-bold mb-4">Quick Links</h4>
                     <ul class="site-footer-muted space-y-2 text-sm">
                         <li><a href="{{ route('blog.index') }}" class="hover:text-gold">Blog</a></li>
+                        @if($siteSettings['about_content'])
+                            <li><a href="{{ route('pages.about') }}" class="hover:text-gold">About</a></li>
+                        @endif
+                        @if($siteSettings['footer_email'] || $siteSettings['footer_phone'] || $siteSettings['whatsapp_number'])
+                            <li><a href="{{ route('pages.contact') }}" class="hover:text-gold">Contact</a></li>
+                        @endif
                         <li><a href="{{ route('home', ['filter' => 'new-arrivals']) }}" class="hover:text-gold">New
                                 Arrivals</a></li>
                         <li><a href="{{ route('home', ['filter' => 'featured']) }}" class="hover:text-gold">Featured
@@ -204,6 +236,9 @@
                         </li>
                         <li><a href="{{ route('pages.shipping-policy') }}" class="hover:text-gold">Shipping Policy</a>
                         </li>
+                        @if($siteSettings['returns_policy'])
+                            <li><a href="{{ route('pages.returns') }}" class="hover:text-gold">Returns Policy</a></li>
+                        @endif
                     </ul>
                 </div>
 

@@ -27,6 +27,9 @@ class SiteSettingController extends Controller
         $footerPhone = SiteSetting::where('key', 'footer_phone')->first();
         $footerEmail = SiteSetting::where('key', 'footer_email')->first();
         $footerHours = SiteSetting::where('key', 'footer_hours')->first();
+        $aboutContent = SiteSetting::where('key', 'about_content')->first();
+        $returnsPolicy = SiteSetting::where('key', 'returns_policy')->first();
+        $socialProfiles = SiteSetting::where('key', 'social_profiles')->first();
         return view('admin.settings.index', compact(
             'groupedSettings', 
             'siteName', 
@@ -40,7 +43,10 @@ class SiteSettingController extends Controller
             'footerAddress',
             'footerPhone',
             'footerEmail',
-            'footerHours'
+            'footerHours',
+            'aboutContent',
+            'returnsPolicy',
+            'socialProfiles'
         ));
     }
 
@@ -51,6 +57,9 @@ class SiteSettingController extends Controller
             'whatsapp_number'           => 'nullable|string|max:20',
             'whatsapp_message_template' => 'nullable|string|max:500',
             'shipping_policy' => 'nullable|string',
+            'about_content' => 'nullable|string',
+            'returns_policy' => 'nullable|string',
+            'social_profiles' => 'nullable|string|max:5000',
             'navbar_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'footer_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'favicon' => 'nullable|image|mimes:ico,png,jpg,jpeg,gif,svg|max:1024',
@@ -81,6 +90,15 @@ class SiteSettingController extends Controller
         // Update Shipping Policy
         if ($request->has('shipping_policy')) {
             SiteSetting::set('shipping_policy', $request->shipping_policy, 'textarea', 'content');
+        }
+        if ($request->has('about_content')) {
+            SiteSetting::set('about_content', $request->about_content, 'textarea', 'content');
+        }
+        if ($request->has('returns_policy')) {
+            SiteSetting::set('returns_policy', $request->returns_policy, 'textarea', 'content');
+        }
+        if ($request->has('social_profiles')) {
+            SiteSetting::set('social_profiles', $request->social_profiles, 'textarea', 'identity');
         }
 
         // Update Footer Contact Info

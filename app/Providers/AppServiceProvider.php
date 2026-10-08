@@ -55,6 +55,9 @@ class AppServiceProvider extends ServiceProvider
                         'footer_phone'       => rescue(fn() => SiteSetting::get('footer_phone', ''), ''),
                         'footer_email'       => rescue(fn() => SiteSetting::get('footer_email', ''), ''),
                         'footer_hours'       => rescue(fn() => SiteSetting::get('footer_hours', ''), ''),
+                        'about_content'      => rescue(fn() => SiteSetting::get('about_content', ''), ''),
+                        'returns_policy'     => rescue(fn() => SiteSetting::get('returns_policy', ''), ''),
+                        'social_profiles'    => rescue(fn() => SiteSetting::get('social_profiles', ''), ''),
                         // Theme Colors (Earthy, artisanal palette from design.md)
                         'color_primary'      => rescue(fn() => SiteSetting::get('color_primary', '#9B4522'), '#9B4522'),
                         'color_secondary'    => rescue(fn() => SiteSetting::get('color_secondary', '#C98B32'), '#C98B32'),
@@ -82,6 +85,9 @@ class AppServiceProvider extends ServiceProvider
                     'footer_phone'       => '',
                     'footer_email'       => '',
                     'footer_hours'       => '',
+                    'about_content'      => '',
+                    'returns_policy'     => '',
+                    'social_profiles'    => '',
                 ]);
             }
         });

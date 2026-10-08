@@ -6,6 +6,9 @@ use App\Http\Controllers\Frontend\ProductController;
 use App\Http\Controllers\Frontend\CartController;
 use App\Http\Controllers\Frontend\InquiryController as FrontendInquiryController;
 use App\Http\Controllers\Frontend\PageController;
+use App\Http\Controllers\Frontend\RobotsController;
+use App\Http\Controllers\Frontend\SitemapController;
+use App\Http\Controllers\Frontend\LlmsController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\InquiryController as AdminInquiryController;
@@ -31,15 +34,22 @@ use App\Http\Controllers\Admin\CommissionPayoutController;
 
 // Frontend
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/robots.txt', [RobotsController::class, 'index'])->name('robots');
+Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
+Route::get('/llms.txt', [LlmsController::class, 'index'])->name('llms');
 
 // Blog
 Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
 Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/{slug}', [ProductController::class, 'show'])->name('products.show');
+Route::get('/categories/{category:slug}', [ProductController::class, 'category'])->name('categories.show');
 
 // Static Pages
 Route::get('/shipping-policy', [PageController::class, 'shippingPolicy'])->name('pages.shipping-policy');
+Route::get('/about', [PageController::class, 'about'])->name('pages.about');
+Route::get('/contact', [PageController::class, 'contact'])->name('pages.contact');
+Route::get('/returns', [PageController::class, 'returns'])->name('pages.returns');
 
 // Cart & Checkout
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');

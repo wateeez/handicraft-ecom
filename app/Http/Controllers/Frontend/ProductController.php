@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Category;
 use App\Models\Product;
 
 class ProductController extends Controller
@@ -29,5 +30,17 @@ class ProductController extends Controller
             ->get();
 
         return view('frontend.products.show', compact('product', 'relatedProducts'));
+    }
+
+    public function category(Category $category)
+    {
+        $category->load('subCategories');
+
+        $products = $category->products()
+            ->latest()
+            ->paginate(16)
+            ->withQueryString();
+
+        return view('frontend.categories.show', compact('category', 'products'));
     }
 }

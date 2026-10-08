@@ -1,5 +1,17 @@
 Ecommerce website using php laravel with mysql database. webpage includes product page, product ,checkout, blog, header , footer and inquiry page. Products must contains admin editable categories and sub-categories, product list/grid, cart, checkout order/inquiry. At checkout there should be provides shipping rates and product rate. payment providers and methods should be updated in admin dashboard.
 
+## SEO
+
+- `GET /robots.txt` dynamically publishes crawler rules and the absolute sitemap URL.
+- `GET /sitemap.xml` includes the public homepage, shipping policy, category pages, products, and published blog posts.
+- After deployment, add the canonical production sitemap URL to Google Search Console and Bing Webmaster Tools. Product metadata and structured data use USD because storefront prices are displayed in dollars; update this before launch if the storefront currency changes.
+
+## AI visibility
+
+- `GET /llms.txt` provides a concise catalog and citation guide for AI retrieval systems.
+- Site settings control public About, Returns, contact, shipping, and official social-profile information. Enter only verified facts: these values appear in public pages, Organization structured data, the sitemap, and `llms.txt`.
+- Category pages publish visible, factual FAQ blocks and matching `FAQPage` structured data for statues, paintings, thankas, and singing bowls when those categories exist.
+
 Orders are mostly taken through buyers email confirmation so, inquiry button at product must be prominent, In inquiry page Form must be filled by buyer. Form includes their full name, address line, zip code country phone number, (important for shipping rate calculation). Contact details like email address and phone number. When inquiry is done by buyers; It should be updated in admin dashboard including all the details of buyer and product that buyer has chosen. When replying through dashboard, Email should be sent to buyers email address. Inquiry button must be placed on every product that is available on the website but order now button must be control by the admin whether to show or not. For the product with order now button available normal process must follow i.e.: go to checkout page and payment can be receive, But when product is inquired by the buyer and buyer is ready to purchase, admin should be able to generate checkout page with payment options and share link with username and password auto generate and attached with the link which will be shared with the buyer via email or WhatsApp.
 
 Shipping calculation logic work on php Laravel and handle with ajax with mysql database for different location buyer's entry on the checkout/inquiry form. Weight range and prices are updated based on location and controlled/updated by the admin dashboard . To calculate add 4 cm to each side L, B. H from actual dimension for packing material / boxes(buffer). To calculate volumetric weight = LxBxH/5000 and if weight is more than 500kg volumetric calculation is measured by LxBxH/6000. Actual dimension should be shown on product detail page. there should be different types of shipping agents like DHL, Aramex, FedEx etc. with different weight range of prices for different locations. Location are categorized as zones e.g.: (Zone1=US,UK, Zone2=Australia, Europe)etc. These are also updated and control by admin. To apply shipping charges greater value of actual weight and volumetric weight; whichever is greater in value that should be applied and shown.

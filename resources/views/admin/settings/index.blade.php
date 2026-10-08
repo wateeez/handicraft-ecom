@@ -317,6 +317,46 @@
                     @enderror
                     <p class="mt-2 text-xs text-truffle-extra-dark">You can use plain text. Each new line will be preserved when displayed.</p>
                 </div>
+            </div>
+
+            <!-- Trust & AI Visibility Section -->
+            <div class="p-6 border-b border-truffle-medium/30">
+                <h3 class="text-lg font-semibold text-truffle-extra-dark mb-4">Trust & AI Visibility</h3>
+                <p class="mb-4 text-sm text-truffle-extra-dark">Publish only verified facts. These pages and official profile URLs are used by the public site, structured data, the sitemap, and <code>llms.txt</code>.</p>
+
+                <div class="space-y-5">
+                    <div>
+                        <label class="mb-2 block text-sm font-medium text-truffle-extra-dark">About Content</label>
+                        <textarea name="about_content" rows="8"
+                            class="w-full rounded-lg border border-truffle-medium/30 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-green-500"
+                            placeholder="Describe the business, sourcing, makers, and products using only verifiable facts.">{{ old('about_content', $aboutContent->value ?? '') }}</textarea>
+                        @error('about_content')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-medium text-truffle-extra-dark">Returns & Refunds Policy</label>
+                        <textarea name="returns_policy" rows="8"
+                            class="w-full rounded-lg border border-truffle-medium/30 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-green-500"
+                            placeholder="State the return period, eligibility conditions, return-shipping responsibility, and refund timing.">{{ old('returns_policy', $returnsPolicy->value ?? '') }}</textarea>
+                        @error('returns_policy')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-medium text-truffle-extra-dark">Official Social Profile URLs</label>
+                        <textarea name="social_profiles" rows="5"
+                            class="w-full rounded-lg border border-truffle-medium/30 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-green-500"
+                            placeholder="One official profile URL per line, for example https://www.instagram.com/your-account">{{ old('social_profiles', $socialProfiles->value ?? '') }}</textarea>
+                        <p class="mt-2 text-xs text-truffle-extra-dark">Only add profiles owned by this business. They are added to Organization structured data as official identity links.</p>
+                        @error('social_profiles')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+            </div>
             <!-- Submit Button -->
             <div class="p-6 bg-paper/60 border-t border-border flex justify-end">
                 <button type="submit" 

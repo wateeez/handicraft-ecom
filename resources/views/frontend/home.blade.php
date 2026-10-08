@@ -1,5 +1,11 @@
 @extends('layouts.app')
 
+@section('title', $siteSettings['site_name'] . ' | Handmade Handicrafts')
+@section('meta_description', 'Shop distinctive handmade handicrafts, thoughtfully created by skilled artisans.')
+@if(request()->hasAny(['category', 'subcategory', 'filter', 'search', 'sort', 'page']))
+    @section('robots', 'noindex, follow')
+@endif
+
 @section('content')
     <div class="container mx-auto px-4 sm:px-6 py-12">
         <div class="flex flex-col md:flex-row gap-12">
@@ -10,7 +16,7 @@
                     <h3 class="text-xl font-serif mb-6 text-truffle-extra-dark">Categories</h3>
                     <ul class="space-y-3">
                         <li>
-                            <a href="{{ route('home', request()->only('filter')) }}"
+                            <a href="{{ route('home') }}"
                                 class="flex justify-between items-center text-truffle-extra-dark hover:text-green-premium transition group">
                                 <span class="{{ !request('category') ? 'font-bold text-green-premium' : '' }}">All
                                     Products</span>
@@ -19,7 +25,7 @@
                         @foreach($categories as $category)
                             <li class="relative group">
                                 <div class="flex justify-between items-center gap-2">
-                                    <a href="{{ route('home', array_merge(request()->only('filter'), ['category' => $category->slug])) }}"
+                                    <a href="{{ route('categories.show', $category) }}"
                                         class="flex-1 min-w-0 flex items-center text-truffle-extra-dark hover:text-green-premium transition">
                                         <span class="truncate {{ request('category') == $category->slug ? 'font-bold text-green-premium' : '' }}">{{ $category->name }}</span>
                                     </a>

@@ -1,5 +1,53 @@
 @extends('layouts.app')
 
+@php
+    $seoDescription = \Illuminate\Support\Str::limit(
+        trim(strip_tags($product->long_description ?: $product->description ?: "{$product->name} handmade handicraft.")),
+        160
+    );
+    $productUrl = route('products.show', $product->slug);
+    $productImage = $product->main_image ?: $product->secondary_image;
+@endphp
+
+@section('title', $product->name . ' | ' . $siteSettings['site_name'])
+@section('meta_description', $seoDescription)
+@section('canonical', $productUrl)
+
+@push('head')
+    <meta property="og:type" content="product">
+    <meta property="og:url" content="{{ $productUrl }}">
+    @if($productImage)
+        <meta property="og:image" content="{{ $productImage }}">
+        <meta property="og:image:alt" content="{{ $product->name }}">
+    @endif
+    <script type="application/ld+json">
+    {!! json_encode([
+        '@context' => 'https://schema.org',
+        '@type' => 'Product',
+        'name' => $product->name,
+        'description' => $seoDescription,
+        'sku' => $product->sku,
+        'image' => array_values(array_filter(array_merge([$productImage], $product->images ?? []))),
+        'url' => $productUrl,
+        'brand' => [
+            '@type' => 'Brand',
+            'name' => $siteSettings['site_name'],
+        ],
+        'material' => $product->material,
+        'offers' => [
+            '@type' => 'Offer',
+            'url' => $productUrl,
+            'priceCurrency' => 'USD',
+            'price' => number_format($product->effective_price, 2, '.', ''),
+            'availability' => $product->stock > 0
+                ? 'https://schema.org/InStock'
+                : 'https://schema.org/OutOfStock',
+            'itemCondition' => 'https://schema.org/NewCondition',
+        ],
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+    </script>
+@endpush
+
 @section('content')
     <div class="container mx-auto px-4 sm:px-6 py-12">
 
@@ -135,6 +183,10 @@
                         <p>{{ $product->description }}</p>
                     </div>
                 @endif
+
+                <p class="mb-8 rounded-xl border border-truffle-medium/30 bg-[#F5F2EA] px-4 py-3 text-sm leading-relaxed text-truffle-extra-dark">
+                    Prices are in USD. We serve international buyers worldwide except Nepal and India; confirm delivery timing for your destination before ordering.
+                </p>
 
                 <div class="mb-8">
                     <h3 class="font-serif font-bold text-lg mb-4 text-truffle-extra-dark">Product Specifications</h3>
@@ -307,10 +359,12 @@
                         <h2 class="text-2xl sm:text-3xl font-serif font-bold text-foreground">You May Also Admire</h2>
                         <p class="text-xs text-muted-foreground mt-1">Hand-picked companions from the same craft collection.</p>
                     </div>
-                    <a href="{{ route('home', ['category' => $product->category->slug ?? '']) }}" class="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
+                    @if($product->category)
+                        <a href="{{ route('categories.show', $product->category) }}" class="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
                         Explore Collection
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                    </a>
+                        </a>
+                    @endif
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     @foreach($relatedProducts as $relProduct)

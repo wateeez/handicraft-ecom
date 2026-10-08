@@ -3,55 +3,59 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\BlogPost;
-use Spatie\Sitemap\Sitemap;
-use Spatie\Sitemap\Tags\Url;
+use App\Models\SiteSetting;
 
 class SitemapController extends Controller
 {
     public function index()
     {
-        $sitemap = Sitemap::create();
+        $urls = collect([
+            ['loc' => route('home'), 'lastmod' => now()],
+            ['loc' => route('blog.index'), 'lastmod' => BlogPost::max('updated_at')],
+        ]);
+        foreach ([
+            'shipping_policy' => 'pages.shipping-policy',
+            'about_content' => 'pages.about',
+            'returns_policy' => 'pages.returns',
+        ] as $settingKey => $route) {
+            $setting = SiteSetting::where('key', $settingKey)->first();
+            if ($setting?->value) {
+                $urls->push(['loc' => route($route), 'lastmod' => $setting->updated_at]);
+            }
+        }
 
-        // Add home page
-        $sitemap->add(Url::create(route('home'))
-            ->setLastModificationDate(now())
-            ->setChangeFrequency(Url::CHANGE_FREQUENCY_WEEKLY)
-            ->setPriority(1.0));
+        if (SiteSetting::get('footer_email') || SiteSetting::get('footer_phone') || SiteSetting::get('whatsapp_number')) {
+            $urls->push(['loc' => route('pages.contact'), 'lastmod' => null]);
+        }
 
-        // Add static pages
-        $sitemap->add(Url::create(route('pages.shipping-policy'))
-            ->setLastModificationDate(now())
-            ->setChangeFrequency(Url::CHANGE_FREQUENCY_MONTHLY)
-            ->setPriority(0.6));
+        Category::query()
+            ->select(['slug', 'updated_at'])
+            ->orderBy('id')
+            ->each(fn (Category $category) => $urls->push([
+                'loc' => route('categories.show', $category),
+                'lastmod' => $category->updated_at,
+            ]));
 
-        // Add blog index
-        $sitemap->add(Url::create(route('blog.index'))
-            ->setLastModificationDate(now())
-            ->setChangeFrequency(Url::CHANGE_FREQUENCY_WEEKLY)
-            ->setPriority(0.8));
+        Product::query()
+            ->select(['slug', 'updated_at'])
+            ->orderBy('id')
+            ->each(fn (Product $product) => $urls->push([
+                'loc' => route('products.show', $product->slug),
+                'lastmod' => $product->updated_at,
+            ]));
 
-        // Add all blog posts
-        BlogPost::where('published', true)
-            ->get()
-            ->each(function (BlogPost $post) use ($sitemap) {
-                $sitemap->add(Url::create(route('blog.show', $post->slug))
-                    ->setLastModificationDate($post->updated_at)
-                    ->setChangeFrequency(Url::CHANGE_FREQUENCY_MONTHLY)
-                    ->setPriority(0.7));
-            });
+        BlogPost::published()
+            ->select(['slug', 'updated_at'])
+            ->each(fn (BlogPost $post) => $urls->push([
+                'loc' => route('blog.show', $post),
+                'lastmod' => $post->updated_at,
+            ]));
 
-        // Add all products
-        Product::where('status', 'active')
-            ->get()
-            ->each(function (Product $product) use ($sitemap) {
-                $sitemap->add(Url::create(route('product.show', $product->slug))
-                    ->setLastModificationDate($product->updated_at)
-                    ->setChangeFrequency(Url::CHANGE_FREQUENCY_WEEKLY)
-                    ->setPriority(0.9));
-            });
+        $xml = view('frontend.sitemap', compact('urls'))->render();
 
-        return response($sitemap->toXml(), 200, ['Content-Type' => 'application/xml']);
+        return response($xml, 200, ['Content-Type' => 'application/xml; charset=UTF-8']);
     }
 }
