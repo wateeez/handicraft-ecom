@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 class ViewerReadOnly
 {
     /**
-     * Allow users with only the `viewer` role to access read-only (GET/HEAD) admin pages.
+     * Restrict accounts that hold only view_* permissions to read-only (GET/HEAD) admin requests.
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -25,14 +25,13 @@ class ViewerReadOnly
             return redirect()->route('login')->with('error', 'Your account has been deactivated.');
         }
 
-        // Apply viewer-only behavior only to users who are exclusively viewers
-        if ($user->hasRole('viewer') && !$user->hasAnyRole(['admin', 'editor', 'super_admin'])) {
-            if (in_array($request->method(), ['GET', 'HEAD'])) {
-                return $next($request);
-            }
+        // Users whose permissions are all view_* are read-only, whatever their role names
+        $permissions = $user->permissionNames();
+        $readOnly = !$user->isSuperAdmin()
+            && collect($permissions)->every(fn (string $name) => str_starts_with($name, 'view_'));
 
-            // Block non-read-only actions for pure viewers
-            abort(403, 'Unauthorized. Viewer accounts have read-only access.');
+        if ($readOnly && !in_array($request->method(), ['GET', 'HEAD'])) {
+            abort(403, 'Unauthorized. Your account has read-only access.');
         }
 
         return $next($request);

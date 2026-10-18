@@ -129,7 +129,12 @@ Route::middleware(['auth', 'viewer.readonly'])->prefix('admin')->name('admin.')-
     });
 
     // Clients
-    Route::resource('clients', ClientController::class)->middleware('permission:manage_clients');
+    Route::resource('clients', ClientController::class)
+        ->only(['index', 'show'])
+        ->middleware('permission:view_clients,manage_clients');
+    Route::resource('clients', ClientController::class)
+        ->except(['index', 'show'])
+        ->middleware('permission:manage_clients');
 
     // Orders
     Route::resource('orders', OrderController::class)
@@ -219,14 +224,3 @@ Route::middleware(['auth', 'viewer.readonly'])->prefix('admin')->name('admin.')-
     });
 });
   
-// Resend mail server
-Route::get('/test-resend', function () {
-    $resend = \Resend::client(env('RESEND_API_KEY'));
-
-    return $resend->emails->send([
-        'from' => env('MAIL_FROM_NAME') . ' <' . env('MAIL_FROM_ADDRESS') . '>',
-        'to' => ['delivered@resend.dev'],
-        'subject' => 'Test Email',
-        'html' => '<strong>It works!</strong>'
-    ]);
-});

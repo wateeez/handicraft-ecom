@@ -49,7 +49,7 @@ class AdminUserController extends Controller
      */
     public function create()
     {
-        $roles = Role::all();
+        $roles = $this->grantableRoles();
         return view('admin.users.create', compact('roles'));
     }
 
@@ -66,6 +66,8 @@ class AdminUserController extends Controller
             'roles.*' => ['exists:roles,id'],
             'is_active' => ['boolean'],
         ]);
+
+        $this->ensureRolesGrantable($validated['roles']);
 
         $user = User::create([
             'name' => $validated['name'],
@@ -88,7 +90,7 @@ class AdminUserController extends Controller
     public function show(User $user)
     {
         $user->load('roles.permissions');
-        $roles = Role::all();
+        $roles = $this->grantableRoles();
         return view('admin.users.show', compact('user', 'roles'));
     }
 
@@ -97,12 +99,9 @@ class AdminUserController extends Controller
      */
     public function edit(User $user)
     {
-        // Prevent non-super-admins from editing super admins
-        if ($user->isSuperAdmin() && !auth()->user()->isSuperAdmin()) {
-            abort(403, 'You cannot edit a Super Admin account.');
-        }
+        $this->authorizeManage($user, 'edit');
 
-        $roles = Role::all();
+        $roles = $this->grantableRoles();
         $user->load('roles');
         
         return view('admin.users.edit', compact('user', 'roles'));
@@ -113,16 +112,19 @@ class AdminUserController extends Controller
      */
     public function update(Request $request, User $user)
     {
-        // Prevent non-super-admins from editing super admins
-        if ($user->isSuperAdmin() && !auth()->user()->isSuperAdmin()) {
-            abort(403, 'You cannot edit a Super Admin account.');
-        }
+        $this->authorizeManage($user, 'edit');
 
         // Prevent users from editing themselves out of super admin
-        if ($user->id === auth()->id() && $user->isSuperAdmin()) {
+        // and the last active super admin from losing the role
+        if ($user->isSuperAdmin()) {
             $requestedRoles = Role::whereIn('id', $request->roles ?? [])->pluck('name')->toArray();
             if (!in_array('super_admin', $requestedRoles)) {
-                return back()->with('error', 'You cannot remove your own Super Admin role.');
+                if ($user->id === auth()->id()) {
+                    return back()->with('error', 'You cannot remove your own Super Admin role.');
+                }
+                if ($user->isLastActiveSuperAdmin()) {
+                    return back()->with('error', 'You cannot remove the Super Admin role from the last active Super Admin.');
+                }
             }
         }
 
@@ -134,14 +136,25 @@ class AdminUserController extends Controller
             'is_active' => ['boolean'],
         ]);
 
+        $this->ensureRolesGrantable($validated['roles']);
+
+        $isActive = $request->boolean('is_active', true);
+        if (!$isActive && $user->id === auth()->id()) {
+            return back()->with('error', 'You cannot deactivate your own account.');
+        }
+        if (!$isActive && $user->isLastActiveSuperAdmin()) {
+            return back()->with('error', 'You cannot deactivate the last active Super Admin.');
+        }
+
         $user->update([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'is_active' => $request->boolean('is_active', true),
+            'is_active' => $isActive,
         ]);
 
         // Sync roles
         $user->roles()->sync($validated['roles']);
+        $user->flushAccessCache();
 
         return redirect()
             ->route('admin.users.index')
@@ -153,14 +166,15 @@ class AdminUserController extends Controller
      */
     public function destroy(User $user)
     {
-        // Prevent deletion of super admin by non-super-admin
-        if ($user->isSuperAdmin() && !auth()->user()->isSuperAdmin()) {
-            abort(403, 'You cannot delete a Super Admin account.');
-        }
+        $this->authorizeManage($user, 'delete');
 
         // Prevent users from deleting themselves
         if ($user->id === auth()->id()) {
             return back()->with('error', 'You cannot delete your own account.');
+        }
+
+        if ($user->isLastActiveSuperAdmin()) {
+            return back()->with('error', 'You cannot delete the last active Super Admin.');
         }
 
         $user->delete();
@@ -175,14 +189,15 @@ class AdminUserController extends Controller
      */
     public function toggleStatus(User $user)
     {
-        // Prevent deactivation of super admin by non-super-admin
-        if ($user->isSuperAdmin() && !auth()->user()->isSuperAdmin()) {
-            abort(403, 'You cannot deactivate a Super Admin account.');
-        }
+        $this->authorizeManage($user, 'deactivate');
 
         // Prevent users from deactivating themselves
         if ($user->id === auth()->id()) {
             return back()->with('error', 'You cannot deactivate your own account.');
+        }
+
+        if ($user->is_active && $user->isLastActiveSuperAdmin()) {
+            return back()->with('error', 'You cannot deactivate the last active Super Admin.');
         }
 
         $user->update([
@@ -199,10 +214,7 @@ class AdminUserController extends Controller
      */
     public function showResetPasswordForm(User $user)
     {
-        // Prevent non-super-admins from resetting super admin passwords
-        if ($user->isSuperAdmin() && !auth()->user()->isSuperAdmin()) {
-            abort(403, 'You cannot reset a Super Admin password.');
-        }
+        $this->authorizeManage($user, 'reset the password of');
 
         return view('admin.users.reset-password', compact('user'));
     }
@@ -212,10 +224,7 @@ class AdminUserController extends Controller
      */
     public function resetPassword(Request $request, User $user)
     {
-        // Prevent non-super-admins from resetting super admin passwords
-        if ($user->isSuperAdmin() && !auth()->user()->isSuperAdmin()) {
-            abort(403, 'You cannot reset a Super Admin password.');
-        }
+        $this->authorizeManage($user, 'reset the password of');
 
         $validated = $request->validate([
             'password' => ['required', 'confirmed', Password::defaults()],
@@ -241,14 +250,15 @@ class AdminUserController extends Controller
 
         $role = Role::findOrFail($validated['role_id']);
 
-        // Prevent non-super-admins from assigning super_admin role
-        if ($role->name === 'super_admin' && !auth()->user()->isSuperAdmin()) {
-            return back()->with('error', 'You cannot assign the Super Admin role.');
+        $this->authorizeManage($user, 'modify');
+
+        if (!auth()->user()->canGrantRole($role)) {
+            return back()->with('error', 'You cannot assign a role with permissions you do not hold.');
         }
 
-        // Avoid assigning to self restrictions: if assigning/removing affects current user super admin, handled separately
         if (!$user->hasRole($role->name)) {
             $user->roles()->attach($role->id);
+            $user->flushAccessCache();
         }
 
         return back()->with('success', 'Role assigned successfully.');
@@ -259,9 +269,18 @@ class AdminUserController extends Controller
      */
     public function revokeRole(User $user, Role $role)
     {
-        // Prevent non-super-admins from modifying super admin role
-        if ($role->name === 'super_admin' && !auth()->user()->isSuperAdmin()) {
-            return back()->with('error', 'You cannot revoke the Super Admin role.');
+        $this->authorizeManage($user, 'modify');
+
+        if (!$user->roles()->where('roles.id', $role->id)->exists()) {
+            return back()->with('error', 'User does not have that role.');
+        }
+
+        if (!auth()->user()->canGrantRole($role)) {
+            return back()->with('error', 'You cannot revoke a role with permissions you do not hold.');
+        }
+
+        if ($role->name === 'super_admin' && $user->isLastActiveSuperAdmin()) {
+            return back()->with('error', 'You cannot remove the Super Admin role from the last active Super Admin.');
         }
 
         // Prevent users from removing their own Super Admin role
@@ -270,7 +289,38 @@ class AdminUserController extends Controller
         }
 
         $user->roles()->detach($role->id);
+        $user->flushAccessCache();
 
         return back()->with('success', 'Role revoked successfully.');
+    }
+
+    /**
+     * Abort unless the acting admin may manage the target account.
+     */
+    private function authorizeManage(User $user, string $action): void
+    {
+        abort_unless(auth()->user()->canManageUser($user), 403, "You cannot {$action} an account with higher privileges than yours.");
+    }
+
+    /**
+     * Roles the acting admin is allowed to hand out.
+     */
+    private function grantableRoles()
+    {
+        $actor = auth()->user();
+
+        return Role::with('permissions')->get()->filter(fn (Role $role) => $actor->canGrantRole($role))->values();
+    }
+
+    /**
+     * Abort unless every requested role id is grantable by the acting admin.
+     */
+    private function ensureRolesGrantable(array $roleIds): void
+    {
+        $actor = auth()->user();
+
+        foreach (Role::whereIn('id', $roleIds)->get() as $role) {
+            abort_unless($actor->canGrantRole($role), 403, 'You cannot assign a role with permissions you do not hold.');
+        }
     }
 }

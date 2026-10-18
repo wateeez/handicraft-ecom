@@ -52,6 +52,10 @@ class User extends Authenticatable
         ];
     }
 
+    protected ?array $roleNamesCache = null;
+
+    protected ?array $permissionNamesCache = null;
+
     /**
      * The roles that belong to the user.
      */
@@ -61,15 +65,48 @@ class User extends Authenticatable
     }
 
     /**
+     * Role names held by the user (memoized per instance).
+     */
+    protected function roleNames(): array
+    {
+        return $this->roleNamesCache ??= $this->roles()->pluck('name')->all();
+    }
+
+    /**
+     * Permission names granted through the user's roles (memoized per instance).
+     * Super admins implicitly hold every permission.
+     */
+    public function permissionNames(): array
+    {
+        if ($this->permissionNamesCache !== null) {
+            return $this->permissionNamesCache;
+        }
+
+        if (in_array('super_admin', $this->roleNames(), true)) {
+            return $this->permissionNamesCache = Permission::pluck('name')->all();
+        }
+
+        return $this->permissionNamesCache = Permission::whereHas('roles', function ($query) {
+            $query->whereIn('roles.id', $this->roles()->pluck('roles.id'));
+        })->pluck('name')->all();
+    }
+
+    /**
+     * Clear memoized role/permission lookups after roles change.
+     */
+    public function flushAccessCache(): void
+    {
+        $this->roleNamesCache = null;
+        $this->permissionNamesCache = null;
+        $this->unsetRelation('roles');
+    }
+
+    /**
      * Check if user has a specific role
      */
     public function hasRole(string|array $roles): bool
     {
-        if (is_array($roles)) {
-            return $this->roles()->whereIn('name', $roles)->exists();
-        }
-
-        return $this->roles()->where('name', $roles)->exists();
+        return $this->hasAnyRole((array) $roles);
     }
 
     /**
@@ -77,7 +114,7 @@ class User extends Authenticatable
      */
     public function hasAnyRole(array $roles): bool
     {
-        return $this->roles()->whereIn('name', $roles)->exists();
+        return count(array_intersect($roles, $this->roleNames())) > 0;
     }
 
     /**
@@ -85,12 +122,7 @@ class User extends Authenticatable
      */
     public function hasAllRoles(array $roles): bool
     {
-        foreach ($roles as $role) {
-            if (!$this->hasRole($role)) {
-                return false;
-            }
-        }
-        return true;
+        return count(array_diff($roles, $this->roleNames())) === 0;
     }
 
     /**
@@ -98,9 +130,7 @@ class User extends Authenticatable
      */
     public function hasPermission(string $permission): bool
     {
-        return $this->roles()->whereHas('permissions', function ($query) use ($permission) {
-            $query->where('name', $permission);
-        })->exists();
+        return in_array($permission, $this->permissionNames(), true);
     }
 
     /**
@@ -108,9 +138,55 @@ class User extends Authenticatable
      */
     public function hasAnyPermission(array $permissions): bool
     {
-        return $this->roles()->whereHas('permissions', function ($query) use ($permissions) {
-            $query->whereIn('name', $permissions);
-        })->exists();
+        return count(array_intersect($permissions, $this->permissionNames())) > 0;
+    }
+
+    /**
+     * Whether this user may assign the given role: super admins may assign any,
+     * others only roles whose permissions they already hold (never super_admin).
+     */
+    public function canGrantRole(Role $role): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($role->name === 'super_admin') {
+            return false;
+        }
+
+        return count(array_diff($role->permissions()->pluck('name')->all(), $this->permissionNames())) === 0;
+    }
+
+    /**
+     * Whether this user may modify the target admin account (no outranking).
+     */
+    public function canManageUser(User $target): bool
+    {
+        if ($this->isSuperAdmin() || $target->id === $this->id) {
+            return true;
+        }
+
+        if ($target->isSuperAdmin()) {
+            return false;
+        }
+
+        return count(array_diff($target->permissionNames(), $this->permissionNames())) === 0;
+    }
+
+    /**
+     * Whether this is the only active super admin.
+     */
+    public function isLastActiveSuperAdmin(): bool
+    {
+        if (!$this->isSuperAdmin()) {
+            return false;
+        }
+
+        return !static::active()
+            ->where('id', '!=', $this->id)
+            ->whereHas('roles', fn ($q) => $q->where('name', 'super_admin'))
+            ->exists();
     }
 
     /**
@@ -123,6 +199,7 @@ class User extends Authenticatable
         }
 
         $this->roles()->syncWithoutDetaching([$role->id]);
+        $this->flushAccessCache();
     }
 
     /**
@@ -135,6 +212,7 @@ class User extends Authenticatable
         }
 
         $this->roles()->detach($role->id);
+        $this->flushAccessCache();
     }
 
     /**
@@ -144,6 +222,7 @@ class User extends Authenticatable
     {
         $roleIds = Role::whereIn('name', $roles)->pluck('id')->toArray();
         $this->roles()->sync($roleIds);
+        $this->flushAccessCache();
     }
 
     /**

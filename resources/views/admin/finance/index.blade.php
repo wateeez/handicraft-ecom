@@ -53,54 +53,61 @@
     </section>
 
     @if($financeTablesReady)
-        <section class="rounded-md border border-border bg-card" aria-labelledby="sales-details-heading">
-            <div class="border-b border-border px-5 py-4">
-                <h3 id="sales-details-heading" class="font-semibold">Sales details</h3>
-                <p class="mt-1 text-sm text-muted-foreground">Paid sales excluding cancelled and fully refunded orders.</p>
+        <details class="rounded-md border border-border bg-card">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-sm font-semibold select-none hover:bg-muted/40 transition-colors">
+                <div>
+                    <span>Sales details</span>
+                    <p class="mt-1 text-xs font-normal text-muted-foreground">Paid sales excluding cancelled and fully refunded orders.</p>
+                </div>
+                <svg class="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200 details-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </summary>
+            <div class="border-t border-border">
+                <div class="grid gap-px border-b border-border bg-border sm:grid-cols-3">
+                    <article class="bg-card p-5">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Paid sales</p>
+                        <p class="mt-2 text-2xl font-semibold tabular-nums">{{ number_format($salesDetails['count']) }}</p>
+                    </article>
+                    <article class="bg-card p-5">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Gross sales</p>
+                        <p class="mt-2 text-2xl font-semibold tabular-nums">{{ number_format($salesDetails['gross_sales'], 2) }}</p>
+                    </article>
+                    <article class="bg-card p-5">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Average sale</p>
+                        <p class="mt-2 text-2xl font-semibold tabular-nums">{{ number_format($salesDetails['average_sale'], 2) }}</p>
+                    </article>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                            <tr><th class="px-5 py-3">Order</th><th class="px-5 py-3">Buyer</th><th class="px-5 py-3">Date</th><th class="px-5 py-3">Status</th><th class="px-5 py-3 text-right">Total</th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-border">
+                            @forelse($salesDetails['recent_orders'] as $sale)
+                                <tr>
+                                    <td class="px-5 py-3 font-medium"><a class="hover:underline" href="{{ route('admin.orders.show', $sale) }}">{{ $sale->order_number }}</a></td>
+                                    <td class="px-5 py-3">{{ $sale->client?->name ?? $sale->name ?? '—' }}</td>
+                                    <td class="px-5 py-3 text-muted-foreground">{{ $sale->created_at?->format('M j, Y') }}</td>
+                                    <td class="px-5 py-3">{{ $sale->status_label }}</td>
+                                    <td class="px-5 py-3 text-right font-medium tabular-nums">{{ number_format($sale->grand_total, 2) }}</td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="5" class="px-5 py-8 text-center text-muted-foreground">No paid sales recorded yet.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <div class="grid gap-px border-b border-border bg-border sm:grid-cols-3">
-                <article class="bg-card p-5">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Paid sales</p>
-                    <p class="mt-2 text-2xl font-semibold tabular-nums">{{ number_format($salesDetails['count']) }}</p>
-                </article>
-                <article class="bg-card p-5">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Gross sales</p>
-                    <p class="mt-2 text-2xl font-semibold tabular-nums">{{ number_format($salesDetails['gross_sales'], 2) }}</p>
-                </article>
-                <article class="bg-card p-5">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Average sale</p>
-                    <p class="mt-2 text-2xl font-semibold tabular-nums">{{ number_format($salesDetails['average_sale'], 2) }}</p>
-                </article>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-                        <tr><th class="px-5 py-3">Order</th><th class="px-5 py-3">Buyer</th><th class="px-5 py-3">Date</th><th class="px-5 py-3">Status</th><th class="px-5 py-3 text-right">Total</th></tr>
-                    </thead>
-                    <tbody class="divide-y divide-border">
-                        @forelse($salesDetails['recent_orders'] as $sale)
-                            <tr>
-                                <td class="px-5 py-3 font-medium"><a class="hover:underline" href="{{ route('admin.orders.show', $sale) }}">{{ $sale->order_number }}</a></td>
-                                <td class="px-5 py-3">{{ $sale->client?->name ?? $sale->name ?? '—' }}</td>
-                                <td class="px-5 py-3 text-muted-foreground">{{ $sale->created_at?->format('M j, Y') }}</td>
-                                <td class="px-5 py-3">{{ $sale->status_label }}</td>
-                                <td class="px-5 py-3 text-right font-medium tabular-nums">{{ number_format($sale->grand_total, 2) }}</td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="5" class="px-5 py-8 text-center text-muted-foreground">No paid sales recorded yet.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </section>
+        </details>
     @endif
 
     @if($financeTablesReady && (auth()->user()->isSuperAdmin() || auth()->user()->hasPermission('manage_finance')))
         <details class="rounded-md border border-border bg-card">
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-sm font-semibold">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-sm font-semibold select-none hover:bg-muted/40 transition-colors">
                 <span>Finance settings</span>
-                <svg class="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7zm7.94-3.5a7.95 7.95 0 00-.13-1.43l2.02-1.57-2-3.46-2.4.97a7.97 7.97 0 00-2.47-1.43L14.6 2h-4l-.36 2.98a7.97 7.97 0 00-2.47 1.43l-2.4-.97-2 3.46 2.02 1.57A7.95 7.95 0 005.26 12c0 .49.04.97.13 1.43l-2.02 1.57 2 3.46 2.4-.97a7.97 7.97 0 002.47 1.43L10.6 22h4l.36-2.98a7.97 7.97 0 002.47-1.43l2.4.97 2-3.46-2.02-1.57c.09-.46.13-.94.13-1.43z" />
+                <svg class="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200 details-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
             </summary>
             <form method="POST" action="{{ route('admin.finance.settings.update') }}" class="grid gap-4 border-t border-border p-5 md:grid-cols-3">
@@ -117,60 +124,97 @@
     @endif
 
     @if($financeTablesReady)
-        <section aria-labelledby="finance-aging-heading">
-            <h3 id="finance-aging-heading" class="mb-3 text-base font-semibold">Outstanding balance aging</h3>
-            <div class="grid gap-px overflow-hidden rounded-md border border-border bg-border sm:grid-cols-3">
-                @foreach(['0_7' => '0–7 days', '8_30' => '8–30 days', '31_plus' => '31+ days'] as $bucket => $label)
-                    <article class="bg-card p-5">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ $label }}</p>
-                        <p class="mt-3 text-2xl font-semibold tabular-nums">{{ number_format(data_get($outstandingAging, "{$bucket}.balance", 0), 2) }}</p>
-                        <p class="mt-1 text-xs text-muted-foreground">{{ data_get($outstandingAging, "{$bucket}.count", 0) }} unpaid or partially paid order(s)</p>
-                    </article>
-                @endforeach
+        <details class="rounded-md border border-border bg-card">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-sm font-semibold select-none hover:bg-muted/40 transition-colors">
+                <div>
+                    <span>Outstanding balance aging</span>
+                    <p class="mt-1 text-xs font-normal text-muted-foreground">Unpaid or partially paid order balances grouped by age.</p>
+                </div>
+                <svg class="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200 details-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </summary>
+            <div class="border-t border-border">
+                <div class="grid gap-px overflow-hidden rounded-b-md bg-border sm:grid-cols-3">
+                    @foreach(['0_7' => '0–7 days', '8_30' => '8–30 days', '31_plus' => '31+ days'] as $bucket => $label)
+                        <article class="bg-card p-5">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ $label }}</p>
+                            <p class="mt-3 text-2xl font-semibold tabular-nums">{{ number_format(data_get($outstandingAging, "{$bucket}.balance", 0), 2) }}</p>
+                            <p class="mt-1 text-xs text-muted-foreground">{{ data_get($outstandingAging, "{$bucket}.count", 0) }} unpaid or partially paid order(s)</p>
+                        </article>
+                    @endforeach
+                </div>
             </div>
-        </section>
+        </details>
 
-        <section class="rounded-md border border-border bg-card p-5" aria-labelledby="finance-chart-heading">
-            <h3 id="finance-chart-heading" class="font-semibold">Finance activity</h3>
-            <p class="mt-1 text-sm text-muted-foreground">Confirmed receipts and financial corrections in the reporting currency.</p>
-            <div class="mt-3 flex gap-2">
-                <input id="reportFrom" type="date" class="rounded-md border border-border bg-background px-3 py-1.5 text-sm">
-                <input id="reportTo" type="date" class="rounded-md border border-border bg-background px-3 py-1.5 text-sm">
-                <button id="refreshFinanceChart" type="button" class="rounded-md border border-border px-3 py-1.5 text-sm font-semibold">Refresh</button>
+        <details class="rounded-md border border-border bg-card">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-sm font-semibold select-none hover:bg-muted/40 transition-colors">
+                <div>
+                    <span>Finance activity</span>
+                    <p class="mt-1 text-xs font-normal text-muted-foreground">Confirmed receipts and financial corrections in the reporting currency.</p>
+                </div>
+                <svg class="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200 details-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </summary>
+            <div class="border-t border-border p-5">
+                <div class="flex gap-2">
+                    <input id="reportFrom" type="date" class="rounded-md border border-border bg-background px-3 py-1.5 text-sm">
+                    <input id="reportTo" type="date" class="rounded-md border border-border bg-background px-3 py-1.5 text-sm">
+                    <button id="refreshFinanceChart" type="button" class="rounded-md border border-border px-3 py-1.5 text-sm font-semibold">Refresh</button>
+                </div>
+                <div class="mt-5 h-72"><canvas id="financeActivityChart"></canvas></div>
             </div>
-            <div class="mt-5 h-72"><canvas id="financeActivityChart"></canvas></div>
-        </section>
+        </details>
     @endif
 
     @if($financeTablesReady)
-        <section class="rounded-md border border-border bg-card p-5" x-data="{ clientId: '', summary: null, loading: false }">
-            <h3 class="font-semibold">Client finance lookup</h3>
-            <p class="mt-1 text-sm text-muted-foreground">Load derived purchase metrics from confirmed payments and refunds.</p>
-            <div class="mt-4 flex max-w-lg gap-2">
-                <input x-model="clientId" type="number" min="1" placeholder="Client ID" class="w-full rounded-md border border-border bg-background px-3 py-2">
-                <button @click="loading = true; fetch(`/admin/finance/clients/${clientId}/summary`, {headers:{Accept:'application/json'}}).then(r => r.json()).then(data => summary = data).finally(() => loading = false)" class="rounded-md border border-border px-4 py-2 text-sm font-semibold">Load</button>
+        <details class="rounded-md border border-border bg-card">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-sm font-semibold select-none hover:bg-muted/40 transition-colors">
+                <div>
+                    <span>Client finance lookup</span>
+                    <p class="mt-1 text-xs font-normal text-muted-foreground">Load derived purchase metrics from confirmed payments and refunds.</p>
+                </div>
+                <svg class="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200 details-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </summary>
+            <div class="border-t border-border p-5" x-data="{ clientId: '', summary: null, loading: false }">
+                <div class="flex max-w-lg gap-2">
+                    <input x-model="clientId" type="number" min="1" placeholder="Client ID" class="w-full rounded-md border border-border bg-background px-3 py-2">
+                    <button @click="loading = true; fetch(`/admin/finance/clients/${clientId}/summary`, {headers:{Accept:'application/json'}}).then(r => r.json()).then(data => summary = data).finally(() => loading = false)" class="rounded-md border border-border px-4 py-2 text-sm font-semibold">Load</button>
+                </div>
+                <template x-if="summary"><div class="mt-4 grid gap-3 sm:grid-cols-3 text-sm"><div><span class="text-muted-foreground">Lifetime spend</span><p class="font-semibold" x-text="summary.lifetime_spend"></p></div><div><span class="text-muted-foreground">Paid orders</span><p class="font-semibold" x-text="summary.total_orders"></p></div><div><span class="text-muted-foreground">Average order</span><p class="font-semibold" x-text="summary.average_order_value"></p></div></div></template>
             </div>
-            <template x-if="summary"><div class="mt-4 grid gap-3 sm:grid-cols-3 text-sm"><div><span class="text-muted-foreground">Lifetime spend</span><p class="font-semibold" x-text="summary.lifetime_spend"></p></div><div><span class="text-muted-foreground">Paid orders</span><p class="font-semibold" x-text="summary.total_orders"></p></div><div><span class="text-muted-foreground">Average order</span><p class="font-semibold" x-text="summary.average_order_value"></p></div></div></template>
-        </section>
+        </details>
     @endif
 
     @if($financeTablesReady && (auth()->user()->isSuperAdmin() || auth()->user()->hasPermission('record_payments')))
-        <section class="rounded-md border border-border bg-card p-5" x-data="{ orderId: '' }">
-            <h3 class="font-semibold">Record payment</h3>
-            <p class="mt-1 text-sm text-muted-foreground">Creates a pending payment; a separate authorized user confirms it.</p>
-            <form class="mt-4 grid gap-3 md:grid-cols-3" :action="`/admin/finance/orders/${orderId}/payments`" method="POST">
-                @csrf
-                <input x-model="orderId" type="number" min="1" required placeholder="Order ID" class="rounded-md border border-border bg-background px-3 py-2">
-                <input name="amount" type="number" min="0.01" step="0.01" required placeholder="Order currency amount" class="rounded-md border border-border bg-background px-3 py-2">
-                <input name="reporting_amount" type="number" min="0.01" step="0.01" required placeholder="Reporting amount" class="rounded-md border border-border bg-background px-3 py-2">
-                <input name="reporting_exchange_rate" type="number" min="0.00000001" step="0.00000001" value="1" required class="rounded-md border border-border bg-background px-3 py-2">
-                <input name="currency" maxlength="3" placeholder="Currency (e.g. USD)" class="rounded-md border border-border bg-background px-3 py-2">
-                <select name="method" required class="rounded-md border border-border bg-background px-3 py-2"><option value="">Payment method</option><option>Bank transfer</option><option>PayPal</option><option>Card</option><option>Cash</option></select>
-                <input name="reference" placeholder="Transaction reference" class="rounded-md border border-border bg-background px-3 py-2">
-                <input name="received_on" type="date" value="{{ now()->toDateString() }}" required class="rounded-md border border-border bg-background px-3 py-2">
-                <button class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Record payment</button>
-            </form>
-        </section>
+        <details class="rounded-md border border-border bg-card">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-sm font-semibold select-none hover:bg-muted/40 transition-colors">
+                <div>
+                    <span>Record payment</span>
+                    <p class="mt-1 text-xs font-normal text-muted-foreground">Creates a pending payment; a separate authorized user confirms it.</p>
+                </div>
+                <svg class="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200 details-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </summary>
+            <div class="border-t border-border p-5" x-data="{ orderId: '' }">
+                <form class="grid gap-3 md:grid-cols-3" :action="`/admin/finance/orders/${orderId}/payments`" method="POST">
+                    @csrf
+                    <input x-model="orderId" type="number" min="1" required placeholder="Order ID" class="rounded-md border border-border bg-background px-3 py-2">
+                    <input name="amount" type="number" min="0.01" step="0.01" required placeholder="Order currency amount" class="rounded-md border border-border bg-background px-3 py-2">
+                    <input name="reporting_amount" type="number" min="0.01" step="0.01" required placeholder="Reporting amount" class="rounded-md border border-border bg-background px-3 py-2">
+                    <input name="reporting_exchange_rate" type="number" min="0.00000001" step="0.00000001" value="1" required class="rounded-md border border-border bg-background px-3 py-2">
+                    <input name="currency" maxlength="3" placeholder="Currency (e.g. USD)" class="rounded-md border border-border bg-background px-3 py-2">
+                    <select name="method" required class="rounded-md border border-border bg-background px-3 py-2"><option value="">Payment method</option><option>Bank transfer</option><option>PayPal</option><option>Card</option><option>Cash</option></select>
+                    <input name="reference" placeholder="Transaction reference" class="rounded-md border border-border bg-background px-3 py-2">
+                    <input name="received_on" type="date" value="{{ now()->toDateString() }}" required class="rounded-md border border-border bg-background px-3 py-2">
+                    <button class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Record payment</button>
+                </form>
+            </div>
+        </details>
     @endif
 
     <section class="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.8fr)]">
@@ -207,6 +251,16 @@
         </aside>
     </div>
 </div>
+
+<style>
+    /* Hide the default details marker across browsers */
+    details summary::-webkit-details-marker { display: none; }
+
+    /* Rotate the chevron when the details element is open */
+    details[open] > summary .details-chevron {
+        transform: rotate(180deg);
+    }
+</style>
 @endsection
 
 @section('scripts')

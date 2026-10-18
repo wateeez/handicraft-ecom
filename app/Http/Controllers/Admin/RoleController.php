@@ -10,6 +10,11 @@ use Illuminate\Http\Request;
 class RoleController extends Controller
 {
     /**
+     * Roles shipped with the application that cannot be deleted.
+     */
+    private const PROTECTED_ROLES = ['super_admin', 'admin', 'editor', 'viewer', 'operations_staff', 'finance'];
+
+    /**
      * Display a listing of roles.
      */
     public function index()
@@ -23,7 +28,7 @@ class RoleController extends Controller
      */
     public function create()
     {
-        $permissions = Permission::all();
+        $permissions = $this->assignablePermissions();
         return view('admin.roles.create', compact('permissions'));
     }
 
@@ -39,6 +44,8 @@ class RoleController extends Controller
             'permissions' => ['array'],
             'permissions.*' => ['exists:permissions,id'],
         ]);
+
+        $this->ensurePermissionsAssignable($validated['permissions'] ?? []);
 
         $role = Role::create([
             'name' => $validated['name'],
@@ -74,9 +81,11 @@ class RoleController extends Controller
             abort(403, 'Super Admin role cannot be edited.');
         }
 
-        $permissions = Permission::all();
+        $this->ensureRoleEditable($role);
+
+        $permissions = $this->assignablePermissions();
         $role->load('permissions');
-        
+
         return view('admin.roles.edit', compact('role', 'permissions'));
     }
 
@@ -90,12 +99,16 @@ class RoleController extends Controller
             abort(403, 'Super Admin role cannot be edited.');
         }
 
+        $this->ensureRoleEditable($role);
+
         $validated = $request->validate([
             'display_name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'permissions' => ['array'],
             'permissions.*' => ['exists:permissions,id'],
         ]);
+
+        $this->ensurePermissionsAssignable($validated['permissions'] ?? []);
 
         $role->update([
             'display_name' => $validated['display_name'],
@@ -119,8 +132,16 @@ class RoleController extends Controller
             abort(403, 'Super Admin role cannot be deleted.');
         }
 
-        // Detach related users and permissions to allow deletion
-        $role->users()->detach();
+        if (in_array($role->name, self::PROTECTED_ROLES, true)) {
+            return back()->with('error', 'Built-in roles cannot be deleted.');
+        }
+
+        $this->ensureRoleEditable($role);
+
+        if ($role->users()->exists()) {
+            return back()->with('error', 'Reassign the users of this role before deleting it.');
+        }
+
         $role->permissions()->detach();
 
         $role->delete();
@@ -128,5 +149,34 @@ class RoleController extends Controller
         return redirect()
             ->route('admin.roles.index')
             ->with('success', 'Role deleted successfully.');
+    }
+
+    /**
+     * Permissions the acting admin may hand out: only ones they hold themselves.
+     */
+    private function assignablePermissions()
+    {
+        $held = auth()->user()->permissionNames();
+
+        return Permission::all()->filter(fn (Permission $p) => in_array($p->name, $held, true))->values();
+    }
+
+    /**
+     * Abort unless every submitted permission id is one the acting admin holds.
+     */
+    private function ensurePermissionsAssignable(array $permissionIds): void
+    {
+        $held = auth()->user()->permissionNames();
+        $names = Permission::whereIn('id', $permissionIds)->pluck('name')->all();
+
+        abort_unless(count(array_diff($names, $held)) === 0, 403, 'You cannot grant permissions you do not hold.');
+    }
+
+    /**
+     * Abort if the role contains permissions the acting admin does not hold.
+     */
+    private function ensureRoleEditable(Role $role): void
+    {
+        abort_unless(auth()->user()->canGrantRole($role), 403, 'You cannot modify a role with permissions you do not hold.');
     }
 }
