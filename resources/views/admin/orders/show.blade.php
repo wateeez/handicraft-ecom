@@ -399,7 +399,7 @@
                                             <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide {{ $payment->status === 'confirmed' ? 'bg-emerald-100 text-emerald-800' : ($payment->status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700') }}">{{ $payment->status }}</span>
                                         </div>
                                         <div class="text-xs text-truffle-extra-dark/70">
-                                            Reporting amount: {{ \App\Models\FinanceSetting::query()->value('reporting_currency') ?? 'USD' }} {{ number_format((float) $payment->reporting_amount, 2) }}
+                                            Reporting amount: {{ \App\Models\FinanceSetting::query()->value('reporting_currency') ?? 'NPR' }} {{ number_format((float) $payment->reporting_amount, 2) }}
                                             <span class="mx-1">·</span>
                                             Recorded by {{ $payment->recordedBy?->name ?? 'System' }}
                                         </div>

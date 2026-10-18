@@ -16,6 +16,7 @@ use App\Models\Payment;
 use App\Models\Refund;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class FinanceService
@@ -71,7 +72,7 @@ class FinanceService
 
             $this->audit('payment_confirmed', $order, $payment, $user, ['status' => 'pending'], ['status' => 'confirmed']);
             $this->ledger($order, $payment, 'payment_confirmed', $payment->amount, $payment->reporting_amount, $payment->reporting_exchange_rate);
-            $this->logNotification($order, 'payment_received');
+            DB::afterCommit(fn () => $this->logNotification($order, 'payment_received'));
 
             $netReceipts = (float) Payment::query()
                 ->where('order_id', $order->id)
@@ -117,6 +118,7 @@ class FinanceService
 
             // The payment follows the invoice's pricing, not whatever the order currently holds.
             $amount = $invoiceTotal;
+            $reportingRate = $this->reportingRate((string) $order->currency);
             $payment = Payment::create([
                 'order_id' => $order->id,
                 'invoice_id' => $invoice->id,
@@ -125,8 +127,8 @@ class FinanceService
                 'confirmed_by' => $user?->id,
                 'amount' => $amount,
                 'currency' => $order->currency,
-                'reporting_amount' => $amount,
-                'reporting_exchange_rate' => 1,
+                'reporting_amount' => bcmul((string) $amount, $reportingRate, 2),
+                'reporting_exchange_rate' => $reportingRate,
                 'method' => $method,
                 'reference' => $reference,
                 'received_on' => now()->toDateString(),
@@ -137,7 +139,7 @@ class FinanceService
 
             $this->audit('payment_auto_recorded', $order, $payment, $user, [], $payment->only(['amount', 'currency', 'method', 'reference']));
             $this->ledger($order, $payment, 'payment_confirmed', $payment->amount, $payment->reporting_amount, $payment->reporting_exchange_rate);
-            $this->logNotification($order, 'payment_received');
+            DB::afterCommit(fn () => $this->logNotification($order, 'payment_received'));
 
             if ($order->is_paid) {
                 $this->initializeSettledOrderFinance($order);
@@ -146,6 +148,25 @@ class FinanceService
 
             return $payment;
         });
+    }
+
+    /**
+     * Rate that converts an order-currency amount into the reporting currency (NPR).
+     * Refuses to guess: with no rate available the whole operation fails and rolls back.
+     */
+    private function reportingRate(string $orderCurrency): string
+    {
+        $reporting = (string) (FinanceSetting::query()->value('reporting_currency') ?? 'NPR');
+        if (strtoupper($orderCurrency) === strtoupper($reporting)) {
+            return '1';
+        }
+
+        $rate = app(\App\Contracts\ForexRateProvider::class)->currentRate();
+        if ($rate === null || bccomp($rate, '0', 8) <= 0) {
+            throw ValidationException::withMessages(['payment' => "No {$orderCurrency}→{$reporting} exchange rate is available right now. Try again, or record the payment manually with a rate."]);
+        }
+
+        return $rate;
     }
 
     /**
@@ -318,12 +339,17 @@ class FinanceService
                 return;
             }
 
-            OrderNotification::create([
-                'order_id' => $order->id,
-                'notifiable_email' => $email,
-                'channel' => 'email',
-                'event_type' => $eventType,
-                'status' => 'queued',
-            ]);
+            // Runs after the money records are committed; a notification problem must never undo a payment.
+            try {
+                OrderNotification::create([
+                    'order_id' => $order->id,
+                    'notifiable_email' => $email,
+                    'channel' => 'email',
+                    'event_type' => $eventType,
+                    'status' => 'queued',
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('Finance: could not log order notification', ['order_id' => $order->id, 'event' => $eventType, 'error' => $e->getMessage()]);
+            }
     }
 }

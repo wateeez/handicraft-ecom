@@ -311,10 +311,16 @@ class OrderController extends Controller
         }
 
         try {
-            $this->orderService->markAsPaid($order, auth()->user());
-            app(\App\Services\FinanceService::class)->recordSettledPayment($order->fresh(), 'cash', null, auth()->user());
+            // All or nothing: the order is only left paid if its payment and ledger entry were recorded too.
+            \Illuminate\Support\Facades\DB::transaction(function () use ($order) {
+                $this->orderService->markAsPaid($order, auth()->user());
+                app(\App\Services\FinanceService::class)->recordSettledPayment($order->fresh(), 'cash', null, auth()->user());
+            });
             return back()->with('success', 'Order marked as paid. Financials are now locked.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->with('error', collect($e->errors())->flatten()->first());
         } catch (\Exception $e) {
+            report($e);
             return back()->with('error', $e->getMessage());
         }
     }

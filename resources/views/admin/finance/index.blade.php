@@ -13,7 +13,7 @@
 @section('content')
 @php
     $user = auth()->user();
-    $currency = $financeSettings->reporting_currency ?? 'USD';
+    $currency = $financeSettings->reporting_currency ?? 'NPR';
     $money = fn ($v, $c = null) => ($c ?: $currency) . ' ' . number_format((float) $v, 2);
     $maxAging = max(1, collect($outstandingAging)->max('balance') ?? 1);
     $netReceipts = (float) $receiptSummary['receipts'] - (float) $receiptSummary['refunds'] - (float) $receiptSummary['reversals'];
