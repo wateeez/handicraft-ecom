@@ -23,7 +23,6 @@ use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\InvoiceController;
 use App\Http\Controllers\Admin\FinanceController;
 use App\Http\Controllers\Admin\FinancePaymentController;
-use App\Http\Controllers\Admin\DistributorPayoutController;
 use App\Http\Controllers\Admin\CommissionPayoutController;
 
 /*
@@ -84,8 +83,23 @@ Route::middleware(['auth', 'viewer.readonly'])->prefix('admin')->name('admin.')-
     Route::middleware('permission:confirm_payments')->post('finance/payments/{payment}/confirm', [FinancePaymentController::class, 'confirm'])->name('finance.payments.confirm');
     Route::middleware('permission:confirm_payments')->post('finance/payments/{payment}/reverse', [FinancePaymentController::class, 'reverse'])->name('finance.payments.reverse');
     Route::middleware('permission:confirm_payments')->post('finance/refunds/{refund}/confirm', [FinancePaymentController::class, 'confirmRefund'])->name('finance.refunds.confirm');
-    Route::middleware('permission:manage_finance')->post('finance/distributor-payouts', [DistributorPayoutController::class, 'store'])->name('finance.distributor-payouts.store');
     Route::middleware('permission:manage_finance')->post('finance/commission-payouts', [CommissionPayoutController::class, 'store'])->name('finance.commission-payouts.store');
+    // Order profit & commission, vendors, and rates
+    Route::middleware('permission:view_finance,manage_finance')->group(function () {
+        Route::get('finance/rates', [\App\Http\Controllers\Admin\FinanceRateSettingController::class, 'edit'])->name('finance.rates.edit');
+        Route::get('finance/orders/{order}/profit', [\App\Http\Controllers\Admin\OrderProfitController::class, 'show'])->name('finance.orders.profit.show');
+    });
+    Route::middleware('permission:manage_finance')->group(function () {
+        Route::put('finance/rates', [\App\Http\Controllers\Admin\FinanceRateSettingController::class, 'update'])->name('finance.rates.update');
+        Route::post('finance/orders/{order}/payouts', [\App\Http\Controllers\Admin\OrderPayoutController::class, 'store'])->name('finance.orders.payouts.store');
+        Route::post('finance/payouts/bulk', [\App\Http\Controllers\Admin\BulkPayoutController::class, 'store'])->name('finance.payouts.bulk');
+        Route::post('finance/forex-rate/refresh', [\App\Http\Controllers\Admin\OrderProfitController::class, 'refreshForex'])->name('finance.forex.refresh');
+        Route::post('finance/orders/{order}/profit', [\App\Http\Controllers\Admin\OrderProfitController::class, 'store'])->name('finance.orders.profit.store');
+        Route::patch('finance/vendors/{vendor}/toggle', [\App\Http\Controllers\Admin\VendorController::class, 'toggle'])->name('finance.vendors.toggle');
+        Route::resource('finance/vendors', \App\Http\Controllers\Admin\VendorController::class)
+            ->except(['show'])
+            ->names('finance.vendors');
+    });
     Route::middleware('permission:manage_settings')->group(function () {
         Route::post('/maintenance/toggle', [DashboardController::class, 'toggleMaintenance'])->name('maintenance.toggle');
         Route::post('/verify-password', [DashboardController::class, 'verifyPassword'])->name('verify-password');

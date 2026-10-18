@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             DemoUsersSeeder::class,
             OmsSeeder::class,
+            ProfitSettingsSeeder::class,
         ]);
 
         if (!User::where('email', 'admin@ecom.com')->exists()) {

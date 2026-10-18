@@ -15,7 +15,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(\App\Contracts\ForexRateProvider::class, match (config('services.forex.driver')) {
+            'manual' => \App\Services\Finance\ManualForexRateProvider::class,
+            'nrb' => \App\Services\Finance\NrbForexRateProvider::class,
+            default => \App\Services\Finance\ApiForexRateProvider::class,
+        });
     }
 
     /**

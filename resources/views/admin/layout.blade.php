@@ -244,20 +244,33 @@
                     </ul>
                 </div>
                 @if (Route::has('admin.finance.index'))
-                    <div>
-                        <div class="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/40 font-sans">
-                            Finance
+                    @php($authUser = auth()->user())
+                    @php($canViewFinance = $authUser->hasAnyPermission(['view_finance', 'manage_finance']))
+                    @php($canManageFinance = $authUser->hasPermission('manage_finance'))
+                    @php($canViewOverview = $authUser->hasPermission('view_finance'))
+                    @php($financeLinks = array_values(array_filter([
+                            $canViewOverview ? ['Overview', 'admin.finance.index', 'M12 8c-2 0-3.5.8-3.5 2s1.5 2 3.5 2 3.5.8 3.5 2-1.5 2-3.5 2m0-8V6m0 12v-2m8-4a8 8 0 11-16 0 8 8 0 0116 0z', ['admin.finance.index', 'admin.finance.report-summary', 'admin.finance.orders.*']] : null,
+                            $canManageFinance ? ['Vendors', 'admin.finance.vendors.index', 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4', ['admin.finance.vendors.*']] : null,
+                        ])))
+                    @if (count($financeLinks))
+                        <div>
+                            <div class="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/40 font-sans">
+                                Finance
+                            </div>
+                            <ul class="space-y-1">
+                                @foreach ($financeLinks as [$label, $routeName, $icon, $patterns])
+                                    @php($active = request()->routeIs(...$patterns))
+                                    <li>
+                                        <a href="{{ route($routeName) }}" @if($active) aria-current="page" @endif
+                                            class="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 {{ $active ? 'bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm' : 'text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent' }}">
+                                            <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $icon }}"/></svg>
+                                            <span>{{ $label }}</span>
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
                         </div>
-                        <ul class="space-y-1">
-                            <li>
-                                <a href="{{ route('admin.finance.index') }}"
-                                    class="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.finance.*') ? 'bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm' : 'text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent' }}">
-                                    <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-2 0-3.5.8-3.5 2s1.5 2 3.5 2 3.5.8 3.5 2-1.5 2-3.5 2m0-8V6m0 12v-2m8-4a8 8 0 11-16 0 8 8 0 0116 0z"/></svg>
-                                    <span>Finance</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+                    @endif
                 @endif
             </nav>
 

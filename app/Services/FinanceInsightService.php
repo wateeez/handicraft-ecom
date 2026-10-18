@@ -48,4 +48,24 @@ class FinanceInsightService
                 'balance' => $orders->sum(fn (Order $order) => (float) $order->grand_total - (float) $order->net_paid),
             ])->all();
     }
+
+    /**
+     * The largest unpaid or partly paid orders, with their outstanding balance.
+     */
+    public function outstandingOrders(int $limit = 8): \Illuminate\Support\Collection
+    {
+        return Order::query()
+            ->where('type', Order::TYPE_ORDER)
+            ->whereNotIn('status', [Order::STATUS_CANCELLED, Order::STATUS_REFUNDED])
+            ->with('client:id,name')
+            ->selectRaw('orders.*,
+                COALESCE((SELECT SUM(payments.amount) FROM payments WHERE payments.order_id = orders.id AND payments.status = "confirmed" AND payments.deleted_at IS NULL), 0)
+                - COALESCE((SELECT SUM(refunds.amount) FROM refunds WHERE refunds.order_id = orders.id AND refunds.status = "confirmed" AND refunds.deleted_at IS NULL), 0) AS net_paid')
+            ->get()
+            ->filter(fn (Order $order) => (float) $order->net_paid < (float) $order->grand_total)
+            ->each(fn (Order $order) => $order->setAttribute('balance', bcsub((string) $order->grand_total, (string) $order->net_paid, 2)))
+            ->sortByDesc(fn (Order $order) => (float) $order->balance)
+            ->take($limit)
+            ->values();
+    }
 }

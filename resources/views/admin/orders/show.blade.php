@@ -187,27 +187,27 @@
                                     </td>
                                     <td class="px-6 py-4 text-right">
                                         @php $netPrice = $item->quantity > 0 ? $item->line_total / $item->quantity : $item->unit_price; @endphp
-                                        ${{ number_format($netPrice, 2) }}
+                                        {{ $order->currency ?? 'USD' }} {{ number_format($netPrice, 2) }}
                                         @if($item->option_price > 0)
                                             <div class="text-[10px] text-truffle-extra-dark/70">
-                                                base: ${{ number_format($item->base_unit_price, 2) }} + option:
-                                                ${{ number_format($item->option_price, 2) }}
+                                                base: {{ $order->currency ?? 'USD' }} {{ number_format($item->base_unit_price, 2) }} + option:
+                                                {{ $order->currency ?? 'USD' }} {{ number_format($item->option_price, 2) }}
                                             </div>
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 text-center font-medium">{{ $item->quantity }}</td>
                                     <td class="px-6 py-4 text-right">
                                         @if($item->item_discount_amount > 0)
-                                            <div class="text-red-500">Ref: -${{ number_format($item->item_discount_amount, 2) }}</div>
+                                            <div class="text-red-500">Ref: -{{ $order->currency ?? 'USD' }} {{ number_format($item->item_discount_amount, 2) }}</div>
                                             <div class="text-[10px] text-truffle-extra-dark/70">
-                                                orig: ${{ number_format($item->unit_price, 2) }}
+                                                orig: {{ $order->currency ?? 'USD' }} {{ number_format($item->unit_price, 2) }}
                                             </div>
                                         @else
                                             <span class="text-gray-300">-</span>
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 text-right font-semibold text-truffle-extra-dark">
-                                        ${{ number_format($item->line_total, 2) }}</td>
+                                        {{ $order->currency ?? 'USD' }} {{ number_format($item->line_total, 2) }}</td>
                                     @if($order->isReturnEligible())
                                         <td class="px-6 py-4 text-center" x-data="{ open: false }">
                                             @php
@@ -274,22 +274,22 @@
                     <div class="w-full max-w-sm space-y-2 text-sm">
                         <div class="flex justify-between text-truffle-extra-dark font-medium">
                             <span>Subtotal (Net)</span>
-                            <span>${{ number_format($order->subtotal, 2) }}</span>
+                            <span>{{ $order->currency ?? 'USD' }} {{ number_format($order->subtotal, 2) }}</span>
                         </div>
                         @if($order->order_discount_amount > 0)
                             <div class="flex justify-between text-red-500">
                                 <span>Order Discount
                                     ({{ $order->order_discount_type === 'percent' ? $order->order_discount_value . '%' : 'Fixed' }})</span>
-                                <span>-${{ number_format($order->order_discount_amount, 2) }}</span>
+                                <span>-{{ $order->currency ?? 'USD' }} {{ number_format($order->order_discount_amount, 2) }}</span>
                             </div>
                         @endif
                         <div class="flex justify-between text-truffle-extra-dark pb-2 border-b border-truffle-medium/30">
                             <span>Shipping Cost</span>
-                            <span>+${{ number_format($order->shipping_cost, 2) }}</span>
+                            <span>+{{ $order->currency ?? 'USD' }} {{ number_format($order->shipping_cost, 2) }}</span>
                         </div>
                         <div class="flex justify-between text-lg font-bold text-truffle-extra-dark">
                             <span>Grand Total</span>
-                            <span>${{ number_format($order->grand_total, 2) }}</span>
+                            <span>{{ $order->currency ?? 'USD' }} {{ number_format($order->grand_total, 2) }}</span>
                         </div>
                     </div>
                 </div>
@@ -363,6 +363,10 @@
             {{-- Right Column (Sidebar) --}}
             <div class="space-y-6">
 
+                @if(auth()->user()->hasAnyPermission(['view_finance', 'manage_finance']) && $order->type === \App\Models\Order::TYPE_ORDER)
+                    <a href="{{ route('admin.finance.orders.profit.show', $order) }}" class="block rounded-md border border-truffle-medium/30 bg-white px-5 py-3 text-sm font-semibold text-green-premium hover:bg-[#F5F2EA]">Profit &amp; commission &rarr;</a>
+                @endif
+
                 @if(auth()->user()->hasPermission('view_finance') || auth()->user()->hasPermission('record_payments') || auth()->user()->hasPermission('confirm_payments'))
                     @php
                         $financePayments = $order->payments()->with(['recordedBy', 'confirmedBy'])->latest()->get();
@@ -395,7 +399,7 @@
                                             <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide {{ $payment->status === 'confirmed' ? 'bg-emerald-100 text-emerald-800' : ($payment->status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700') }}">{{ $payment->status }}</span>
                                         </div>
                                         <div class="text-xs text-truffle-extra-dark/70">
-                                            Reporting amount: {{ number_format((float) $payment->reporting_amount, 2) }}
+                                            Reporting amount: {{ \App\Models\FinanceSetting::query()->value('reporting_currency') ?? 'USD' }} {{ number_format((float) $payment->reporting_amount, 2) }}
                                             <span class="mx-1">·</span>
                                             Recorded by {{ $payment->recordedBy?->name ?? 'System' }}
                                         </div>

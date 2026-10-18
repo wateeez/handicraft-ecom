@@ -43,4 +43,15 @@ return [
         'mode' => env('PAYPAL_MODE', 'sandbox'),
     ],
 
+    'forex' => [
+        'driver' => env('FOREX_DRIVER', 'nrb'),
+        'key' => env('FOREX_API_KEY'),
+        // exchangerate-api.com v6; {key} is replaced by FOREX_API_KEY. Without a key the free open endpoint is used.
+        'url' => env('FOREX_API_URL', 'https://v6.exchangerate-api.com/v6/{key}/latest/USD'),
+        'open_url' => 'https://open.er-api.com/v6/latest/USD',
+        // driver=nrb: official Nepal Rastra Bank USD sell rate, no key needed.
+        'nrb_url' => env('FOREX_NRB_URL', 'https://www.nrb.org.np/api/forex/v1/rates'),
+        'cache_seconds' => env('FOREX_CACHE_SECONDS', 3600),
+    ],
+
 ];

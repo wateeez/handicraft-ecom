@@ -40,3 +40,56 @@ For adding new product use below table format:
 
 For webpage Design:
 e-commerce store logo is displayed(logo is place by admin dashboard) The website's top section features the store name "store -name," followed by navigation links: "Products," "Blog," and Below this, there's a search bar and a cart icon with an admin profile link in the top right corner. The central area showcases product listings under the heading "All Products," with a subtitle indicating the number of products displayed. Three product cards are visible: Beneath each card are details like the product name, status, and price. On the left side, there's a category filter box. The overall color scheme is light, featuring a combination of cream, beige, and touches of green and gold. The style is clean and modern, typical of a professional e-commerce site. The perspective is a direct, eye-level shot.
+## Order profit & commission (Finance)
+
+Open an order and use **Profit & commission** (needs `view_finance`; calculating needs `manage_finance`).
+Each calculation is stored as an immutable, versioned snapshot in `order_finance_snapshots`, with every input and
+rate used. Changing rates or vendors later never alters old snapshots; **Recalculate** adds a new version.
+
+### Formulas
+All percentages are in percent units. USD ➜ NPR uses the forex rate entered on the order (NPR per USD).
+
+| # | Value | Formula |
+|---|-------|---------|
+| 1 | selling price (USD) | product price + shipping |
+| 2 | gateway fee (USD) | selling price × gateway fee % (default 14) |
+| 3 | received (USD) | selling price − gateway fee |
+| 4 | received (NPR) | received USD × forex |
+| 5 | vendor cost | MRP = product price × forex; cost price = MRP × vendor cost %; vendor commission = cost price × vendor commission % (cost price only, not MRP); vendor total = cost price + commission |
+| 6 | balance after vendor | received NPR − vendor total |
+| 7 | commission base (USD) | product + shipping if *include shipping in commission* is on, else product only |
+| 8 | CSR | base × CSR % (default 4), × forex for NPR |
+| 9 | data entry | base × data entry % (default 10); NPR rate = forex if forex ≥ threshold (default 200), else the fixed rate (default 150) |
+| 10 | leftover | balance after vendor − CSR − data entry |
+| 11 | net profit | leftover − actual shipping cost (NPR, optional, default 0) |
+
+**Rounding:** the math (`App\Services\Finance\OrderFinanceCalculator`, pure, no DB) uses bcmath, never floats.
+Each money line is rounded half-up (away from zero) to 2 decimals when it becomes a result line, and later lines are
+derived from those rounded values, so the breakdown always adds up to the cent.
+
+### Changing rates
+- **Finance ➜ Profit rates** (`/admin/finance/rates`): gateway fee, CSR %, data entry %, fixed rate, threshold, and
+  the include-shipping switch. Stored in `finance_rate_settings` (cached; cache is cleared on save). Defaults are in
+  `FinanceRateRepository::DEFAULTS` and seeded by `ProfitSettingsSeeder`.
+- **Finance ➜ Vendors** (`/admin/finance/vendors`): per-vendor cost price % and commission %. HME is seeded at 50% / 20%.
+  Deactivated or deleted vendors cannot be chosen for new calculations; past snapshots keep the name and rates used.
+- **Forex:** pre-filled from Nepal Rastra Bank's official USD **sell** rate (`NrbForexRateProvider`, `FOREX_DRIVER=nrb`,
+  cached `FOREX_CACHE_SECONDS`). The admin can still override it per calculation; if NRB is unreachable, the last
+  confirmed rate is used. Other drivers: `api` (exchangerate-api.com) and `manual`.
+
+### Tests
+`tests/Unit/OrderFinanceCalculatorTest.php` needs no database. `tests/Feature/OrderProfitSnapshotTest.php` needs one:
+the default `phpunit.xml` uses SQLite (`pdo_sqlite`); without it run against a scratch MySQL database:
+
+    DB_CONNECTION=mysql DB_DATABASE=ecom_test php artisan test
+
+### Vendors and payouts
+Vendors are the single "who we buy from and pay" record (the old `distributors` tables were merged into `vendors`).
+Once an order is paid and has a profit snapshot, `OrderPayoutService::sync` keeps three rows in `order_payables`
+(one per payee type, all NPR): **vendor** = vendor total, **csr** = CSR NPR, **data_entry** = data entry NPR.
+Recalculating a paid order moves these amounts, but never below what has already been paid (the recalculation is
+rejected and rolled back).
+
+Payments are stored one row at a time in `payout_payments` (vendor payments, CSR payments, data entry payments),
+recorded from the order's **Profit & commission** page by anyone with `manage_finance`. Payments cannot exceed the
+outstanding balance, are append-only, and each one writes a finance audit-log entry.

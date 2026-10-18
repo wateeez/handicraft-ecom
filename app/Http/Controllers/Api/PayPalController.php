@@ -187,6 +187,17 @@ class PayPalController extends Controller
             ]);
         }
 
+        // Auto-record the settled payment in the finance ledger
+        try {
+            $captureId = data_get($capture, 'purchase_units.0.payments.captures.0.id') ?? $paypalOrderId;
+            app(\App\Services\FinanceService::class)->recordSettledPayment($order->fresh(), 'paypal', $captureId);
+        } catch (\Exception $e) {
+            Log::warning('PayPal: could not auto-record payment after capture', [
+                'order_id' => $order->id,
+                'error'    => $e->getMessage(),
+            ]);
+        }
+
         // Clear the session cart
         session()->forget('cart');
 

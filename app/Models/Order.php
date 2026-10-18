@@ -83,7 +83,7 @@ class Order extends Model
         'currency',
         'checkout_token',
         'client_id',
-        'distributor_id',
+        'vendor_id',
         'created_by',
         'status',
         'subtotal',
@@ -137,11 +137,6 @@ class Order extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
-    }
-
-    public function distributor(): BelongsTo
-    {
-        return $this->belongsTo(Distributor::class);
     }
 
     public function creator(): BelongsTo
@@ -209,9 +204,9 @@ class Order extends Model
         return $this->hasMany(Refund::class);
     }
 
-    public function distributorPayable(): HasOne
+    public function payables(): HasMany
     {
-        return $this->hasOne(DistributorPayable::class);
+        return $this->hasMany(OrderPayable::class);
     }
 
     public function commissionEntries(): HasMany
@@ -508,5 +503,15 @@ class Order extends Model
     public function getShippingProviderNameAttribute(): ?string
     {
         return $this->shippingProvider?->name;
+    }
+
+    public function vendor(): BelongsTo
+    {
+        return $this->belongsTo(Vendor::class)->withTrashed();
+    }
+
+    public function financeSnapshots(): HasMany
+    {
+        return $this->hasMany(OrderFinanceSnapshot::class)->orderByDesc('version');
     }
 }

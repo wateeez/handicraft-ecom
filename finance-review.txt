@@ -1,0 +1,99 @@
+FINANCE MODULE REVIEW
+=====================
+Scope: FinancePaymentController, FinanceService, CommissionService,
+DistributorPayoutService, FinanceInsightService, FinanceReportService,
+PaymentPolicy, payout controllers.
+Method: code reading only. Nothing was run and no finance code was changed.
+
+
+BROKEN
+------
+
+1. Reversing a payment always returns 403.
+   reverse() calls authorize('update', $payment). PaymentPolicy::update only
+   allows 'pending' payments, but only 'confirmed' payments can be reversed.
+   The "Reverse payment" button on the order page is a dead end.
+
+2. Confirming a payment needs the wrong permission.
+   The route requires confirm_payments, but the policy check inside also needs
+   record_payments. A user with only confirm_payments gets a 403.
+   Confirm and reverse need their own policy methods.
+
+3. A payment can be reversed more than once.
+   The original stays 'confirmed' and nothing checks for an existing reversal.
+   Each click adds another negative payment and ledger entry.
+
+4. Reversed payments still count as money received.
+   - A reversal is a separate row with status 'reversed'; the original stays
+     'confirmed'.
+   - Every total sums only 'confirmed' rows, so the reversal is never netted out.
+   - Affected: the order paid check in confirmPayment, invoice balances
+     (syncInvoiceRegister), the aging report, client lifetime spend, and the
+     dashboard "confirmed receipts".
+   - A reversed order stays is_paid, with its commission and payable intact.
+   - Refunds against an already-reversed payment are still allowed.
+
+5. Commission payouts always fail.
+   - CommissionService::calculate() creates entries with recipient_id = null and
+     nothing ever assigns a recipient.
+   - settle() requires entry.recipient_id to equal the chosen recipient, so
+     every allocation is rejected.
+   - Distributor side: distributor_share is hard-coded to 0, so those payables
+     are always zero.
+
+6. Refunds cannot be created.
+   No code creates a Refund, so confirmRefund has nothing to confirm.
+
+7. "Commission earned: on delivery" setting does nothing.
+   Nothing reads commission_earned_trigger, and entries never move from
+   'pending' to 'earned'.
+
+
+CONTROL AND INTEGRITY
+---------------------
+
+8. No separation of duties.
+   - The person who recorded a payment can confirm it.
+   - One person with manage_finance records and approves a payout in one step
+     (approved_by = recorded_by).
+   - confirmRefund overwrites recorded_by with the confirmer, losing the
+     original recorder.
+
+9. Marking an order paid bypasses finance.
+   orders/{order}/mark-paid needs only manage_orders. It sets is_paid with no
+   payment record, ledger entry, commission or payable.
+
+10. Payment inputs are not validated.
+    - invoice_id is not checked to belong to the order.
+    - The order is not checked to be open (cancelled orders accept payments).
+    - Overpayment is not rejected.
+    - reporting_amount is user-typed, not calculated from amount x rate.
+    - The paid check adds amounts in whatever currency was entered and compares
+      them to grand_total, so a payment in another currency can mark the order
+      paid.
+
+11. Payout currency is not checked.
+    The batch currency is not compared with the currency of the entries or
+    payables being paid. Batch totals are summed as floats.
+
+12. Smaller issues.
+    - Money is handled as float in paid checks and payout math.
+    - reporting_currency is not uppercased.
+    - updateSettings repeats the permission check the route already does.
+    - markAsPaid throws a bare Exception, so a double-pay race gives a 500.
+
+
+SUGGESTED FIX ORDER
+-------------------
+
+1. Fix the policy: separate confirm and reverse methods, no 'pending'
+   requirement on reverse.                                         (items 1, 2)
+2. Block double reversals and net them out everywhere (mark the original
+   'reversed' or sum signed amounts), then revert is_paid.        (items 3, 4)
+3. Add recipient and distributor-share assignment so payouts work. (item 5)
+4. Add separation of duties and input validation.          (items 8, 10, 11)
+5. Route mark-paid through the finance flow, or require confirm_payments.
+                                                                    (item 9)
+
+Needs a design decision first: items 5, 6 and 7 (recipient model, refund-entry
+flow, "earned on delivery" behaviour) do not exist yet.

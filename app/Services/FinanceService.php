@@ -3,11 +3,14 @@
 namespace App\Services;
 
 use App\Models\FinanceAuditLog;
+use App\Models\Invoice;
 use App\Models\FinancialLedgerEntry;
 use App\Models\FinanceInvoice;
 use App\Models\FinanceOrderSnapshot;
 use App\Models\FinanceSetting;
+use App\Services\Finance\OrderPayoutService;
 use App\Models\Order;
+use App\Models\OrderFinanceSnapshot;
 use App\Models\OrderNotification;
 use App\Models\Payment;
 use App\Models\Refund;
@@ -20,7 +23,7 @@ class FinanceService
     public function __construct(
         private readonly OrderService $orderService,
         private readonly CommissionService $commissionService,
-        private readonly DistributorPayoutService $distributorPayoutService,
+        private readonly OrderPayoutService $orderPayoutService,
     )
     {
     }
@@ -88,6 +91,77 @@ class FinanceService
 
             return $payment->fresh();
         });
+    }
+
+    /**
+     * Auto-record a payment that is already settled (PayPal capture, or an admin marking
+     * a cash order paid): creates a confirmed payment, its ledger entry and audit trail,
+     * and refreshes the invoice register. Idempotent — returns null when the order's
+     * confirmed receipts already cover the total or the reference was already recorded.
+     */
+    public function recordSettledPayment(Order $order, string $method, ?string $reference = null, ?User $user = null): ?Payment
+    {
+        return DB::transaction(function () use ($order, $method, $reference, $user) {
+            $order = Order::lockForUpdate()->findOrFail($order->id);
+
+            $invoice = $this->ensureIssuedInvoice($order, $user);
+            $invoiceTotal = (string) data_get($invoice->financial_snapshot, 'grand_total', $order->grand_total);
+
+            $confirmed = Payment::query()->where('order_id', $order->id)->where('status', 'confirmed');
+            if ($reference && (clone $confirmed)->where('reference', $reference)->exists()) {
+                return null;
+            }
+            if ((float) (clone $confirmed)->sum('amount') >= (float) $invoiceTotal) {
+                return null;
+            }
+
+            // The payment follows the invoice's pricing, not whatever the order currently holds.
+            $amount = $invoiceTotal;
+            $payment = Payment::create([
+                'order_id' => $order->id,
+                'invoice_id' => $invoice->id,
+                'client_id' => $order->client_id,
+                'recorded_by' => $user?->id,
+                'confirmed_by' => $user?->id,
+                'amount' => $amount,
+                'currency' => $order->currency,
+                'reporting_amount' => $amount,
+                'reporting_exchange_rate' => 1,
+                'method' => $method,
+                'reference' => $reference,
+                'received_on' => now()->toDateString(),
+                'status' => 'confirmed',
+                'confirmed_at' => now(),
+                'notes' => 'Auto-recorded on ' . ($method === 'paypal' ? 'PayPal capture.' : 'admin mark-as-paid.'),
+            ]);
+
+            $this->audit('payment_auto_recorded', $order, $payment, $user, [], $payment->only(['amount', 'currency', 'method', 'reference']));
+            $this->ledger($order, $payment, 'payment_confirmed', $payment->amount, $payment->reporting_amount, $payment->reporting_exchange_rate);
+            $this->logNotification($order, 'payment_received');
+
+            if ($order->is_paid) {
+                $this->initializeSettledOrderFinance($order);
+            }
+            $this->syncInvoiceRegister($order);
+
+            return $payment;
+        });
+    }
+
+    /**
+     * The order's live invoice, created and issued when missing so a settled payment always
+     * has an invoice to be recorded against.
+     */
+    private function ensureIssuedInvoice(Order $order, ?User $user): Invoice
+    {
+        $invoices = app(InvoiceService::class);
+        $invoice = $order->invoices()->whereIn('status', ['draft', 'issued'])->latest('id')->first();
+
+        if (!$invoice) {
+            return $invoices->generateInvoice($order, $user, 'issued');
+        }
+
+        return $invoice->status === 'draft' && $user ? $invoices->issueInvoice($invoice, $user) : $invoice;
     }
 
     public function confirmRefund(Refund $refund, User $user): Refund
@@ -161,12 +235,12 @@ class FinanceService
         });
     }
 
-    private function audit(string $action, Order $order, object $subject, User $user, array $oldValues, array $newValues): void
+    private function audit(string $action, Order $order, object $subject, ?User $user, array $oldValues, array $newValues): void
     {
         FinanceAuditLog::create([
             'order_id' => $order->id,
             'client_id' => $order->client_id,
-            'user_id' => $user->id,
+            'user_id' => $user?->id,
             'subject_type' => $subject::class,
             'subject_id' => $subject->id,
             'action_type' => $action,
@@ -220,10 +294,10 @@ class FinanceService
             $snapshot = FinanceOrderSnapshot::firstOrCreate(
                 ['order_id' => $order->id],
                 [
-                    'distributor_id' => $order->distributor_id,
+                    'vendor_id' => $order->vendor_id,
                     'currency' => $order->currency,
                     'reporting_exchange_rate' => 1,
-                    'distributor_share' => 0,
+                    'vendor_share' => OrderFinanceSnapshot::where('order_id', $order->id)->orderByDesc('version')->value('vendor_total_npr') ?? 0,
                     'commission_type' => $settings->default_commission_type,
                     'commission_value' => $settings->default_commission_value,
                     'commission_base' => $settings->commission_base,
@@ -234,9 +308,7 @@ class FinanceService
             );
 
             $this->commissionService->calculate($order);
-            if ($snapshot->distributor_id) {
-                $this->distributorPayoutService->createPayable($order);
-            }
+            $this->orderPayoutService->sync($order);
         }
 
     private function logNotification(Order $order, string $eventType): void
