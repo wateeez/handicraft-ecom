@@ -102,6 +102,7 @@ Route::middleware(['auth', 'viewer.readonly'])->prefix('admin')->name('admin.')-
     });
     Route::middleware('permission:manage_settings')->group(function () {
         Route::post('/maintenance/toggle', [DashboardController::class, 'toggleMaintenance'])->name('maintenance.toggle');
+        Route::post('/paypal/toggle', [DashboardController::class, 'togglePaypal'])->name('paypal.toggle');
         Route::post('/verify-password', [DashboardController::class, 'verifyPassword'])->name('verify-password');
     });
 

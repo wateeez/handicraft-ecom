@@ -39,11 +39,11 @@
     @stack('head')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link
-        href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Instrument+Sans:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <style>
         .site-header {
-            background-color: rgba(253, 251, 247, 0.85);
+            background-color: rgb(246 241 225 / 0.85);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border-color: var(--border, #e5e0d8);
@@ -66,7 +66,7 @@
         h2,
         h3,
         .serif {
-            font-family: 'Noto Serif', serif;
+            font-family: 'Cormorant Garamond', Garamond, Georgia, serif;
             text-wrap: balance;
         }
     </style>

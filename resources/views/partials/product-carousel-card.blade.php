@@ -50,10 +50,10 @@
 
         <!-- Content -->
         <div class="p-4 text-center">
-            <h3 class="text-sm font-serif font-bold text-truffle-extra-dark mb-2 truncate" title="{{ $product->name }}">
+            <h3 class="text-xl leading-tight font-serif font-bold text-truffle-extra-dark mb-2 truncate" title="{{ $product->name }}">
                 {{ $product->name }}
             </h3>
-            <div class="text-green-premium font-bold">
+            <div class="text-green-premium font-bold font-sans tabular-nums">
                 @if($product->discount_price)
                     <span class="text-truffle-extra-dark/70 line-through text-sm mr-1">${{ number_format($product->price, 2) }}</span>
                     <span class="text-lg">${{ number_format($product->discount_price, 2) }}</span>

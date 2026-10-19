@@ -231,7 +231,7 @@
                             class="fv-tab inline-flex items-center gap-2 px-4 py-3 text-sm font-semibold text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary"
                             aria-selected="{{ $key === 'overview' ? 'true' : 'false' }}">
                             {{ $label }}
-                            @if(($tabBadges[$key] ?? 0) > 0)<span class="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-900">{{ $tabBadges[$key] }}</span>@endif
+                            @if(($tabBadges[$key] ?? 0) > 0)<span class="rounded-full bg-amber-100 px-1.5 py-0.5 text-[11px] font-bold text-amber-900">{{ $tabBadges[$key] }}</span>@endif
                         </button>
                     @endforeach
                 </div>
@@ -554,6 +554,33 @@
 
             {{-- ============ RECEIVABLES ============ --}}
             <div id="panel-receivables" role="tabpanel" aria-labelledby="tab-receivables" x-show="tab === 'receivables'" x-cloak class="space-y-6">
+                <section aria-labelledby="recentreceipts-heading" class="fv-rise rounded-lg border border-border bg-card">
+                    <header class="border-b border-border px-5 py-4">
+                        <h3 id="recentreceipts-heading" class="font-semibold">Recent payments</h3>
+                        <p class="mt-1 text-xs text-muted-foreground">Latest 10 confirmed customer payments, including PayPal captures.</p>
+                    </header>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                                <tr><th class="px-5 py-3">Received on</th><th class="px-5 py-3">Customer</th><th class="px-5 py-3">Order</th><th class="px-5 py-3">Method</th><th class="px-5 py-3 text-right">Amount</th></tr>
+                            </thead>
+                            <tbody class="divide-y divide-border">
+                                @forelse($recentReceipts as $receipt)
+                                    <tr>
+                                        <td class="px-5 py-3 text-muted-foreground">{{ ($receipt->received_on ?? $receipt->created_at)->format('M j, Y') }}</td>
+                                        <td class="px-5 py-3 font-medium">{{ $receipt->client?->name ?? '—' }}</td>
+                                        <td class="px-5 py-3">@if($receipt->order)<a class="text-primary hover:underline" href="{{ route('admin.orders.show', $receipt->order) }}">{{ $receipt->order->order_number }}</a>@else #{{ $receipt->order_id }}@endif</td>
+                                        <td class="px-5 py-3">{{ ucfirst($receipt->method) }}@if($receipt->reference) <span class="text-xs text-muted-foreground">&middot; {{ $receipt->reference }}</span>@endif</td>
+                                        <td class="px-5 py-3 text-right font-semibold tabular-nums">{{ $money($receipt->amount, $receipt->currency) }}</td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="5" class="px-5 py-8 text-center text-muted-foreground">No payments recorded yet.</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
                 <section aria-labelledby="aging-heading" class="fv-rise rounded-lg border border-border bg-card">
                     <header class="border-b border-border px-5 py-4">
                         <h3 id="aging-heading" class="font-semibold">Unpaid order balances by age</h3>

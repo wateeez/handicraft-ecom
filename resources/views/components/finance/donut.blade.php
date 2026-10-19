@@ -20,7 +20,7 @@
             @endforeach
         </svg>
         <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
-            <span class="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{{ $centerLabel }}</span>
+            <span class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{{ $centerLabel }}</span>
             <span class="mt-0.5 break-all text-sm font-bold tabular-nums leading-tight">{{ $centerValue }}</span>
         </div>
     </div>

@@ -39,7 +39,7 @@
                                                     {{ $item['product']->name }}
                                                 </a>
 
-                                                <div class="text-[11px] text-muted-foreground mt-1 flex items-center gap-2">
+                                                <div class="text-[12px] text-muted-foreground mt-1 flex items-center gap-2">
                                                     <span>{{ $item['product']->formatted_length }} &times; {{ $item['product']->formatted_width }} &times; {{ $item['product']->formatted_height }} cm</span>
                                                     <span>&bull;</span>
                                                     <span>{{ $item['product']->formatted_weight }} kg</span>
@@ -50,7 +50,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                                         <div class="font-serif font-bold text-primary">${{ number_format($item['unit_price'], 2) }}</div>
                                         @if($item['product']->discount_price)
-                                            <div class="text-[10px] text-muted-foreground line-through">
+                                            <div class="text-[11px] text-muted-foreground line-through">
                                                 ${{ number_format($item['product']->price, 2) }}
                                             </div>
                                         @endif
@@ -97,7 +97,7 @@
                         <span class="text-muted-foreground">Subtotal Estimate</span>
                         <span class="font-serif font-bold text-lg text-foreground">${{ number_format($subtotal, 2) }}</span>
                     </div>
-                    <p class="text-[11px] text-muted-foreground mb-5 leading-relaxed">
+                    <p class="text-[12px] text-muted-foreground mb-5 leading-relaxed">
                         Worldwide shipping calculated at the next step. No direct payment required at this stage.
                     </p>
                     <a href="{{ route('checkout') }}"

@@ -105,19 +105,19 @@
                                         <a href="{{ route('admin.orders.show', $o) }}"
                                             class="font-mono font-semibold text-green-premium hover:underline">{{ $o->order_number }}</a>
                                         @if($o->is_paid) <span
-                                            class="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.2 ml-1 rounded">PAID</span>
+                                            class="text-[11px] bg-emerald-100 text-emerald-700 px-1.5 py-0.2 ml-1 rounded">PAID</span>
                                         @endif
                                         @if($o->hasReturnedItems())
                                             <span
-                                                class="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.2 ml-1 rounded">RETURN</span>
+                                                class="text-[11px] bg-red-100 text-red-700 px-1.5 py-0.2 ml-1 rounded">RETURN</span>
                                         @endif
                                         @if($o->type === 'inquiry' && $o->convertedOrder)
-                                            <div class="text-[10px] text-indigo-600 mt-0.5">
+                                            <div class="text-[11px] text-indigo-600 mt-0.5">
                                                 &rarr; Converted to
                                                 <a href="{{ route('admin.orders.show', $o->convertedOrder) }}" class="hover:underline font-mono">{{ $o->convertedOrder->order_number }}</a>
                                             </div>
                                         @elseif($o->type === 'order' && $o->sourceInquiry)
-                                            <div class="text-[10px] text-amber-600 mt-0.5">
+                                            <div class="text-[11px] text-amber-600 mt-0.5">
                                                 &larr; From inquiry
                                                 <a href="{{ route('admin.orders.show', $o->sourceInquiry) }}" class="hover:underline font-mono">{{ $o->sourceInquiry->order_number }}</a>
                                             </div>

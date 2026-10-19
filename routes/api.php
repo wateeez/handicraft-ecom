@@ -20,6 +20,9 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 
 use App\Http\Controllers\Api\PayPalController;
 
+// Lets the checkout frontend know whether to show PayPal
+Route::get('/payment-methods', fn () => response()->json(['paypal' => \App\Models\SiteSetting::paypalEnabled()]));
+
 // Postman test routes for PayPal Backend Processing
 Route::post('/paypal/orders', [PayPalController::class, 'createOrder']);
 Route::post('/paypal/orders/{orderId}/capture', [PayPalController::class, 'capturePayment']);

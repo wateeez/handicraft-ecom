@@ -185,6 +185,83 @@
         </div>
     </div>
 
+    <!-- PayPal Payment Toggle -->
+    @php($paypalOn = \App\Models\SiteSetting::paypalSwitchedOn())
+    @php($paypalConfigured = \App\Models\SiteSetting::paypalConfigured())
+    @php($canTogglePaypal = auth()->user()->hasPermission('manage_settings'))
+    <style>
+        .pp-card { display:flex; align-items:center; justify-content:space-between; gap:1.25rem; flex-wrap:wrap;
+            padding:1.25rem 1.5rem; margin-bottom:2rem; border-radius:1rem; border:1px solid var(--border, #e5e7eb);
+            background:var(--card, #fff); position:relative; overflow:hidden; transition:border-color .4s, box-shadow .4s; }
+        .pp-card.is-on { border-color:#10b981; box-shadow:0 0 0 3px rgba(16,185,129,.12); }
+        .pp-card::before { content:""; position:absolute; inset:0 auto 0 0; width:4px; background:#9ca3af; transition:background .4s; }
+        .pp-card.is-on::before { background:#10b981; }
+        .pp-info { display:flex; align-items:center; gap:1rem; min-width:0; }
+        .pp-icon { width:2.75rem; height:2.75rem; border-radius:.75rem; display:flex; align-items:center; justify-content:center;
+            font-weight:800; font-size:1.1rem; color:#fff; background:#9ca3af; transition:background .4s, transform .4s; flex-shrink:0; }
+        .pp-card.is-on .pp-icon { background:linear-gradient(135deg,#003087,#009cde); transform:rotate(-6deg) scale(1.05); }
+        .pp-title { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; font-weight:700; }
+        .pp-badge { display:inline-flex; align-items:center; gap:.4rem; padding:.2rem .65rem; border-radius:999px; font-size:.7rem;
+            font-weight:700; letter-spacing:.04em; text-transform:uppercase; background:#f3f4f6; color:#6b7280; transition:all .4s; }
+        .pp-card.is-on .pp-badge { background:rgba(16,185,129,.15); color:#047857; }
+        .pp-dot { width:.5rem; height:.5rem; border-radius:50%; background:#9ca3af; }
+        .pp-card.is-on .pp-dot { background:#10b981; animation:pp-pulse 1.6s ease-out infinite; }
+        .pp-desc { font-size:.75rem; opacity:.65; margin-top:.2rem; }
+        .pp-control { display:flex; align-items:center; gap:.75rem; }
+        .pp-label { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; opacity:.6; min-width:2rem; text-align:right; }
+        .pp-switch { position:relative; width:4rem; height:2rem; border-radius:999px; border:none; padding:0; cursor:pointer;
+            background:#cbd5e1; box-shadow:inset 0 2px 4px rgba(0,0,0,.15); transition:background .35s, box-shadow .35s; flex-shrink:0; }
+        .pp-switch.is-on { background:linear-gradient(135deg,#10b981,#059669); animation:pp-glow 2.2s ease-in-out infinite; }
+        .pp-switch:hover:not(:disabled) { filter:brightness(1.07); }
+        .pp-switch:focus-visible { outline:3px solid rgba(0,156,222,.5); outline-offset:2px; }
+        .pp-switch:disabled { opacity:.55; cursor:not-allowed; }
+        .pp-knob { position:absolute; top:.25rem; left:.25rem; width:1.5rem; height:1.5rem; border-radius:50%; background:#fff;
+            box-shadow:0 2px 6px rgba(0,0,0,.3); display:flex; align-items:center; justify-content:center; font-size:.75rem; font-weight:800;
+            color:#94a3b8; transition:transform .35s cubic-bezier(.34,1.56,.64,1), color .3s; }
+        .pp-switch.is-on .pp-knob { transform:translateX(2rem); color:#059669; }
+        .pp-switch:active:not(:disabled) .pp-knob { width:1.9rem; }
+        .pp-switch.is-on:active:not(:disabled) .pp-knob { transform:translateX(1.6rem); }
+        .pp-switch.is-busy { opacity:.6; pointer-events:none; animation:pp-busy .6s ease-in-out infinite alternate; }
+        .pp-note { font-size:.7rem; opacity:.6; }
+        @keyframes pp-pulse { 0%{box-shadow:0 0 0 0 rgba(16,185,129,.6)} 100%{box-shadow:0 0 0 8px rgba(16,185,129,0)} }
+        @keyframes pp-glow { 0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.45), inset 0 2px 4px rgba(0,0,0,.15)} 50%{box-shadow:0 0 14px 3px rgba(16,185,129,.4), inset 0 2px 4px rgba(0,0,0,.15)} }
+        @keyframes pp-busy { to { opacity:.3; } }
+        @media (prefers-reduced-motion: reduce) { .pp-card *, .pp-switch { animation:none !important; transition:none !important; } }
+    </style>
+    <div class="pp-card {{ $paypalOn ? 'is-on' : '' }}">
+        <div class="pp-info">
+            <div class="pp-icon">P</div>
+            <div>
+                <div class="pp-title">
+                    <span>PayPal Payments</span>
+                    <span class="pp-badge"><span class="pp-dot"></span>{{ $paypalOn ? 'Live' : 'Off' }}</span>
+                </div>
+                @unless($paypalConfigured)
+                    <p class="pp-desc" style="color:#b45309;opacity:1;font-weight:600;">
+                        ⚠ PayPal credentials are missing. Add PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET to .env &mdash; checkout will not show PayPal until then.
+                    </p>
+                @endunless
+                <p class="pp-desc">
+                    {{ $paypalOn ? 'Customers can pay with PayPal at checkout.' : 'PayPal is hidden at checkout and new PayPal orders are rejected.' }}
+                </p>
+            </div>
+        </div>
+
+        <form action="{{ route('admin.paypal.toggle') }}" method="POST" class="pp-control"
+            onsubmit="this.querySelector('.pp-switch').classList.add('is-busy')">
+            @csrf
+            @unless($canTogglePaypal)
+                <span class="pp-note">Requires Manage Settings permission</span>
+            @endunless
+            <span class="pp-label">{{ $paypalOn ? 'On' : 'Off' }}</span>
+            <button type="submit" role="switch" aria-checked="{{ $paypalOn ? 'true' : 'false' }}" aria-label="Toggle PayPal payments"
+                class="pp-switch {{ $paypalOn ? 'is-on' : '' }}" @disabled(! $canTogglePaypal)
+                title="{{ $canTogglePaypal ? ($paypalOn ? 'Turn PayPal off' : 'Turn PayPal on') : 'You need the Manage Settings permission' }}">
+                <span class="pp-knob">{{ $paypalOn ? '✓' : '' }}</span>
+            </button>
+        </form>
+    </div>
+
     <!-- Recent Orders & Inquiries Split View -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Recent Orders -->
@@ -215,7 +292,7 @@
                                     <span class="text-xs text-muted-foreground block truncate">
                                         {{ $order->client?->name ?? 'Guest Buyer' }} &bull; {{ $order->created_at->diffForHumans() }}
                                     </span>
-                                    <span class="text-[11px] text-muted-foreground/80 block truncate">
+                                    <span class="text-[12px] text-muted-foreground/80 block truncate">
                                         Ships to {{ $order->shipping_country ?? 'N/A' }} &bull; {{ $order->shipping_provider_name ?? 'No provider' }}
                                     </span>
                                 </div>
@@ -224,7 +301,7 @@
                                 <span class="text-sm font-bold font-serif text-foreground block">
                                     ${{ number_format($order->grand_total ?? 0, 2) }}
                                 </span>
-                                <span class="inline-block text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full mt-0.5 bg-secondary text-secondary-foreground border border-border">
+                                <span class="inline-block text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full mt-0.5 bg-secondary text-secondary-foreground border border-border">
                                     {{ ucfirst($order->status ?? 'unprocessed') }}
                                 </span>
                             </div>
@@ -266,7 +343,7 @@
                                     <span class="text-xs text-muted-foreground block truncate">
                                         {{ $inquiry->client?->name ?? 'Prospect' }} &bull; {{ $inquiry->created_at->diffForHumans() }}
                                     </span>
-                                    <span class="text-[11px] text-muted-foreground/80 block truncate">
+                                    <span class="text-[12px] text-muted-foreground/80 block truncate">
                                         Ships to {{ $inquiry->shipping_country ?? 'N/A' }} &bull; {{ $inquiry->shipping_provider_name ?? 'No provider' }}
                                     </span>
                                 </div>

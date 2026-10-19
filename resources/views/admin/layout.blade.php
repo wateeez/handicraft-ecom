@@ -11,10 +11,10 @@
     @endif
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Manrope', sans-serif;
+            font-family: 'Instrument Sans', sans-serif;
         }
         [x-cloak] {
             display: none !important;
@@ -49,7 +49,7 @@
                                 <h1 class="text-sm font-semibold tracking-wide text-sidebar-foreground truncate">
                                     {{ $siteSettings['site_name'] ?? 'Handicraft' }}
                                 </h1>
-                                <span class="text-[10px] font-medium tracking-wider uppercase text-sidebar-foreground/50 block">Admin Suite</span>
+                                <span class="text-[11px] font-medium tracking-wider uppercase text-sidebar-foreground/50 block">Admin Suite</span>
                             </div>
                         @endif
                     </a>
@@ -66,7 +66,7 @@
 
             <nav class="flex-1 overflow-y-auto py-4 px-3 custom-scroll space-y-6">
                 <div>
-                    <div class="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/40 font-sans">
+                    <div class="px-3 mb-2 text-[12px] font-semibold uppercase tracking-wider text-sidebar-foreground/40 font-sans">
                         Overview
                     </div>
                     <ul class="space-y-1">
@@ -85,7 +85,7 @@
                 </div>
 
                 <div>
-                    <div class="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/40 font-sans">
+                    <div class="px-3 mb-2 text-[12px] font-semibold uppercase tracking-wider text-sidebar-foreground/40 font-sans">
                         Catalogue & Sales
                     </div>
                     <ul class="space-y-1">
@@ -147,7 +147,7 @@
                 </div>
 
                 <div>
-                    <div class="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/40 font-sans">
+                    <div class="px-3 mb-2 text-[12px] font-semibold uppercase tracking-wider text-sidebar-foreground/40 font-sans">
                         Settings & Content
                     </div>
                     <ul class="space-y-1">
@@ -254,7 +254,7 @@
                         ])))
                     @if (count($financeLinks))
                         <div>
-                            <div class="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/40 font-sans">
+                            <div class="px-3 mb-2 text-[12px] font-semibold uppercase tracking-wider text-sidebar-foreground/40 font-sans">
                                 Finance
                             </div>
                             <ul class="space-y-1">
@@ -324,7 +324,7 @@
                     <div class="flex items-center gap-2.5">
                         <div class="text-right hidden sm:block">
                             <div class="text-sm font-semibold text-foreground leading-tight">{{ auth()->user()->name }}</div>
-                            <div class="text-[11px] text-muted-foreground">
+                            <div class="text-[12px] text-muted-foreground">
                                 @foreach(auth()->user()->roles as $role)
                                     <span>{{ $role->display_name }}</span>{{ !$loop->last ? ', ' : '' }}
                                 @endforeach

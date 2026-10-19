@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Inquiry;
+use App\Models\SiteSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Cache;
@@ -68,6 +69,14 @@ class DashboardController extends Controller
         }
 
         return back()->with('success', $message);
+    }
+
+    public function togglePaypal()
+    {
+        $enable = ! SiteSetting::paypalSwitchedOn();
+        SiteSetting::set('paypal_enabled', $enable ? '1' : '0', 'boolean', 'payment');
+
+        return back()->with('success', $enable ? 'PayPal payments enabled.' : 'PayPal payments disabled.');
     }
 
     public function verifyPassword(Request $request)

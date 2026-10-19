@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\SiteSetting;
 use App\Services\InvoiceService;
 use App\Services\OrderService;
 use App\Services\ResendNotificationService;
@@ -44,6 +45,10 @@ class PayPalController extends Controller
      */
     public function createOrder(Request $request)
     {
+        if (! SiteSetting::paypalEnabled()) {
+            return response()->json(['error' => 'PayPal payments are currently disabled.'], 403);
+        }
+
         $request->validate(['order_id' => ['required', 'integer']]);
 
         $order = Order::find($request->integer('order_id'));
@@ -192,9 +197,10 @@ class PayPalController extends Controller
             $captureId = data_get($capture, 'purchase_units.0.payments.captures.0.id') ?? $paypalOrderId;
             app(\App\Services\FinanceService::class)->recordSettledPayment($order->fresh(), 'paypal', $captureId);
         } catch (\Exception $e) {
-            Log::warning('PayPal: could not auto-record payment after capture', [
-                'order_id' => $order->id,
-                'error'    => $e->getMessage(),
+            Log::error('PayPal: captured but NOT recorded in finance — run `php artisan finance:backfill-payments --method=paypal --apply`', [
+                'order_id'   => $order->id,
+                'capture_id' => $captureId ?? $paypalOrderId,
+                'error'      => $e->getMessage(),
             ]);
         }
 

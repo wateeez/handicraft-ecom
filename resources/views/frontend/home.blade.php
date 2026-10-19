@@ -243,17 +243,17 @@
                                     <div class="mb-2">
                                         @if($product->is_order_now_enabled)
                                             <span
-                                                class="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 text-[11px] px-2.5 py-0.5 rounded-full uppercase tracking-wider font-semibold">In
+                                                class="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 text-[12px] px-2.5 py-0.5 rounded-full uppercase tracking-wider font-semibold">In
                                                 Stock</span>
                                         @else
                                             <span
-                                                class="bg-accent/20 text-accent-foreground border border-accent/30 text-[11px] px-2.5 py-0.5 rounded-full uppercase tracking-wider font-semibold">Inquiry
+                                                class="bg-accent/20 text-accent-foreground border border-accent/30 text-[12px] px-2.5 py-0.5 rounded-full uppercase tracking-wider font-semibold">Inquiry
                                                 Only</span>
                                         @endif
                                     </div>
-                                    <h3 class="text-base font-serif font-bold text-foreground mb-2 line-clamp-1 group-hover:text-primary transition-colors">{{ $product->name }}</h3>
+                                    <h3 class="text-xl leading-tight font-serif font-bold text-foreground mb-2 line-clamp-1 group-hover:text-primary transition-colors">{{ $product->name }}</h3>
                                 </div>
-                                <div class="text-primary font-bold text-lg font-serif mt-1">
+                                <div class="text-primary font-bold text-lg font-sans tabular-nums mt-1">
                                     @if($product->discount_price)
                                         <span class="text-muted-foreground line-through text-sm mr-2 font-normal">${{ number_format($product->price, 2) }}</span>
                                         <span>${{ number_format($product->discount_price, 2) }}</span>

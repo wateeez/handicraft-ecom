@@ -189,7 +189,7 @@
                                         @php $netPrice = $item->quantity > 0 ? $item->line_total / $item->quantity : $item->unit_price; @endphp
                                         {{ $order->currency ?? 'USD' }} {{ number_format($netPrice, 2) }}
                                         @if($item->option_price > 0)
-                                            <div class="text-[10px] text-truffle-extra-dark/70">
+                                            <div class="text-[11px] text-truffle-extra-dark/70">
                                                 base: {{ $order->currency ?? 'USD' }} {{ number_format($item->base_unit_price, 2) }} + option:
                                                 {{ $order->currency ?? 'USD' }} {{ number_format($item->option_price, 2) }}
                                             </div>
@@ -199,7 +199,7 @@
                                     <td class="px-6 py-4 text-right">
                                         @if($item->item_discount_amount > 0)
                                             <div class="text-red-500">Ref: -{{ $order->currency ?? 'USD' }} {{ number_format($item->item_discount_amount, 2) }}</div>
-                                            <div class="text-[10px] text-truffle-extra-dark/70">
+                                            <div class="text-[11px] text-truffle-extra-dark/70">
                                                 orig: {{ $order->currency ?? 'USD' }} {{ number_format($item->unit_price, 2) }}
                                             </div>
                                         @else
@@ -218,7 +218,7 @@
                                                 {{ $item->return_status_label }}
                                             </span>
                                             @if($item->returned_quantity > 0)
-                                                <div class="text-[10px] text-truffle-extra-dark/70 mt-0.5">{{ $item->returned_quantity }}/{{ $item->quantity }} returned</div>
+                                                <div class="text-[11px] text-truffle-extra-dark/70 mt-0.5">{{ $item->returned_quantity }}/{{ $item->quantity }} returned</div>
                                             @endif
 
                                             @if(auth()->user()->hasPermission('manage_orders'))
@@ -245,13 +245,13 @@
                                                     method="POST" class="mt-2 p-2 bg-amber-50 border border-amber-100 rounded-lg text-left space-y-1.5">
                                                     @csrf
                                                     <div>
-                                                        <label class="block text-[10px] font-semibold text-amber-700">Qty (max {{ $item->returnable_quantity }})</label>
+                                                        <label class="block text-[11px] font-semibold text-amber-700">Qty (max {{ $item->returnable_quantity }})</label>
                                                         <input type="number" name="quantity" min="1" max="{{ $item->returnable_quantity }}"
                                                             value="{{ $item->returnable_quantity }}"
                                                             class="w-full text-xs border-amber-300 rounded">
                                                     </div>
                                                     <div>
-                                                        <label class="block text-[10px] font-semibold text-amber-700">Reason</label>
+                                                        <label class="block text-[11px] font-semibold text-amber-700">Reason</label>
                                                         <input type="text" name="reason" placeholder="e.g. damaged in transit"
                                                             class="w-full text-xs border-amber-300 rounded">
                                                     </div>
@@ -396,7 +396,7 @@
                                                     <p class="mt-1 break-all text-xs text-truffle-extra-dark/70">Ref: {{ $payment->reference }}</p>
                                                 @endif
                                             </div>
-                                            <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide {{ $payment->status === 'confirmed' ? 'bg-emerald-100 text-emerald-800' : ($payment->status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700') }}">{{ $payment->status }}</span>
+                                            <span class="rounded-full px-2.5 py-1 text-[12px] font-semibold uppercase tracking-wide {{ $payment->status === 'confirmed' ? 'bg-emerald-100 text-emerald-800' : ($payment->status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700') }}">{{ $payment->status }}</span>
                                         </div>
                                         <div class="text-xs text-truffle-extra-dark/70">
                                             Reporting amount: {{ \App\Models\FinanceSetting::query()->value('reporting_currency') ?? 'NPR' }} {{ number_format((float) $payment->reporting_amount, 2) }}
@@ -458,7 +458,7 @@
                                         <div>
                                             <label for="payment-reporting-amount" class="mb-1 block text-xs font-semibold text-truffle-extra-dark">Reporting amount *</label>
                                             <input id="payment-reporting-amount" name="reporting_amount" type="number" min="0.01" step="0.01" required readonly x-bind:value="amount !== '' && rate !== '' ? (Number(amount) * Number(rate)).toFixed(2) : ''" class="w-full rounded-md border border-truffle-medium/40 bg-gray-50 text-sm focus:border-primary focus:ring-primary">
-                                            <p class="mt-1 text-[11px] text-truffle-extra-dark/70">Calculated from amount × exchange rate.</p>
+                                            <p class="mt-1 text-[12px] text-truffle-extra-dark/70">Calculated from amount × exchange rate.</p>
                                             @error('reporting_amount')<p class="mt-1 text-xs text-red-700">{{ $message }}</p>@enderror
                                         </div>
                                     </div>
@@ -644,7 +644,7 @@
                                     <div class="flex justify-between items-start">
                                         <p class="text-sm font-semibold text-truffle-extra-dark">{{ $log->action_label }}</p>
                                         <span
-                                            class="text-[10px] text-truffle-extra-dark/70 font-mono">{{ $log->created_at->format('M d, H:i') }}</span>
+                                            class="text-[11px] text-truffle-extra-dark/70 font-mono">{{ $log->created_at->format('M d, H:i') }}</span>
                                     </div>
                                     <p class="text-xs text-truffle-extra-dark mt-0.5">by {{ $log->user?->name ?? 'System' }}</p>
                                     @if($log->description)

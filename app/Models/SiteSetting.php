@@ -36,6 +36,30 @@ class SiteSetting extends Model
     }
 
     /**
+     * Whether the admin has switched PayPal on (dashboard toggle). Off by default.
+     */
+    public static function paypalSwitchedOn(): bool
+    {
+        return self::get('paypal_enabled', '0') === '1';
+    }
+
+    /**
+     * Whether PayPal API credentials are present in the environment config.
+     */
+    public static function paypalConfigured(): bool
+    {
+        return filled(config('services.paypal.client_id')) && filled(config('services.paypal.secret'));
+    }
+
+    /**
+     * Whether PayPal checkout is actually usable: switched on AND credentials configured.
+     */
+    public static function paypalEnabled(): bool
+    {
+        return self::paypalSwitchedOn() && self::paypalConfigured();
+    }
+
+    /**
      * Get all settings as key-value pairs
      */
     public static function getAll()

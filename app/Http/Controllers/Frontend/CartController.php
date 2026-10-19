@@ -204,6 +204,10 @@ class CartController extends Controller
 
     public function initOrder(Request $request)
     {
+        if (! \App\Models\SiteSetting::paypalEnabled()) {
+            return response()->json(['error' => 'PayPal payments are currently disabled.'], 403);
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],

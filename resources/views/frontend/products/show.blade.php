@@ -380,15 +380,15 @@
                                 @endif
                                 @if($relProduct->discount_price)
                                     <div class="absolute top-2.5 right-2.5">
-                                        <span class="bg-destructive text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-xs">Sale</span>
+                                        <span class="bg-destructive text-white text-[11px] px-2 py-0.5 rounded-full font-bold shadow-xs">Sale</span>
                                     </div>
                                 @endif
                             </div>
                             <div class="p-4 text-center">
-                                <h3 class="font-serif font-bold text-sm text-foreground group-hover:text-primary transition-colors truncate mb-1">{{ $relProduct->name }}</h3>
-                                <div class="text-primary font-bold text-sm font-serif">
+                                <h3 class="font-serif font-bold text-xl leading-tight text-foreground group-hover:text-primary transition-colors truncate mb-1.5">{{ $relProduct->name }}</h3>
+                                <div class="text-primary font-bold text-lg font-sans tabular-nums">
                                     @if($relProduct->discount_price)
-                                        <span class="text-muted-foreground line-through text-xs mr-1 font-normal">${{ number_format($relProduct->price, 2) }}</span>
+                                        <span class="text-muted-foreground line-through text-sm mr-1.5 font-normal">${{ number_format($relProduct->price, 2) }}</span>
                                         <span>${{ number_format($relProduct->discount_price, 2) }}</span>
                                     @else
                                         <span>${{ number_format($relProduct->price, 2) }}</span>

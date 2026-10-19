@@ -172,7 +172,7 @@
                                 @if($product->main_image)
                                     <img class="h-10 w-10 rounded-lg object-cover mr-3 border border-border shadow-xs" src="{{ $product->main_image }}" alt="">
                                 @else
-                                    <div class="h-10 w-10 rounded-lg bg-paper text-muted-foreground border border-border flex items-center justify-center mr-3 text-[10px] font-mono">
+                                    <div class="h-10 w-10 rounded-lg bg-paper text-muted-foreground border border-border flex items-center justify-center mr-3 text-[11px] font-mono">
                                         No Img</div>
                                 @endif
                                 <div class="text-sm font-medium text-foreground">{{ $product->name }}</div>

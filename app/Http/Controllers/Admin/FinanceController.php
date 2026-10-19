@@ -55,6 +55,9 @@ class FinanceController extends Controller
                 : ['receipts' => 0, 'refunds' => 0, 'reversals' => 0],
             'reportFrom' => $request->query('from'),
             'reportTo' => $request->query('to'),
+            'recentReceipts' => $financeTablesReady
+                ? Payment::with(['order:id,order_number', 'client:id,name'])->where('status', 'confirmed')->latest('id')->limit(10)->get()
+                : collect(),
             'pendingPayments' => $financeTablesReady ? Payment::where('status', 'pending')->count() : 0,
             'profit' => $financeTablesReady ? $this->profitOverview() : null,
             'dash' => $financeTablesReady ? $dashboard->build($request->query('from') ?: null, $request->query('to') ?: null) : null,

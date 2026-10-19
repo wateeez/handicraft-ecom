@@ -2,10 +2,14 @@
 
 @section('title', 'Get a Quote')
 
+@php($paypalEnabled = \App\Models\SiteSetting::paypalEnabled())
+
 @section('content')
     <div class="container mx-auto px-4 sm:px-6 py-12" x-data="checkout()">
-        <h1 class="text-3xl font-serif font-bold text-truffle-extra-dark mb-2">Get a Quote</h1>
-        <p class="text-truffle-extra-dark/70 mb-8 text-sm">Fill in your details below and we'll send you a personalised quote via email.</p>
+        <h1 class="text-3xl font-serif font-bold text-truffle-extra-dark mb-2">{{ $paypalEnabled ? 'Checkout' : 'Get a Quote' }}</h1>
+        <p class="text-truffle-extra-dark/70 mb-8 text-sm">
+            {{ $paypalEnabled ? 'Fill in your details below, choose shipping and pay securely with PayPal.' : "Fill in your details below and we'll send you a personalised quote via email." }}
+        </p>
 
         <div class="flex flex-col md:flex-row gap-10">
             <!-- Form Section -->
@@ -162,6 +166,17 @@
                         </p>
                     </div>
 
+                    @if($paypalEnabled)
+                    <!-- Pay Now (PayPal) -->
+                    <div class="bg-card p-6 md:p-8 rounded-2xl border border-border shadow-xs mb-6">
+                        <h2 class="text-xl font-serif font-bold mb-2 text-foreground">Pay Now with PayPal</h2>
+                        <p class="text-sm text-muted-foreground mb-4">Complete the form and select a shipping method, then pay securely with PayPal.</p>
+                        <div id="paypal-button-container" class="mt-4" style="min-height:50px"></div>
+                        <div id="paypal-feedback" class="text-sm text-primary hidden my-2 font-bold">Processing payment... Please wait.</div>
+                    </div>
+                    @endif
+
+                    @unless($paypalEnabled)
                     <!-- Get Quote CTA -->
                     <div class="bg-card p-6 md:p-8 rounded-2xl border border-border shadow-xs mb-6">
                         <h2 class="text-xl font-serif font-bold mb-2 text-foreground">Request Your Personalized Quote</h2>
@@ -187,6 +202,7 @@
                             Send Quote Request
                         </button>
                     </div>
+                    @endunless
 
                 </form>
             </div>
@@ -321,9 +337,16 @@
             }
         }
 
-        // Prevent double-submit
-        document.getElementById('quote-form').addEventListener('submit', function () {
+        document.getElementById('quote-form').addEventListener('submit', function (e) {
             const btn = document.getElementById('submit-quote-btn');
+
+            // PayPal checkout: the form must never post as a quote (e.g. Enter key in a field)
+            if (!btn) {
+                e.preventDefault();
+                return;
+            }
+
+            // Prevent double-submit
             btn.disabled = true;
             btn.innerHTML = `
                 <svg class="animate-spin w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -334,4 +357,140 @@
         });
     </script>
     <script src="//unpkg.com/alpinejs" defer></script>
+
+    @if($paypalEnabled)
+    <script src="https://www.paypal.com/sdk/js?client-id={{ trim(config('services.paypal.client_id')) }}&currency=USD&intent=capture&components=buttons"></script>
+    <script>
+        let localOrderId = null;
+
+        function showPayPalError(msg) {
+            const el = document.getElementById('paypal-feedback');
+            el.innerText = msg;
+            el.classList.remove('hidden', 'text-primary');
+            el.classList.add('text-red-600');
+        }
+
+        function showPayPalInfo(msg) {
+            const el = document.getElementById('paypal-feedback');
+            el.innerText = msg;
+            el.classList.remove('hidden', 'text-red-600');
+            el.classList.add('text-primary');
+        }
+
+        // Creates the pending local order and returns its ID.
+        async function initOrder() {
+            const data = new FormData(document.getElementById('quote-form'));
+            data.append('token', '{{ $token ?? '' }}');
+
+            const response = await fetch('{{ route("checkout.init-order") }}', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+                body: data,
+            });
+            const result = await response.json();
+
+            if (!response.ok) {
+                const fieldErrors = result.errors ? Object.values(result.errors).flat().join(' ') : null;
+                throw new Error(fieldErrors || result.message || result.error || 'Could not create order.');
+            }
+
+            localOrderId = result.order_id;
+            return result.order_id;
+        }
+
+        window.addEventListener('DOMContentLoaded', function () {
+            if (typeof paypal === 'undefined') {
+                showPayPalError('PayPal failed to load. Please refresh the page.');
+                return;
+            }
+
+            paypal.Buttons({
+                fundingSource: paypal.FUNDING.PAYPAL,
+                style: { layout: 'vertical', color: 'gold', shape: 'rect', label: 'paypal', height: 45 },
+
+                createOrder: async function () {
+                    const form = document.getElementById('quote-form');
+                    if (!form.checkValidity()) {
+                        form.reportValidity();
+                        throw new Error('Please fill in all required fields before paying.');
+                    }
+                    if (!document.getElementById('shipping_provider_input').value) {
+                        showPayPalError('Please select a shipping method before paying.');
+                        throw new Error('Please select a shipping method before paying.');
+                    }
+
+                    showPayPalInfo('Preparing your order...');
+                    const orderId = await initOrder();
+
+                    const response = await fetch('/api/paypal/orders', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                        body: JSON.stringify({ order_id: orderId }),
+                    });
+                    const orderData = await response.json();
+
+                    if (!response.ok || orderData.error || !orderData.id) {
+                        throw new Error(orderData.error || 'PayPal order creation failed.');
+                    }
+
+                    document.getElementById('paypal-feedback').classList.add('hidden');
+                    return orderData.id;
+                },
+
+                onApprove: async function (data) {
+                    document.getElementById('paypal-button-container').classList.add('hidden');
+                    showPayPalInfo('Processing payment... Please wait.');
+
+                    try {
+                        const response = await fetch('/api/paypal/orders/' + data.orderID + '/capture', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                            body: JSON.stringify({ order_id: localOrderId }),
+                        });
+                        const result = await response.json();
+
+                        if (!response.ok || !result.success) {
+                            throw new Error(result.error || 'Payment capture failed.');
+                        }
+
+                        showPayPalInfo('Payment successful! Redirecting...');
+                        window.location.href = result.redirect_url;
+                    } catch (err) {
+                        showPayPalError('Payment failed: ' + err.message);
+                        document.getElementById('paypal-button-container').classList.remove('hidden');
+                        console.error(err);
+                    }
+                },
+
+                // Customer closed the PayPal popup: cancel the pending order to avoid orphans.
+                onCancel: async function () {
+                    const cancelledId = localOrderId;
+                    localOrderId = null;
+
+                    if (cancelledId) {
+                        try {
+                            await fetch('/api/orders/' + cancelledId + '/cancel-pending', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                            });
+                        } catch (e) {
+                            console.warn('Could not cancel pending order:', e);
+                        }
+                    }
+
+                    document.getElementById('paypal-feedback').classList.add('hidden');
+                    document.getElementById('paypal-button-container').classList.remove('hidden');
+                },
+
+                onError: function (err) {
+                    console.error('PayPal SDK error:', err);
+                    showPayPalError('A PayPal error occurred. Please try again.');
+                },
+            }).render('#paypal-button-container').catch(function (err) {
+                console.error('PayPal render error:', err);
+                showPayPalError('Could not load the PayPal button. Error: ' + (err.message || err));
+            });
+        });
+    </script>
+    @endif
 @endsection
