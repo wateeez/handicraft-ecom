@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\Vendor;
 use App\Models\SubCategory;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -18,7 +19,7 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::with('category');
+        $query = Product::with(['category', 'vendor']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -41,7 +42,8 @@ class ProductController extends Controller
     public function create()
     {
         $categories = Category::with('subCategories')->get();
-        return view('admin.products.create', compact('categories'));
+        $vendors = Vendor::active()->orderBy('name')->get(['id', 'name']);
+        return view('admin.products.create', compact('categories', 'vendors'));
     }
 
     public function store(Request $request)
@@ -53,6 +55,7 @@ class ProductController extends Controller
             'discount_price' => 'nullable|numeric|min:0',
 
             'category_id' => 'required|exists:categories,id',
+            'vendor_id' => 'nullable|exists:vendors,id',
             'weight' => 'required|numeric', // Important for shipping
             'length' => 'required|numeric',
             'width' => 'required|numeric',
@@ -97,7 +100,8 @@ class ProductController extends Controller
     public function edit(Product $product)
     {
         $categories = Category::with('subCategories')->get();
-        return view('admin.products.edit', compact('product', 'categories'));
+        $vendors = Vendor::where('is_active', true)->orWhere('id', $product->vendor_id)->orderBy('name')->get(['id', 'name']);
+        return view('admin.products.edit', compact('product', 'categories', 'vendors'));
     }
 
     public function update(Request $request, Product $product)
@@ -109,6 +113,7 @@ class ProductController extends Controller
             'discount_price' => 'nullable|numeric|min:0',
 
             'category_id' => 'required|exists:categories,id',
+            'vendor_id' => 'nullable|exists:vendors,id',
             'weight' => 'required|numeric',
             'length' => 'required|numeric',
             'width' => 'required|numeric',

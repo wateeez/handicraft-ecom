@@ -21,7 +21,7 @@
                 <div>
                     <label class="block text-sm font-medium text-truffle-extra-dark">Product Name</label>
                     <input type="text" name="name" value="{{ old('name', $product->name) }}"
-                        class="mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 @error('name') border-red-500 @enderror"
+                        class="bg-card mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 @error('name') border-red-500 @enderror"
                         required>
                     @error('name')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -31,17 +31,19 @@
                 <div>
                     <label class="block text-sm font-medium text-truffle-extra-dark">SKU (Unique Identifier)</label>
                     <input type="text" name="sku" value="{{ old('sku', $product->sku) }}"
-                        class="mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 @error('sku') border-red-500 @enderror"
+                        class="bg-card mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 @error('sku') border-red-500 @enderror"
                         required>
                     @error('sku')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
+                @include('admin.products._vendor-select')
+
                 <div>
                     <label class="block text-sm font-medium text-truffle-extra-dark">Category</label>
                     <select name="category_id" id="category_id"
-                        class="mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 @error('category_id') border-red-500 @enderror"
+                        class="bg-card mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 @error('category_id') border-red-500 @enderror"
                         required onchange="updateSubCategories()">
                         <option value="">Select Category</option>
                         @foreach($categories as $category)
@@ -59,7 +61,7 @@
                 <div>
                     <label class="block text-sm font-medium text-truffle-extra-dark">Sub-Category (Optional)</label>
                     <select name="sub_category_id" id="sub_category_id"
-                        class="mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2">
+                        class="bg-card mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2">
                         <option value="">Select Sub-Category</option>
                     </select>
                 </div>
@@ -94,21 +96,21 @@
                 <div>
                     <label class="block text-sm font-medium text-truffle-extra-dark">Price ($)</label>
                     <input type="number" step="0.01" name="price" value="{{ $product->price }}"
-                        class="mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2"
+                        class="bg-card mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2"
                         required>
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-truffle-extra-dark">Discount Price ($) (Optional)</label>
                     <input type="number" step="0.01" name="discount_price" value="{{ $product->discount_price }}"
-                        class="mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2">
+                        class="bg-card mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2">
                 </div>
 
 
                 <div>
                     <label class="block text-sm font-medium text-truffle-extra-dark">Material (Optional)</label>
                     <input type="text" name="material" value="{{ old('material', $product->material) }}" placeholder="e.g., Wood, Cotton, Metal"
-                        class="mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2">
+                        class="bg-card mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2">
                 </div>
 
                 <!-- Shipping -->
@@ -119,7 +121,7 @@
                 <div>
                     <label class="block text-sm font-medium text-truffle-extra-dark">Weight (kg)</label>
                     <input type="number" step="0.001" name="weight" value="{{ old('weight', $product->weight) }}"
-                        class="mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 @error('weight') border-red-500 @enderror"
+                        class="bg-card mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 @error('weight') border-red-500 @enderror"
                         required>
                     @error('weight')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -130,19 +132,19 @@
                     <div>
                         <label class="block text-sm font-medium text-truffle-extra-dark">Length (cm)</label>
                         <input type="number" step="0.01" name="length" value="{{ old('length', $product->length) }}"
-                            class="mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 @error('length') border-red-500 @enderror"
+                            class="bg-card mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 @error('length') border-red-500 @enderror"
                             required>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-truffle-extra-dark">Width (cm)</label>
                         <input type="number" step="0.01" name="width" value="{{ old('width', $product->width) }}"
-                            class="mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 @error('width') border-red-500 @enderror"
+                            class="bg-card mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 @error('width') border-red-500 @enderror"
                             required>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-truffle-extra-dark">Height (cm)</label>
                         <input type="number" step="0.01" name="height" value="{{ old('height', $product->height) }}"
-                            class="mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 @error('height') border-red-500 @enderror"
+                            class="bg-card mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 @error('height') border-red-500 @enderror"
                             required>
                     </div>
                     @error('length') <p class="text-red-500 text-xs mt-1 col-span-1">{{ $message }}</p> @enderror
@@ -158,7 +160,7 @@
                 <div class="col-span-2">
                     <label class="block text-sm font-medium text-truffle-extra-dark">Main Image</label>
                     <input type="file" name="main_image"
-                        class="mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2">
+                        class="bg-card mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2">
                     @if($product->main_image)
                         <p class="text-xs text-truffle-extra-dark mt-1">Current: <a href="{{ $product->main_image }}" target="_blank"
                                 class="text-blue-500 hover:underline">View Image</a></p>
@@ -168,7 +170,7 @@
                 <div class="col-span-2">
                     <label class="block text-sm font-medium text-truffle-extra-dark">Additional Images (Multiple)</label>
                     <input type="file" name="images[]" multiple accept="image/*"
-                        class="mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2">
+                        class="bg-card mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2">
                     <p class="text-xs text-truffle-extra-dark mt-1">You can select multiple images at once. New images will be added to existing ones.</p>
                     @if($product->images && count($product->images) > 0)
                         <div class="mt-2 flex gap-2 flex-wrap">
@@ -182,14 +184,14 @@
                 <div class="col-span-2">
                     <label class="block text-sm font-medium text-truffle-extra-dark">Short Description (Optional)</label>
                     <textarea name="description" rows="2"
-                        class="mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2"
+                        class="bg-card mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2"
                         placeholder="Brief product summary">{{ old('description', $product->description) }}</textarea>
                 </div>
 
                 <div class="col-span-2">
                     <label class="block text-sm font-medium text-truffle-extra-dark">Long Description</label>
                     <textarea name="long_description" rows="6"
-                        class="mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2"
+                        class="bg-card mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2"
                         placeholder="Detailed product description with formatting">{{ old('long_description', $product->long_description) }}</textarea>
                     <p class="text-xs text-truffle-extra-dark mt-1">This will be displayed prominently on the product page</p>
                 </div>
@@ -250,7 +252,7 @@
                 <div class="col-span-2 md:col-span-1 mt-4">
                     <label class="block text-sm font-medium text-truffle-extra-dark">Carousel Priority</label>
                     <input type="number" name="carousel_priority" value="{{ old('carousel_priority', $product->carousel_priority ?? 0) }}" min="0"
-                        class="mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2">
+                        class="bg-card mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2">
                     <p class="text-xs text-truffle-extra-dark mt-1">Higher priority products appear first in carousels (0 = default)</p>
                 </div>
             </div>

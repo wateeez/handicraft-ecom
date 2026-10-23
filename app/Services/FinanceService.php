@@ -76,7 +76,7 @@ class FinanceService
 
             $netReceipts = (float) Payment::query()
                 ->where('order_id', $order->id)
-                ->where('status', 'confirmed')
+                ->whereIn('status', ['confirmed', 'reversed'])
                 ->sum('amount')
                 - (float) Refund::query()
                     ->where('order_id', $order->id)
@@ -100,7 +100,7 @@ class FinanceService
      * and refreshes the invoice register. Idempotent — returns null when the order's
      * confirmed receipts already cover the total or the reference was already recorded.
      */
-    public function recordSettledPayment(Order $order, string $method, ?string $reference = null, ?User $user = null): ?Payment
+    public function recordSettledPayment(Order $order, string $method, ?string $reference = null, ?User $user = null, ?string $note = null): ?Payment
     {
         return DB::transaction(function () use ($order, $method, $reference, $user) {
             $order = Order::lockForUpdate()->findOrFail($order->id);
@@ -134,7 +134,7 @@ class FinanceService
                 'received_on' => now()->toDateString(),
                 'status' => 'confirmed',
                 'confirmed_at' => now(),
-                'notes' => 'Auto-recorded on ' . ($method === 'paypal' ? 'PayPal capture.' : 'admin mark-as-paid.'),
+                'notes' => $note ?? 'Auto-recorded on ' . ($method === 'paypal' ? 'PayPal capture.' : 'admin mark-as-paid.'),
             ]);
 
             $this->audit('payment_auto_recorded', $order, $payment, $user, [], $payment->only(['amount', 'currency', 'method', 'reference']));
@@ -224,6 +224,10 @@ class FinanceService
 
             if ($payment->status !== 'confirmed') {
                 throw ValidationException::withMessages(['payment' => 'Only confirmed payments can be reversed.']);
+            }
+
+            if ($payment->reversals()->exists()) {
+                throw ValidationException::withMessages(['payment' => 'This payment has already been reversed.']);
             }
 
             $reversal = Payment::create([

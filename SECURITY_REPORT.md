@@ -23,40 +23,6 @@
 
 ---
 
-## Remediation status (2026-10-23)
-
-Fixed in code (uncommitted; review with `git diff`):
-
-| Item | Change |
-|---|---|
-| Unauthenticated PayPal/cancel endpoints | New per-order HMAC `pay_token` (`Order::paymentToken()`), issued by `checkout.init-order`, required by `createOrder`, `capturePayment` and `cancelPending`. Checkout JS sends it. PayPal order ID validated against `^[A-Za-z0-9]{10,40}$` |
-| No API rate limiting | `throttleApi()` in `bootstrap/app.php`; `throttle:10,1` on the three PayPal routes |
-| Login / public forms unthrottled | `throttle:5,1` on `POST /login`; `throttle:10,1` on inquiry, quote, init-order, calculate-shipping; `throttle:60,1` on cart routes |
-| **New:** public `/register` route | `Auth::routes()` registered open registration, and self-registered accounts reach admin read routes. Removed; only explicit login/logout remain. This also fixes the `route:list` crash (missing `ForgotPasswordController`) |
-| Inquiry email HTML injection | `name`, product name and sender name now escaped with `e()` |
-| SVG logo uploads | `svg` removed from allowed types (png/jpg/gif/webp, plus ico for the favicon) |
-| Bulk ZIP import | Entry-count and uncompressed-size caps, path-traversal check, unique 0700 temp dir, real-image check via `finfo` + `getimagesize`, extension taken from detected MIME type |
-| Mass assignment (shipping rates) | `only([...])` instead of `all()`; zone/provider IDs validated with `exists` |
-| Unescaped JSON in `<script>` | `JSON_HEX_TAG\|AMP\|APOS\|QUOT` on the order-edit page; `JSON_HEX_TAG\|AMP` on the JSON-LD blocks |
-| Guessable success page | `/checkout/success/{orderNumber}` now requires the `token` query parameter |
-| Session cookie | `secure` defaults to true when `APP_ENV=production` |
-| Forex URL editable? | Checked: the admin form only saves validated rate values, not URLs. No change needed |
-
-Verified: lint clean on all changed files; Blade views compile; wrong or missing `pay_token` returns 422/404 on all three PayPal routes; the API throttle returns 429 after 10 requests a minute; `/register` returns 404; `POST /login` carries `throttle:5,1`.
-
-Not verified: a full PayPal checkout end to end (needs sandbox credentials and a browser), and the login throttle under a real request (CSRF intercepts first when tested from the console). Database-backed tests cannot run here because PHP lacks the `pdo_sqlite` driver.
-
-**Still open (not code changes):**
-1. Upgrade PHP on every environment (after a backup). Confirm the fixed versions on php.net.
-2. Set `APP_DEBUG=false` and `APP_ENV=production` on the live server.
-3. Review the 4 admin accounts (names, roles, last-login IPs) in the admin panel.
-4. Run a dynamic scan (OWASP ZAP / HawkScan) on a staging copy.
-5. Longer term: move models from `$guarded = []` to `$fillable`, and move routing into `bootstrap/app.php`.
-
-Old `checkout/success` links without the token stop working. Customers already redirected there keep the page for that visit only.
-
----
-
 ## 1. PHP runtime patch level — HIGH
 
 | Install | Version found | Patched release named in the advisory email |
@@ -179,7 +145,7 @@ All server-side HTTP requests:
 3. **Harden the bulk image ZIP import** — extension and MIME whitelist, size and entry limits, unique temp dir.
 4. **Remove SVG from logo uploads**, or sanitise it.
 5. **Throttle `/login`** and the public inquiry and quote forms.
-6. **Escape the inquiry confirmation email** (`e($request->name)`) and review other `Mail::html` calls.
+6. **Escape the inquiry confirmation email** (`e($request->name)`) and review other `Mail::html` calls
 7. **Set `APP_DEBUG=false`, `APP_ENV=production`** on the live server.
 8. Replace `$request->all()` with validated data in the shipping controller; move models from `$guarded = []` to `$fillable`.
 9. Use `JSON_HEX_TAG` / `Js::from` in the order-edit and JSON-LD script blocks.

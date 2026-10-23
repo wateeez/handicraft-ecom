@@ -49,7 +49,7 @@
                     <!-- Button -->
                     <tr>
                         <td align="center" style="padding-bottom: 40px;">
-                            <a href="{{ config('app.url') }}/orders/{{ $order->id }}" style="background-color: #2d4a34; color: #ffffff; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Visit your Order Page</a>
+                            <a href="{{ route('checkout.success', ['orderNumber' => $order->order_number, 'token' => $order->paymentToken()]) }}" style="background-color: #2d4a34; color: #ffffff; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Visit your Order Page</a>
                         </td>
                     </tr>
 

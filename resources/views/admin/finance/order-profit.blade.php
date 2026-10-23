@@ -122,7 +122,7 @@
                     @csrf
                     <p class="text-sm font-semibold sm:col-span-2">Record a payment</p>
                     <label class="block text-sm">Pay to
-                        <select name="payee_type" required class="mt-1 w-full rounded-md border border-border bg-background px-3 py-2">
+                        <select name="payee_type" required class="mt-1 w-full rounded-md border border-border bg-card px-3 py-2">
                             @foreach(\App\Models\OrderPayable::TYPES as $type => $typeLabel)
                                 @if($payables->has($type))<option value="{{ $type }}" @selected(old('payee_type') === $type)>{{ $typeLabel }}</option>@endif
                             @endforeach
@@ -130,22 +130,22 @@
                         @error('payee_type')<span class="mt-1 block text-xs text-red-700">{{ $message }}</span>@enderror
                     </label>
                     <label class="block text-sm">Amount (NPR)
-                        <input type="number" step="0.01" min="0.01" name="amount" value="{{ old('amount') }}" required class="mt-1 w-full rounded-md border border-border bg-background px-3 py-2">
+                        <input type="number" step="0.01" min="0.01" name="amount" value="{{ old('amount') }}" required class="mt-1 w-full rounded-md border border-border bg-card px-3 py-2">
                         @error('amount')<span class="mt-1 block text-xs text-red-700">{{ $message }}</span>@enderror
                     </label>
                     <label class="block text-sm">Paid on
-                        <input type="date" name="paid_on" value="{{ old('paid_on', now()->toDateString()) }}" max="{{ now()->toDateString() }}" required class="mt-1 w-full rounded-md border border-border bg-background px-3 py-2">
+                        <input type="date" name="paid_on" value="{{ old('paid_on', now()->toDateString()) }}" max="{{ now()->toDateString() }}" required class="mt-1 w-full rounded-md border border-border bg-card px-3 py-2">
                         @error('paid_on')<span class="mt-1 block text-xs text-red-700">{{ $message }}</span>@enderror
                     </label>
                     <label class="block text-sm">Method
-                        <input name="method" value="{{ old('method') }}" required maxlength="100" placeholder="Bank transfer, cash, eSewa…" class="mt-1 w-full rounded-md border border-border bg-background px-3 py-2">
+                        <input name="method" value="{{ old('method') }}" required maxlength="100" placeholder="Bank transfer, cash, eSewa…" class="mt-1 w-full rounded-md border border-border bg-card px-3 py-2">
                         @error('method')<span class="mt-1 block text-xs text-red-700">{{ $message }}</span>@enderror
                     </label>
                     <label class="block text-sm">Reference
-                        <input name="reference" value="{{ old('reference') }}" maxlength="255" class="mt-1 w-full rounded-md border border-border bg-background px-3 py-2">
+                        <input name="reference" value="{{ old('reference') }}" maxlength="255" class="mt-1 w-full rounded-md border border-border bg-card px-3 py-2">
                     </label>
                     <label class="block text-sm">Notes
-                        <input name="notes" value="{{ old('notes') }}" maxlength="2000" class="mt-1 w-full rounded-md border border-border bg-background px-3 py-2">
+                        <input name="notes" value="{{ old('notes') }}" maxlength="2000" class="mt-1 w-full rounded-md border border-border bg-card px-3 py-2">
                     </label>
                     <div class="sm:col-span-2"><button class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Record payment</button></div>
                 </form>
@@ -162,7 +162,7 @@
             <form method="POST" action="{{ route('admin.finance.orders.profit.store', $order) }}" class="grid gap-4 p-5 sm:grid-cols-2">
                 @csrf
                 <label class="block text-sm">Vendor
-                    <select name="vendor_id" required class="mt-1 w-full rounded-md border border-border bg-background px-3 py-2">
+                    <select name="vendor_id" required class="mt-1 w-full rounded-md border border-border bg-card px-3 py-2">
                         <option value="">Select vendor</option>
                         @foreach($vendors as $vendor)
                             <option value="{{ $vendor->id }}" @selected((string) old('vendor_id', $defaults['vendor_id']) === (string) $vendor->id)>{{ $vendor->name }} ({{ (float) $vendor->cost_price_pct }}% / {{ (float) $vendor->commission_pct }}%)</option>
@@ -172,22 +172,22 @@
                 </label>
                 <label class="block text-sm">Forex rate (NPR per USD)
                     <span class="mt-1 flex gap-2">
-                        <input type="number" step="0.0001" min="0" name="forex_rate" id="forex-rate" value="{{ old('forex_rate', $defaults['forex_rate']) }}" required class="w-full rounded-md border border-border bg-background px-3 py-2">
+                        <input type="number" step="0.0001" min="0" name="forex_rate" id="forex-rate" value="{{ old('forex_rate', $defaults['forex_rate']) }}" required class="w-full rounded-md border border-border bg-card px-3 py-2">
                         <button type="button" id="forex-refresh" data-url="{{ route('admin.finance.forex.refresh') }}" class="shrink-0 rounded-md border border-border px-3 py-2 text-sm hover:bg-muted">Get latest</button>
                     </span>
                     <span id="forex-status" class="mt-1 block text-xs text-muted-foreground" aria-live="polite"></span>
                     @error('forex_rate')<span class="mt-1 block text-xs text-red-700">{{ $message }}</span>@enderror
                 </label>
                 <label class="block text-sm">Product price (USD)
-                    <input type="number" step="0.01" min="0" name="product_price_usd" value="{{ old('product_price_usd', $defaults['product_price_usd']) }}" required class="mt-1 w-full rounded-md border border-border bg-background px-3 py-2">
+                    <input type="number" step="0.01" min="0" name="product_price_usd" value="{{ old('product_price_usd', $defaults['product_price_usd']) }}" required class="mt-1 w-full rounded-md border border-border bg-card px-3 py-2">
                     @error('product_price_usd')<span class="mt-1 block text-xs text-red-700">{{ $message }}</span>@enderror
                 </label>
                 <label class="block text-sm">Shipping charged (USD)
-                    <input type="number" step="0.01" min="0" name="shipping_usd" value="{{ old('shipping_usd', $defaults['shipping_usd']) }}" required class="mt-1 w-full rounded-md border border-border bg-background px-3 py-2">
+                    <input type="number" step="0.01" min="0" name="shipping_usd" value="{{ old('shipping_usd', $defaults['shipping_usd']) }}" required class="mt-1 w-full rounded-md border border-border bg-card px-3 py-2">
                     @error('shipping_usd')<span class="mt-1 block text-xs text-red-700">{{ $message }}</span>@enderror
                 </label>
                 <label class="block text-sm sm:col-span-2">Actual shipping cost (NPR, optional)
-                    <input type="number" step="0.01" min="0" name="actual_shipping_cost_npr" value="{{ old('actual_shipping_cost_npr', $defaults['actual_shipping_cost_npr']) }}" class="mt-1 w-full rounded-md border border-border bg-background px-3 py-2">
+                    <input type="number" step="0.01" min="0" name="actual_shipping_cost_npr" value="{{ old('actual_shipping_cost_npr', $defaults['actual_shipping_cost_npr']) }}" class="mt-1 w-full rounded-md border border-border bg-card px-3 py-2">
                     @error('actual_shipping_cost_npr')<span class="mt-1 block text-xs text-red-700">{{ $message }}</span>@enderror
                 </label>
                 <div class="sm:col-span-2"><button class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">{{ $latest ? 'Recalculate (new version)' : 'Calculate' }}</button></div>

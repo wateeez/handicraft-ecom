@@ -78,6 +78,7 @@ Route::middleware(['auth', 'viewer.readonly'])->prefix('admin')->name('admin.')-
     Route::middleware('permission:view_finance')->get('finance/report-summary', [FinanceController::class, 'reportSummary'])->name('finance.report-summary');
     Route::middleware('permission:view_finance')->get('finance/clients/{client}/summary', [FinanceController::class, 'clientSummary'])->name('finance.clients.summary');
     Route::middleware('permission:manage_finance')->put('finance/settings', [FinanceController::class, 'updateSettings'])->name('finance.settings.update');
+    Route::middleware('permission:record_payments')->post('finance/payments/forex-rate', [FinancePaymentController::class, 'forexRate'])->name('finance.payments.forex-rate');
     Route::middleware('permission:record_payments')->post('finance/orders/{order}/payments', [FinancePaymentController::class, 'store'])->name('finance.payments.store');
     Route::middleware('permission:confirm_payments')->post('finance/payments/{payment}/confirm', [FinancePaymentController::class, 'confirm'])->name('finance.payments.confirm');
     Route::middleware('permission:confirm_payments')->post('finance/payments/{payment}/reverse', [FinancePaymentController::class, 'reverse'])->name('finance.payments.reverse');

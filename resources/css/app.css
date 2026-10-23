@@ -454,6 +454,22 @@ img:not(.object-contain) {
   transition: all 0.2s ease;
 }
 
+/* Consistent field background: slightly lighter than the page */
+@layer base {
+  input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=range]):not([type=color]):not([type=submit]):not([type=button]),
+  select,
+  textarea {
+    background-color: var(--card);
+  }
+}
+
+/* Indeterminate loading bar */
+@keyframes loading-bar-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+.loading-bar > span { animation: loading-bar-slide 1.1s ease-in-out infinite; }
+
 /* Hide number input spinners */
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }

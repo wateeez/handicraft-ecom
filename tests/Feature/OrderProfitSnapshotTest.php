@@ -365,7 +365,7 @@ class OrderProfitSnapshotTest extends TestCase
 
     public function test_finance_sidebar_submenu_follows_permissions(): void
     {
-        $overviewUrl = route('admin.finance.index');
+        $overviewUrl = route('admin.finance.index') . '#overview';
         $vendorsUrl = route('admin.finance.vendors.index');
         $link = fn (string $url) => 'href="' . $url . '"';
 
@@ -374,12 +374,12 @@ class OrderProfitSnapshotTest extends TestCase
             ->assertOk()->assertSee($link($vendorsUrl), false)->assertDontSee($link($overviewUrl), false);
 
         // view_finance alone: Overview, but no Vendors
-        $this->actingAs($this->adminWith('view_finance'))->get($overviewUrl)
+        $this->actingAs($this->adminWith('view_finance'))->get(route('admin.finance.index'))
             ->assertOk()->assertSee($link($overviewUrl), false)->assertDontSee($link($vendorsUrl), false);
 
         // Both: the full submenu
-        $this->actingAs($this->adminWith('view_finance', 'manage_finance'))->get($overviewUrl)
-            ->assertOk()->assertSee($link($overviewUrl), false)->assertSee($link($vendorsUrl), false)->assertSee('aria-current="page"', false);
+        $this->actingAs($this->adminWith('view_finance', 'manage_finance'))->get(route('admin.finance.index'))
+            ->assertOk()->assertSee($link($overviewUrl), false)->assertSee($link($vendorsUrl), false)->assertSee("hash === 'overview'", false);
     }
 
     public function test_finance_overview_shows_its_data_without_hiding_it_in_collapsed_panels(): void
@@ -482,7 +482,6 @@ class OrderProfitSnapshotTest extends TestCase
         $this->ledger($order, 'refund_confirmed', '-15.00', now()->subDay()->toDateTimeString());
 
         $html = $this->actingAs($user)->get(route('admin.finance.index'))->assertOk()
-            ->assertSee('role="tablist"', false)
             ->assertSee('Where the money goes')->assertSee('Receipts trend')->assertSee('Payout progress')
             ->assertSee('Net profit by order')->assertSee('Monthly net profit')->assertSee('Profit by vendor')
             ->assertSee('Recent payout payments')->assertSee('TXN-7')->assertSee('Largest unpaid orders')
@@ -491,7 +490,6 @@ class OrderProfitSnapshotTest extends TestCase
 
         foreach (['overview', 'receipts', 'profit', 'payouts', 'receivables', 'sales'] as $tab) {
             $this->assertStringContainsString('id="panel-' . $tab . '"', $html);
-            $this->assertStringContainsString('id="tab-' . $tab . '"', $html);
         }
 
         // Every SVG on the page must be well-formed XML

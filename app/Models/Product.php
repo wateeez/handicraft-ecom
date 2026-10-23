@@ -25,6 +25,7 @@ class Product extends Model
         'min_quantity',
         'material',
         'category_id',
+        'vendor_id',
         'sub_category_id',
         'sku',
         'length',
@@ -44,6 +45,9 @@ class Product extends Model
 
     protected $guarded = [];
 
+    // Vendor is internal (admin dashboard only); never expose to storefront/API output.
+    protected $hidden = ['vendor_id'];
+
     protected $casts = [
         'images' => 'array',
         'is_new_arrival' => 'boolean',
@@ -52,6 +56,11 @@ class Product extends Model
         'is_on_sale' => 'boolean',
         'is_order_now_enabled' => 'boolean',
     ];
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
+    }
 
     // Scopes for carousel queries
     public function scopeNewArrivals($query)

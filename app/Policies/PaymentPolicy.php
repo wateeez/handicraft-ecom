@@ -40,6 +40,16 @@ class PaymentPolicy
     }
 
     /**
+     * Reversing is the only way to undo a confirmed payment, so it needs the
+     * confirm_payments permission rather than the pending-only update rule.
+     */
+    public function reverse(User $user, Payment $payment): bool
+    {
+        return $payment->status === 'confirmed'
+            && ($user->isSuperAdmin() || $user->hasPermission('confirm_payments'));
+    }
+
+    /**
      * Determine whether the user can delete the model.
      */
     public function delete(User $user, Payment $payment): bool

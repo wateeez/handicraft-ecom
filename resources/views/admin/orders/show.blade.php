@@ -135,18 +135,34 @@
                     @endif
 
                     @if(!$order->is_paid && auth()->user()->hasAnyRole(['super_admin', 'admin']))
-                        <form action="{{ route('admin.orders.mark-paid', $order) }}" method="POST">
-                            @csrf
-                            <button type="submit"
-                                class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium flex items-center gap-2"
-                                onclick="return confirm('Mark as PAID? This will lock order totals. Proceed?')">
+                        <details class="relative">
+                            <summary class="list-none cursor-pointer px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium flex items-center gap-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                                 Mark Paid
-                            </button>
-                        </form>
+                            </summary>
+                            <form action="{{ route('admin.orders.mark-paid', $order) }}" method="POST"
+                                class="absolute right-0 z-20 mt-2 w-72 space-y-3 rounded-lg border border-truffle-medium/30 bg-cream p-4 shadow-lg"
+                                onsubmit="return confirm('Mark as PAID? This will lock order totals and record the payment. Proceed?')">
+                                @csrf
+                                <div>
+                                    <label for="mark-paid-method" class="mb-1 block text-xs font-semibold text-truffle-extra-dark">How was it paid? *</label>
+                                    <select id="mark-paid-method" name="method" required class="w-full rounded-md border border-truffle-medium/40 text-sm">
+                                        <option value="paypal">PayPal</option>
+                                        <option value="cash">Cash</option>
+                                        <option value="bank_transfer">Bank transfer</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="mark-paid-reference" class="mb-1 block text-xs font-semibold text-truffle-extra-dark">Reference (optional)</label>
+                                    <input id="mark-paid-reference" name="reference" type="text" maxlength="255" class="w-full rounded-md border border-truffle-medium/40 text-sm">
+                                </div>
+                                <button type="submit" class="w-full rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Mark as paid</button>
+                            </form>
+                        </details>
                     @endif
                 </div>
             </div>
@@ -406,16 +422,19 @@
                                         @if($payment->notes)
                                             <p class="whitespace-pre-wrap text-xs text-truffle-extra-dark/70">{{ $payment->notes }}</p>
                                         @endif
+                                        @if($payment->status === 'confirmed' && ($reversedOn = $payment->reversals()->latest('id')->value('created_at')))
+                                            <p class="text-xs font-semibold text-red-700">Reversed on {{ \Illuminate\Support\Carbon::parse($reversedOn)->format('M d, Y') }}. This payment no longer counts toward the order total.</p>
+                                        @endif
                                         @if($canConfirmPayments && $payment->status === 'pending')
                                             <form action="{{ route('admin.finance.payments.confirm', $payment) }}" method="POST">
                                                 @csrf
                                                 <button type="submit" class="rounded-md bg-emerald-700 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-800">Confirm receipt</button>
                                             </form>
-                                        @elseif($canConfirmPayments && $payment->status === 'confirmed')
+                                        @elseif($canConfirmPayments && $payment->status === 'confirmed' && !$payment->reversals()->exists())
                                             <form action="{{ route('admin.finance.payments.reverse', $payment) }}" method="POST" class="space-y-2" onsubmit="return confirm('Reverse this confirmed payment? A correction entry will be added to the ledger.')">
                                                 @csrf
                                                 <label class="block text-xs font-semibold text-truffle-extra-dark" for="payment-reversal-reason-{{ $payment->id }}">Reversal reason</label>
-                                                <textarea id="payment-reversal-reason-{{ $payment->id }}" name="reason" rows="2" minlength="5" required class="w-full rounded-md border border-truffle-medium/40 bg-white text-sm focus:border-primary focus:ring-primary" placeholder="Explain why this payment is being reversed"></textarea>
+                                                <textarea id="payment-reversal-reason-{{ $payment->id }}" name="reason" rows="2" minlength="5" required class="w-full rounded-md border border-truffle-medium/40 bg-card text-sm focus:border-primary focus:ring-primary" placeholder="Explain why this payment is being reversed"></textarea>
                                                 <button type="submit" class="rounded-md border border-red-300 px-3 py-2 text-xs font-semibold text-red-800 transition-colors hover:bg-red-50">Reverse payment</button>
                                             </form>
                                         @endif
@@ -427,11 +446,59 @@
                         @if($canRecordPayments)
                             <details class="border-t border-truffle-medium/20">
                                 <summary class="cursor-pointer list-none px-5 py-4 text-sm font-semibold text-green-premium hover:bg-[#F5F2EA]">Record a payment</summary>
-                                <form action="{{ route('admin.finance.payments.store', $order) }}" method="POST" class="space-y-3 px-5 pb-5" x-data="{ amount: @js(old('amount', '')), rate: @js(old('reporting_exchange_rate', '1')) }">
+                                <form action="{{ route('admin.finance.payments.store', $order) }}" method="POST" class="space-y-3 px-5 pb-5" x-data="{
+                                    amount: @js(old('amount', '')),
+                                    rate: @js(old('reporting_exchange_rate', '1')),
+                                    currency: @js(old('currency', $order->currency ?? 'USD')),
+                                    method: @js(old('method', '')),
+                                    receivedOn: @js(old('received_on', now()->toDateString())),
+                                    rateNote: '',
+                                    fetching: false,
+                                    orderTotal: {{ (float) $order->grand_total }},
+                                    received: {{ (float) $order->payments()->whereIn('status', ['pending', 'confirmed', 'reversed'])->sum('amount') }},
+                                    orderCurrency: @js($order->currency ?? 'USD'),
+                                    overpay: @js((bool) old('confirm_overpayment')),
+                                    get exceeds() {
+                                        return this.currency.toUpperCase() === this.orderCurrency.toUpperCase()
+                                            && this.amount !== '' && (this.received + Number(this.amount)) > this.orderTotal + 0.005;
+                                    },
+                                    invoices: @js($order->invoices->where('status', '!=', 'voided')->mapWithKeys(fn ($i) => [$i->id => [
+                                        'amount' => $i->financial_snapshot['grand_total'] ?? null,
+                                        'currency' => $i->financial_snapshot['currency'] ?? 'USD',
+                                        'date' => ($i->issued_at ?? $i->created_at)->toDateString(),
+                                    ]])),
+                                    async pickInvoice(id) {
+                                        const inv = this.invoices[id];
+                                        if (!inv) { return; }
+                                        if (inv.amount !== null) { this.amount = Number(inv.amount).toFixed(2); }
+                                        this.currency = inv.currency;
+                                        this.method = 'PayPal';
+                                        this.receivedOn = inv.date;
+                                        await this.fetchRate();
+                                    },
+                                    async fetchRate() {
+                                        this.fetching = true;
+                                        this.rateNote = 'Fetching live rate...';
+                                        try {
+                                            const res = await fetch(@js(route('admin.finance.payments.forex-rate')), {
+                                                method: 'POST',
+                                                headers: { 'X-CSRF-TOKEN': @js(csrf_token()), 'Accept': 'application/json' },
+                                            });
+                                            const body = await res.json();
+                                            if (!res.ok) { throw new Error(body.message || 'failed'); }
+                                            this.rate = body.rate;
+                                            this.rateNote = 'Live rate: 1 USD = ' + body.rate + ' NPR';
+                                        } catch (e) {
+                                            this.rateNote = 'Could not fetch live rate; enter it manually.';
+                                        } finally {
+                                            this.fetching = false;
+                                        }
+                                    }
+                                }">
                                     @csrf
                                     <div>
                                         <label for="payment-invoice-id" class="mb-1 block text-xs font-semibold text-truffle-extra-dark">Invoice</label>
-                                        <select id="payment-invoice-id" name="invoice_id" class="w-full rounded-md border border-truffle-medium/40 bg-white text-sm focus:border-primary focus:ring-primary">
+                                        <select id="payment-invoice-id" name="invoice_id" @change="pickInvoice($event.target.value)" class="w-full rounded-md border border-truffle-medium/40 bg-card text-sm focus:border-primary focus:ring-primary">
                                             <option value="">No invoice selected</option>
                                             @foreach($order->invoices->where('status', '!=', 'voided') as $invoice)
                                                 <option value="{{ $invoice->id }}" @selected(old('invoice_id') == $invoice->id)>{{ $invoice->invoice_number }} · {{ ucfirst($invoice->status) }}</option>
@@ -441,46 +508,60 @@
                                     <div class="grid grid-cols-2 gap-3">
                                         <div>
                                             <label for="payment-amount" class="mb-1 block text-xs font-semibold text-truffle-extra-dark">Amount *</label>
-                                            <input id="payment-amount" name="amount" type="number" min="0.01" step="0.01" required x-model="amount" value="{{ old('amount') }}" class="w-full rounded-md border border-truffle-medium/40 bg-white text-sm focus:border-primary focus:ring-primary">
+                                            <input id="payment-amount" name="amount" type="number" min="0.01" step="0.01" required x-model="amount" value="{{ old('amount') }}" class="w-full rounded-md border border-truffle-medium/40 bg-card text-sm focus:border-primary focus:ring-primary">
                                             @error('amount')<p class="mt-1 text-xs text-red-700">{{ $message }}</p>@enderror
                                         </div>
                                         <div>
                                             <label for="payment-currency" class="mb-1 block text-xs font-semibold text-truffle-extra-dark">Currency</label>
-                                            <input id="payment-currency" name="currency" type="text" maxlength="3" value="{{ old('currency', $order->currency ?? 'USD') }}" class="w-full rounded-md border border-truffle-medium/40 bg-white text-sm uppercase focus:border-primary focus:ring-primary">
+                                            <input id="payment-currency" name="currency" type="text" maxlength="3" x-model="currency" class="w-full rounded-md border border-truffle-medium/40 bg-card text-sm uppercase focus:border-primary focus:ring-primary">
                                         </div>
+                                    </div>
+                                    <div x-show="exceeds" x-cloak class="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+                                        <p class="font-semibold">This payment goes above the order total.</p>
+                                        <p class="mt-1">Payments on this order already come to <span x-text="orderCurrency + ' ' + received.toFixed(2)"></span> of <span x-text="orderCurrency + ' ' + orderTotal.toFixed(2)"></span>. Check this isn't a duplicate of an earlier payment (for example one auto-recorded by "Mark as paid").</p>
+                                        <label class="mt-2 flex items-center gap-2 font-semibold">
+                                            <input type="checkbox" name="confirm_overpayment" value="1" x-model="overpay"> I understand, record it anyway
+                                        </label>
                                     </div>
                                     <div class="grid grid-cols-2 gap-3">
                                         <div>
                                             <label for="payment-exchange-rate" class="mb-1 block text-xs font-semibold text-truffle-extra-dark">Reporting exchange rate *</label>
-                                            <input id="payment-exchange-rate" name="reporting_exchange_rate" type="number" min="0.00000001" step="0.00000001" required x-model="rate" value="{{ old('reporting_exchange_rate', '1') }}" class="w-full rounded-md border border-truffle-medium/40 bg-white text-sm focus:border-primary focus:ring-primary">
+                                            <div class="flex gap-2">
+                                                <input id="payment-exchange-rate" name="reporting_exchange_rate" type="number" min="0.00000001" step="0.00000001" required x-model="rate" value="{{ old('reporting_exchange_rate', '1') }}" class="w-full rounded-md border border-truffle-medium/40 bg-card text-sm focus:border-primary focus:ring-primary">
+                                                <button type="button" @click="fetchRate()" :disabled="fetching" class="shrink-0 rounded-md border border-truffle-medium/40 px-3 text-sm font-semibold text-green-premium hover:bg-[#F5F2EA] disabled:opacity-50" x-text="fetching ? '...' : 'Fetch'"></button>
+                                            </div>
+                                            <div x-show="fetching" x-cloak class="loading-bar mt-1.5 h-1 w-full overflow-hidden rounded-full bg-truffle-medium/20" role="progressbar" aria-label="Fetching exchange rate">
+                                                <span class="block h-full w-1/3 rounded-full bg-green-premium"></span>
+                                            </div>
                                             @error('reporting_exchange_rate')<p class="mt-1 text-xs text-red-700">{{ $message }}</p>@enderror
                                         </div>
                                         <div>
                                             <label for="payment-reporting-amount" class="mb-1 block text-xs font-semibold text-truffle-extra-dark">Reporting amount *</label>
-                                            <input id="payment-reporting-amount" name="reporting_amount" type="number" min="0.01" step="0.01" required readonly x-bind:value="amount !== '' && rate !== '' ? (Number(amount) * Number(rate)).toFixed(2) : ''" class="w-full rounded-md border border-truffle-medium/40 bg-gray-50 text-sm focus:border-primary focus:ring-primary">
+                                            <input id="payment-reporting-amount" name="reporting_amount" type="number" min="0.01" step="0.01" required readonly x-bind:value="amount !== '' && rate !== '' ? (Number(amount) * Number(rate)).toFixed(2) : ''" class="w-full rounded-md border border-truffle-medium/40 bg-card text-sm focus:border-primary focus:ring-primary">
                                             <p class="mt-1 text-[12px] text-truffle-extra-dark/70">Calculated from amount × exchange rate.</p>
+                                            <p class="mt-1 text-[12px] text-truffle-extra-dark/70" x-text="rateNote" x-show="rateNote"></p>
                                             @error('reporting_amount')<p class="mt-1 text-xs text-red-700">{{ $message }}</p>@enderror
                                         </div>
                                     </div>
                                     <div class="grid grid-cols-2 gap-3">
                                         <div>
                                             <label for="payment-method" class="mb-1 block text-xs font-semibold text-truffle-extra-dark">Method *</label>
-                                            <input id="payment-method" name="method" type="text" maxlength="100" required value="{{ old('method') }}" placeholder="Bank transfer, cash..." class="w-full rounded-md border border-truffle-medium/40 bg-white text-sm focus:border-primary focus:ring-primary">
+                                            <input id="payment-method" name="method" type="text" maxlength="100" required x-model="method" placeholder="Bank transfer, cash..." class="w-full rounded-md border border-truffle-medium/40 bg-card text-sm focus:border-primary focus:ring-primary">
                                             @error('method')<p class="mt-1 text-xs text-red-700">{{ $message }}</p>@enderror
                                         </div>
                                         <div>
                                             <label for="payment-received-on" class="mb-1 block text-xs font-semibold text-truffle-extra-dark">Received on *</label>
-                                            <input id="payment-received-on" name="received_on" type="date" required value="{{ old('received_on', now()->toDateString()) }}" class="w-full rounded-md border border-truffle-medium/40 bg-white text-sm focus:border-primary focus:ring-primary">
+                                            <input id="payment-received-on" name="received_on" type="date" required x-model="receivedOn" class="w-full rounded-md border border-truffle-medium/40 bg-card text-sm focus:border-primary focus:ring-primary">
                                             @error('received_on')<p class="mt-1 text-xs text-red-700">{{ $message }}</p>@enderror
                                         </div>
                                     </div>
                                     <div>
                                         <label for="payment-reference" class="mb-1 block text-xs font-semibold text-truffle-extra-dark">Reference</label>
-                                        <input id="payment-reference" name="reference" type="text" maxlength="255" value="{{ old('reference') }}" class="w-full rounded-md border border-truffle-medium/40 bg-white text-sm focus:border-primary focus:ring-primary">
+                                        <input id="payment-reference" name="reference" type="text" maxlength="255" value="{{ old('reference') }}" class="w-full rounded-md border border-truffle-medium/40 bg-card text-sm focus:border-primary focus:ring-primary">
                                     </div>
                                     <div>
                                         <label for="payment-notes" class="mb-1 block text-xs font-semibold text-truffle-extra-dark">Notes</label>
-                                        <textarea id="payment-notes" name="notes" rows="2" class="w-full rounded-md border border-truffle-medium/40 bg-white text-sm focus:border-primary focus:ring-primary">{{ old('notes') }}</textarea>
+                                        <textarea id="payment-notes" name="notes" rows="2" class="w-full rounded-md border border-truffle-medium/40 bg-card text-sm focus:border-primary focus:ring-primary">{{ old('notes') }}</textarea>
                                     </div>
                                     @error('invoice_id')<p class="text-xs text-red-700">{{ $message }}</p>@enderror
                                     <button type="submit" class="w-full rounded-md bg-green-premium px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:opacity-90">Save payment for confirmation</button>

@@ -30,7 +30,7 @@ class FinanceController extends Controller
         return view('admin.finance.index', [
             'invoiceCount' => Invoice::count(),
             'confirmedReceipts' => $financeTablesReady
-                ? Payment::where('status', 'confirmed')->sum('reporting_amount')
+                ? Payment::whereIn('status', ['confirmed', 'reversed'])->sum('reporting_amount')
                 : 0,
             'outstandingPayouts' => $financeTablesReady
                 ? OrderPayable::where('status', '!=', 'paid')
@@ -56,9 +56,13 @@ class FinanceController extends Controller
             'reportFrom' => $request->query('from'),
             'reportTo' => $request->query('to'),
             'recentReceipts' => $financeTablesReady
-                ? Payment::with(['order:id,order_number', 'client:id,name'])->where('status', 'confirmed')->latest('id')->limit(10)->get()
+                ? Payment::with(['order:id,order_number', 'client:id,name'])->where('status', 'confirmed')->whereDoesntHave('reversals')->latest('id')->limit(15)->get()
                 : collect(),
             'pendingPayments' => $financeTablesReady ? Payment::where('status', 'pending')->count() : 0,
+            'pendingPaymentList' => $financeTablesReady
+                ? Payment::with(['order:id,order_number,grand_total,currency', 'client:id,name', 'invoice:id,invoice_number', 'recordedBy:id,name'])
+                    ->where('status', 'pending')->oldest('id')->limit(100)->get()
+                : collect(),
             'profit' => $financeTablesReady ? $this->profitOverview() : null,
             'dash' => $financeTablesReady ? $dashboard->build($request->query('from') ?: null, $request->query('to') ?: null) : null,
             'unpaidOrders' => $financeTablesReady ? $insights->outstandingOrders() : collect(),

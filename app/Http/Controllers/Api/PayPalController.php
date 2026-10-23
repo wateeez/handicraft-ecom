@@ -218,6 +218,16 @@ class PayPalController extends Controller
             ]);
         }
 
+        // First profit calculation, so the Finance tab is complete without an admin opening the order
+        try {
+            app(\App\Services\Finance\AutoOrderProfitService::class)->calculateIfNeeded($order->fresh());
+        } catch (\Throwable $e) {
+            Log::warning('PayPal: could not auto-calculate profit after payment', [
+                'order_id' => $order->id,
+                'error'    => $e->getMessage(),
+            ]);
+        }
+
         // Clear the session cart
         session()->forget('cart');
 

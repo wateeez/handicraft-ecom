@@ -12,7 +12,7 @@ class FinanceInsightService
     public function clientSummary(Client $client): array
     {
         $confirmedPayments = Payment::where('client_id', $client->id)->where('status', 'confirmed');
-        $gross = (float) (clone $confirmedPayments)->sum('reporting_amount');
+        $gross = (float) Payment::where('client_id', $client->id)->whereIn('status', ['confirmed', 'reversed'])->sum('reporting_amount');
         $refunds = (float) Refund::whereIn('payment_id', (clone $confirmedPayments)->select('id'))
             ->where('status', 'confirmed')->sum('reporting_amount');
         $orders = Order::where('client_id', $client->id);
@@ -34,7 +34,7 @@ class FinanceInsightService
             ->where('type', Order::TYPE_ORDER)
             ->whereNotIn('status', [Order::STATUS_CANCELLED, Order::STATUS_REFUNDED])
             ->selectRaw('orders.id, orders.created_at, orders.grand_total,
-                COALESCE((SELECT SUM(payments.amount) FROM payments WHERE payments.order_id = orders.id AND payments.status = "confirmed" AND payments.deleted_at IS NULL), 0)
+                COALESCE((SELECT SUM(payments.amount) FROM payments WHERE payments.order_id = orders.id AND payments.status IN ("confirmed", "reversed") AND payments.deleted_at IS NULL), 0)
                 - COALESCE((SELECT SUM(refunds.amount) FROM refunds WHERE refunds.order_id = orders.id AND refunds.status = "confirmed" AND refunds.deleted_at IS NULL), 0) AS net_paid')
             ->get()
             ->filter(fn (Order $order) => (float) $order->net_paid < (float) $order->grand_total)
@@ -59,7 +59,7 @@ class FinanceInsightService
             ->whereNotIn('status', [Order::STATUS_CANCELLED, Order::STATUS_REFUNDED])
             ->with('client:id,name')
             ->selectRaw('orders.*,
-                COALESCE((SELECT SUM(payments.amount) FROM payments WHERE payments.order_id = orders.id AND payments.status = "confirmed" AND payments.deleted_at IS NULL), 0)
+                COALESCE((SELECT SUM(payments.amount) FROM payments WHERE payments.order_id = orders.id AND payments.status IN ("confirmed", "reversed") AND payments.deleted_at IS NULL), 0)
                 - COALESCE((SELECT SUM(refunds.amount) FROM refunds WHERE refunds.order_id = orders.id AND refunds.status = "confirmed" AND refunds.deleted_at IS NULL), 0) AS net_paid')
             ->get()
             ->filter(fn (Order $order) => (float) $order->net_paid < (float) $order->grand_total)

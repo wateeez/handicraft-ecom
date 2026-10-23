@@ -310,11 +310,22 @@ class OrderController extends Controller
             abort(403);
         }
 
+        $data = $request->validate([
+            'method' => ['required', 'in:paypal,cash,bank_transfer,other'],
+            'reference' => ['nullable', 'string', 'max:255'],
+        ]);
+
         try {
             // All or nothing: the order is only left paid if its payment and ledger entry were recorded too.
-            \Illuminate\Support\Facades\DB::transaction(function () use ($order) {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($order, $data) {
                 $this->orderService->markAsPaid($order, auth()->user());
-                app(\App\Services\FinanceService::class)->recordSettledPayment($order->fresh(), 'cash', null, auth()->user());
+                app(\App\Services\FinanceService::class)->recordSettledPayment(
+                    $order->fresh(),
+                    $data['method'],
+                    $data['reference'] ?? null,
+                    auth()->user(),
+                    'Recorded on admin mark-as-paid (' . str_replace('_', ' ', $data['method']) . ').'
+                );
             });
             return back()->with('success', 'Order marked as paid. Financials are now locked.');
         } catch (\Illuminate\Validation\ValidationException $e) {

@@ -23,7 +23,13 @@
     $pf = $dash['profit'] ?? null;
     $netProfit = $profit['net_profit'] ?? '0';
     $profitNegative = bccomp($netProfit, '0', 2) < 0;
-    $tabs = ['overview' => 'Overview', 'receipts' => 'Receipts', 'profit' => 'Profit', 'payouts' => 'Payouts', 'receivables' => 'Receivables', 'sales' => 'Sales'];
+    $tabs = ['overview' => 'Overview', 'receipts' => 'Receipts & payments', 'profit' => 'Profit', 'payouts' => 'Payouts', 'receivables' => 'Receivables', 'sales' => 'Sales', 'lookup' => 'Client lookup', 'settings' => 'Finance settings'];
+    $rateErrorKeys = ['gateway_fee_pct', 'csr_pct', 'data_entry_pct', 'de_fixed_rate', 'de_threshold_rate', 'include_shipping_in_commission'];
+    $initialTab = match (true) {
+        $errors->hasAny($rateErrorKeys) => 'settings',
+        $errors->has('amount') || $errors->has('confirm_overpayment') => 'receipts',
+        default => match (request('tool')) { 'settings' => 'settings', 'lookup' => 'lookup', 'record' => 'receipts', default => 'overview' },
+    };
     $tabBadges = ['payouts' => collect($payoutBreakdown)->filter(fn ($r) => bccomp($r['balance'], '0', 2) > 0)->count(), 'receipts' => $pendingPayments];
     $costItems = $pf ? [
         ['label' => 'Vendor', 'value' => $pf['parts']['vendor'], 'color' => 'var(--chart-1)'],
@@ -36,7 +42,18 @@
     $payeeColors = ['Vendor' => 'var(--chart-1)', 'CSR' => 'var(--chart-4)', 'Data entry' => 'var(--chart-3)'];
 @endphp
 @include('admin.finance.partials.styles')
-<div class="space-y-8 p-4 sm:p-6">
+<div class="space-y-8 p-4 sm:p-6" x-data="{
+        tab: @js($initialTab),
+        tabs: @js(array_keys($tabs)),
+        titles: @js($tabs),
+        init() {
+            const fromHash = () => { const t = location.hash.slice(1); if (this.tabs.includes(t)) this.tab = t; };
+            fromHash();
+            window.addEventListener('hashchange', fromHash);
+        },
+        go(t) { location.hash = t; }
+    }">
+    <h2 class="text-lg font-semibold text-foreground" x-text="titles[tab]">{{ $tabs[$initialTab] }}</h2>
     @unless($financeTablesReady)
         <div class="flex items-start gap-3 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950" role="status">
             <svg class="mt-0.5 h-5 w-5 shrink-0 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
@@ -53,32 +70,20 @@
             $canSettings = $financeTablesReady && (auth()->user()->isSuperAdmin() || auth()->user()->hasPermission('manage_finance'));
             $canRecord = $financeTablesReady && (auth()->user()->isSuperAdmin() || auth()->user()->hasPermission('record_payments'));
         @endphp
-        <section aria-labelledby="tools-heading" class="space-y-3" x-data="{ tool: @js(request('tool') ?: ($errors->hasAny($rateKeys) ? 'settings' : null)) }">
+        <section aria-labelledby="tools-heading" class="space-y-3">
             <h3 id="tools-heading" class="sr-only">Finance tools</h3>
-            <div class="flex flex-wrap gap-2">
-                @if($canSettings)
-                    <button type="button" @click="tool = tool === 'settings' ? null : 'settings'" :aria-expanded="tool === 'settings'" aria-controls="tool-settings" :class="tool === 'settings' ? 'ring-2 ring-primary ring-offset-2' : ''" class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">Finance settings</button>
-                @endif
-                @if($financeTablesReady)
-                    <button type="button" @click="tool = tool === 'lookup' ? null : 'lookup'" :aria-expanded="tool === 'lookup'" aria-controls="tool-lookup" :class="tool === 'lookup' ? 'ring-2 ring-primary ring-offset-2' : ''" class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">Client finance lookup</button>
-                @endif
-                @if($canRecord)
-                    <button type="button" @click="tool = tool === 'record' ? null : 'record'" :aria-expanded="tool === 'record'" aria-controls="tool-record" :class="tool === 'record' ? 'ring-2 ring-primary ring-offset-2' : ''" class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">Record payment</button>
-                @endif
-            </div>
     @if($canSettings)
-        <div x-show="tool === 'settings'" x-cloak id="tool-settings" class="rounded-md border border-border bg-card">
+        <div x-show="tab === 'settings'" x-cloak id="tool-settings" class="rounded-md border border-border bg-card">
             <div class="flex items-start justify-between gap-3 px-5 py-4">
                 <div><h4 class="text-sm font-semibold">Finance settings</h4></div>
-                <button type="button" @click="tool = null" class="rounded-md border border-border px-2.5 py-1 text-xs font-semibold hover:bg-muted/40" aria-label="Close Finance settings">Close</button>
             </div>
             <form method="POST" action="{{ route('admin.finance.settings.update') }}" class="grid gap-4 border-t border-border p-5 md:grid-cols-3">
                 @csrf @method('PUT')
-                <label class="text-sm">Reporting currency<input name="reporting_currency" value="{{ $financeSettings->reporting_currency }}" maxlength="3" class="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 uppercase"></label>
-                <label class="text-sm">Commission type<select name="default_commission_type" class="mt-1 w-full rounded-md border border-border bg-background px-3 py-2"><option value="percent" @selected($financeSettings->default_commission_type === 'percent')>Percent</option><option value="fixed" @selected($financeSettings->default_commission_type === 'fixed')>Fixed</option></select></label>
-                <label class="text-sm">Commission value<input type="number" min="0" step="0.01" name="default_commission_value" value="{{ $financeSettings->default_commission_value }}" class="mt-1 w-full rounded-md border border-border bg-background px-3 py-2"></label>
-                <label class="text-sm">Commission earned<select name="commission_earned_trigger" class="mt-1 w-full rounded-md border border-border bg-background px-3 py-2"><option value="payment" @selected($financeSettings->commission_earned_trigger === 'payment')>On payment</option><option value="delivery" @selected($financeSettings->commission_earned_trigger === 'delivery')>On delivery</option></select></label>
-                <label class="text-sm">Loyalty basis<select name="loyalty_basis" class="mt-1 w-full rounded-md border border-border bg-background px-3 py-2"><option value="lifetime_spend" @selected($financeSettings->loyalty_basis === 'lifetime_spend')>Lifetime spend</option><option value="order_count" @selected($financeSettings->loyalty_basis === 'order_count')>Order count</option></select></label>
+                <label class="text-sm">Reporting currency<input name="reporting_currency" value="{{ $financeSettings->reporting_currency }}" maxlength="3" class="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 uppercase"></label>
+                <label class="text-sm">Commission type<select name="default_commission_type" class="mt-1 w-full rounded-md border border-border bg-card px-3 py-2"><option value="percent" @selected($financeSettings->default_commission_type === 'percent')>Percent</option><option value="fixed" @selected($financeSettings->default_commission_type === 'fixed')>Fixed</option></select></label>
+                <label class="text-sm">Commission value<input type="number" min="0" step="0.01" name="default_commission_value" value="{{ $financeSettings->default_commission_value }}" class="mt-1 w-full rounded-md border border-border bg-card px-3 py-2"></label>
+                <label class="text-sm">Commission earned<select name="commission_earned_trigger" class="mt-1 w-full rounded-md border border-border bg-card px-3 py-2"><option value="payment" @selected($financeSettings->commission_earned_trigger === 'payment')>On payment</option><option value="delivery" @selected($financeSettings->commission_earned_trigger === 'delivery')>On delivery</option></select></label>
+                <label class="text-sm">Loyalty basis<select name="loyalty_basis" class="mt-1 w-full rounded-md border border-border bg-card px-3 py-2"><option value="lifetime_spend" @selected($financeSettings->loyalty_basis === 'lifetime_spend')>Lifetime spend</option><option value="order_count" @selected($financeSettings->loyalty_basis === 'order_count')>Order count</option></select></label>
                 <input type="hidden" name="commission_base" value="{{ $financeSettings->commission_base }}">
                 <div class="flex items-end"><button class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Save settings</button></div>
             </form>
@@ -98,7 +103,7 @@
                         ['de_threshold_rate', 'Data entry threshold rate (NPR/USD)', '0.0001', 'real rate used at or above this'],
                     ] as [$key, $label, $step, $hint])
                         <label class="block text-sm">{{ $label }}
-                            <input type="number" step="{{ $step }}" min="0" name="{{ $key }}" value="{{ old($key, (float) $rates[$key]) }}" required class="mt-1 w-full rounded-md border border-border bg-background px-3 py-2">
+                            <input type="number" step="{{ $step }}" min="0" name="{{ $key }}" value="{{ old($key, (float) $rates[$key]) }}" required class="mt-1 w-full rounded-md border border-border bg-card px-3 py-2">
                             <span class="mt-1 block text-xs text-muted-foreground">{{ $hint }}</span>
                             @error($key)<span class="mt-1 block text-xs text-red-700">{{ $message }}</span>@enderror
                         </label>
@@ -114,14 +119,13 @@
                 </div>
     @endif
     @if($financeTablesReady)
-        <div x-show="tool === 'lookup'" x-cloak id="tool-lookup" class="rounded-md border border-border bg-card">
+        <div x-show="tab === 'lookup'" x-cloak id="tool-lookup" class="rounded-md border border-border bg-card">
             <div class="flex items-start justify-between gap-3 px-5 py-4">
                 <div><h4 class="text-sm font-semibold">Client finance lookup</h4><p class="mt-1 text-xs text-muted-foreground">Load derived purchase metrics from confirmed payments and refunds.</p></div>
-                <button type="button" @click="tool = null" class="rounded-md border border-border px-2.5 py-1 text-xs font-semibold hover:bg-muted/40" aria-label="Close Client finance lookup">Close</button>
             </div>
             <div class="border-t border-border p-5" x-data="{ clientId: '', summary: null, loading: false }">
                 <div class="flex max-w-lg gap-2">
-                    <input x-model="clientId" type="number" min="1" placeholder="Client ID" class="w-full rounded-md border border-border bg-background px-3 py-2">
+                    <input x-model="clientId" type="number" min="1" placeholder="Client ID" class="w-full rounded-md border border-border bg-card px-3 py-2">
                     <button @click="loading = true; fetch(`/admin/finance/clients/${clientId}/summary`, {headers:{Accept:'application/json'}}).then(r => r.json()).then(data => summary = data).finally(() => loading = false)" class="rounded-md border border-border px-4 py-2 text-sm font-semibold">Load</button>
                 </div>
                 <template x-if="summary"><div class="mt-4 grid gap-3 sm:grid-cols-3 text-sm"><div><span class="text-muted-foreground">Lifetime spend</span><p class="font-semibold" x-text="summary.lifetime_spend"></p></div><div><span class="text-muted-foreground">Paid orders</span><p class="font-semibold" x-text="summary.total_orders"></p></div><div><span class="text-muted-foreground">Average order</span><p class="font-semibold" x-text="summary.average_order_value"></p></div></div></template>
@@ -129,22 +133,28 @@
                 </div>
     @endif
     @if($canRecord)
-        <div x-show="tool === 'record'" x-cloak id="tool-record" class="rounded-md border border-border bg-card">
+        <div x-show="tab === 'receipts'" x-cloak id="tool-record" class="rounded-md border border-border bg-card">
             <div class="flex items-start justify-between gap-3 px-5 py-4">
-                <div><h4 class="text-sm font-semibold">Record payment</h4><p class="mt-1 text-xs text-muted-foreground">Creates a pending payment; a separate authorized user confirms it.</p></div>
-                <button type="button" @click="tool = null" class="rounded-md border border-border px-2.5 py-1 text-xs font-semibold hover:bg-muted/40" aria-label="Close Record payment">Close</button>
+                <div><h4 class="text-sm font-semibold">Record payment</h4><p class="mt-1 text-xs text-muted-foreground">Creates a pending payment. Confirm it from the Receipts tab.</p></div>
             </div>
-            <div class="border-t border-border p-5" x-data="{ orderId: '' }">
+            <div class="border-t border-border p-5" x-data="{ orderId: @js(old('order_ref', '')) }">
                 <form class="grid gap-3 md:grid-cols-3" :action="`/admin/finance/orders/${orderId}/payments`" method="POST">
                     @csrf
-                    <input x-model="orderId" type="number" min="1" required placeholder="Order ID" class="rounded-md border border-border bg-background px-3 py-2">
-                    <input name="amount" type="number" min="0.01" step="0.01" required placeholder="Order currency amount" class="rounded-md border border-border bg-background px-3 py-2">
-                    <input name="reporting_amount" type="number" min="0.01" step="0.01" required placeholder="Reporting amount" class="rounded-md border border-border bg-background px-3 py-2">
-                    <input name="reporting_exchange_rate" type="number" min="0.00000001" step="0.00000001" value="1" required class="rounded-md border border-border bg-background px-3 py-2">
-                    <input name="currency" maxlength="3" placeholder="Currency (e.g. USD)" class="rounded-md border border-border bg-background px-3 py-2">
-                    <select name="method" required class="rounded-md border border-border bg-background px-3 py-2"><option value="">Payment method</option><option>Bank transfer</option><option>PayPal</option><option>Card</option><option>Cash</option></select>
-                    <input name="reference" placeholder="Transaction reference" class="rounded-md border border-border bg-background px-3 py-2">
-                    <input name="received_on" type="date" value="{{ now()->toDateString() }}" required class="rounded-md border border-border bg-background px-3 py-2">
+                    <input type="hidden" name="return_to" value="{{ route('admin.finance.index') }}#receipts">
+                    <input x-model="orderId" name="order_ref" type="number" min="1" required placeholder="Order ID" class="rounded-md border border-border bg-card px-3 py-2">
+                    <input name="amount" value="{{ old('amount') }}" type="number" min="0.01" step="0.01" required placeholder="Order currency amount" class="rounded-md border border-border bg-card px-3 py-2">
+                    <input name="reporting_amount" value="{{ old('reporting_amount') }}" type="number" min="0.01" step="0.01" required placeholder="Reporting amount" class="rounded-md border border-border bg-card px-3 py-2">
+                    <input name="reporting_exchange_rate" type="number" min="0.00000001" step="0.00000001" value="{{ old('reporting_exchange_rate', 1) }}" required class="rounded-md border border-border bg-card px-3 py-2">
+                    <input name="currency" value="{{ old('currency') }}" maxlength="3" placeholder="Currency (e.g. USD)" class="rounded-md border border-border bg-card px-3 py-2">
+                    <select name="method" required class="rounded-md border border-border bg-card px-3 py-2"><option value="">Payment method</option>@foreach(['Bank transfer', 'PayPal', 'Card', 'Cash'] as $m)<option @selected(old('method') === $m)>{{ $m }}</option>@endforeach</select>
+                    <input name="reference" value="{{ old('reference') }}" placeholder="Transaction reference" class="rounded-md border border-border bg-card px-3 py-2">
+                    <input name="received_on" type="date" value="{{ old('received_on', now()->toDateString()) }}" required class="rounded-md border border-border bg-card px-3 py-2">
+                    @if($errors->has('amount') || $errors->has('confirm_overpayment'))
+                        <div class="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 md:col-span-3">
+                            <p class="font-semibold">{{ $errors->first('amount') ?: 'Check this payment before saving.' }}</p>
+                            <label class="mt-2 flex items-center gap-2 font-semibold"><input type="checkbox" name="confirm_overpayment" value="1"> I understand, record it anyway</label>
+                        </div>
+                    @endif
                     <button class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Record payment</button>
                 </form>
             </div>
@@ -153,7 +163,7 @@
             </section>
 
     {{-- Headline numbers --}}
-    <section aria-labelledby="kpi-heading">
+    <section aria-labelledby="kpi-heading" x-show="tab === 'overview'">
         <h3 id="kpi-heading" class="sr-only">Key figures</h3>
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             <article class="fv-card fv-rise rounded-lg border border-border bg-card p-5" style="--i: 0">
@@ -193,10 +203,10 @@
     @if($financeTablesReady)
         {{-- Things that need someone to act --}}
         @if($pendingPayments > 0 || ($profit['awaiting'] ?? 0) > 0)
-            <section aria-labelledby="attention-heading" class="fv-rise rounded-lg border border-amber-300 bg-amber-50 p-5" style="--i: 5">
+            <section aria-labelledby="attention-heading" x-show="tab === 'overview'" class="fv-rise rounded-lg border border-amber-300 bg-amber-50 p-5" style="--i: 5">
                 <h3 id="attention-heading" class="text-sm font-semibold text-amber-950">Needs attention</h3>
                 <ul class="mt-2 space-y-1 text-sm text-amber-950">
-                    @if($pendingPayments > 0)<li><strong>{{ $pendingPayments }}</strong> payment(s) waiting for confirmation.</li>@endif
+                    @if($pendingPayments > 0)<li><strong>{{ $pendingPayments }}</strong> payment(s) waiting for confirmation. <a href="#receipts" class="font-semibold underline">Review them</a></li>@endif
                     @if(($profit['awaiting'] ?? 0) > 0)<li><strong>{{ $profit['awaiting'] }}</strong> paid order(s) have no profit calculation yet, so no payouts are due for them. Open each one and calculate its profit:
                         <span class="mt-1 flex flex-wrap gap-2">
                             @foreach($profit['awaiting_orders'] as $awaitingOrder)
@@ -210,32 +220,7 @@
         @endif
 
         {{-- Detail reports as tabs. Every panel stays in the page; tabs only show/hide. --}}
-        <div x-data="{
-                tab: 'overview',
-                tabs: @js(array_keys($tabs)),
-                init() {
-                    const fromHash = () => { const t = location.hash.slice(1); if (this.tabs.includes(t)) this.tab = t; };
-                    fromHash();
-                    window.addEventListener('hashchange', fromHash);
-                },
-                go(t) { this.tab = t; history.replaceState(null, '', '#' + t); },
-                move(step) { const i = (this.tabs.indexOf(this.tab) + step + this.tabs.length) % this.tabs.length; this.go(this.tabs[i]); this.$nextTick(() => document.getElementById('tab-' + this.tab)?.focus()); }
-            }" class="space-y-6">
-
-            <div class="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-                <div role="tablist" aria-label="Finance reports" class="flex min-w-max gap-1 border-b border-border" @keydown.arrow-right.prevent="move(1)" @keydown.arrow-left.prevent="move(-1)">
-                    @foreach($tabs as $key => $label)
-                        <button type="button" role="tab" id="tab-{{ $key }}" aria-controls="panel-{{ $key }}"
-                            :aria-selected="tab === '{{ $key }}'" :tabindex="tab === '{{ $key }}' ? 0 : -1"
-                            @click="go('{{ $key }}')"
-                            class="fv-tab inline-flex items-center gap-2 px-4 py-3 text-sm font-semibold text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary"
-                            aria-selected="{{ $key === 'overview' ? 'true' : 'false' }}">
-                            {{ $label }}
-                            @if(($tabBadges[$key] ?? 0) > 0)<span class="rounded-full bg-amber-100 px-1.5 py-0.5 text-[11px] font-bold text-amber-900">{{ $tabBadges[$key] }}</span>@endif
-                        </button>
-                    @endforeach
-                </div>
-            </div>
+        <div class="space-y-6">
 
             {{-- ============ OVERVIEW ============ --}}
             <div id="panel-overview" role="tabpanel" aria-labelledby="tab-overview" x-show="tab === 'overview'" class="space-y-6">
@@ -296,6 +281,112 @@
 
             {{-- ============ RECEIPTS ============ --}}
             <div id="panel-receipts" role="tabpanel" aria-labelledby="tab-receipts" x-show="tab === 'receipts'" x-cloak class="space-y-6">
+                @php
+                    $canConfirm = auth()->user()->isSuperAdmin() || auth()->user()->hasPermission('confirm_payments');
+                    $returnTo = route('admin.finance.index') . '#receipts';
+                @endphp
+                <section aria-labelledby="pending-heading" class="fv-rise rounded-lg border {{ $pendingPaymentList->isNotEmpty() ? 'border-amber-300' : 'border-border' }} bg-card">
+                    <header class="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
+                        <div>
+                            <h3 id="pending-heading" class="font-semibold">Payments awaiting confirmation</h3>
+                            <p class="mt-1 text-xs text-muted-foreground">Confirming moves a payment into the ledger and updates the totals. {{ $canConfirm ? '' : 'You need the confirm payments permission to confirm.' }}</p>
+                        </div>
+                        <span class="rounded-full bg-muted px-2.5 py-1 text-xs font-semibold">{{ $pendingPayments }} pending</span>
+                    </header>
+                    @if($pendingPaymentList->isEmpty())
+                        <p class="px-5 py-4 text-sm italic text-muted-foreground">Nothing is waiting for confirmation.</p>
+                    @else
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-sm">
+                                <thead class="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                                    <tr>
+                                        <th class="px-5 py-2.5 font-semibold">Order</th>
+                                        <th class="px-3 py-2.5 font-semibold">Client</th>
+                                        <th class="px-3 py-2.5 font-semibold">Amount</th>
+                                        <th class="px-3 py-2.5 font-semibold">Method / ref</th>
+                                        <th class="px-3 py-2.5 font-semibold">Received</th>
+                                        <th class="px-3 py-2.5 font-semibold">Recorded by</th>
+                                        <th class="px-5 py-2.5 text-right font-semibold">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-border">
+                                    @foreach($pendingPaymentList as $pending)
+                                        <tr>
+                                            <td class="px-5 py-3">
+                                                <a href="{{ route('admin.orders.show', $pending->order_id) }}" class="font-semibold hover:underline">{{ $pending->order?->order_number ?? '#' . $pending->order_id }}</a>
+                                                @if($pending->invoice)<span class="block text-xs text-muted-foreground">{{ $pending->invoice->invoice_number }}</span>@endif
+                                            </td>
+                                            <td class="px-3 py-3">{{ $pending->client?->name ?? '—' }}</td>
+                                            <td class="px-3 py-3 tabular-nums">
+                                                {{ $pending->currency }} {{ number_format((float) $pending->amount, 2) }}
+                                                @if($pending->order && (float) $pending->amount > (float) $pending->order->grand_total + 0.005)
+                                                    <span class="block text-xs font-semibold text-amber-800">Above order total ({{ number_format((float) $pending->order->grand_total, 2) }})</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-3 py-3">{{ ucfirst(str_replace('_', ' ', $pending->method)) }}@if($pending->reference)<span class="block break-all text-xs text-muted-foreground">{{ $pending->reference }}</span>@endif</td>
+                                            <td class="px-3 py-3 whitespace-nowrap">{{ $pending->received_on?->format('M d, Y') }}</td>
+                                            <td class="px-3 py-3">{{ $pending->recordedBy?->name ?? 'System' }}</td>
+                                            <td class="px-5 py-3 text-right">
+                                                @if($canConfirm)
+                                                    <form action="{{ route('admin.finance.payments.confirm', $pending) }}" method="POST" onsubmit="return confirm('Confirm receipt of {{ $pending->currency }} {{ number_format((float) $pending->amount, 2) }} for {{ $pending->order?->order_number }}?')">
+                                                        @csrf
+                                                        <input type="hidden" name="return_to" value="{{ $returnTo }}">
+                                                        <button type="submit" class="rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800">Confirm receipt</button>
+                                                    </form>
+                                                @else
+                                                    <span class="text-xs text-muted-foreground">No permission</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                </section>
+
+                <section aria-labelledby="recentreceipts-heading" class="fv-rise rounded-lg border border-border bg-card">
+                    <header class="border-b border-border px-5 py-4">
+                        <h3 id="recentreceipts-heading" class="font-semibold">Recent payments</h3>
+                        <p class="mt-1 text-xs text-muted-foreground">Latest 15 confirmed customer payments that haven't been reversed, including PayPal captures. Reverse a payment recorded by mistake; the total then drops and you can record the correct one.</p>
+                    </header>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                                <tr><th class="px-5 py-3">Received on</th><th class="px-5 py-3">Customer</th><th class="px-5 py-3">Order</th><th class="px-5 py-3">Method</th><th class="px-5 py-3 text-right">Amount</th><th class="px-5 py-3 text-right">Action</th></tr>
+                            </thead>
+                            <tbody class="divide-y divide-border">
+                                @forelse($recentReceipts as $receipt)
+                                    <tr>
+                                        <td class="px-5 py-3 text-muted-foreground">{{ ($receipt->received_on ?? $receipt->created_at)->format('M j, Y') }}</td>
+                                        <td class="px-5 py-3 font-medium">{{ $receipt->client?->name ?? '—' }}</td>
+                                        <td class="px-5 py-3">@if($receipt->order)<a class="text-primary hover:underline" href="{{ route('admin.orders.show', $receipt->order) }}">{{ $receipt->order->order_number }}</a>@else #{{ $receipt->order_id }}@endif</td>
+                                        <td class="px-5 py-3">{{ ucfirst($receipt->method) }}@if($receipt->reference) <span class="text-xs text-muted-foreground">&middot; {{ $receipt->reference }}</span>@endif</td>
+                                        <td class="px-5 py-3 text-right font-semibold tabular-nums">{{ $money($receipt->amount, $receipt->currency) }}</td>
+                                        <td class="px-5 py-3 text-right">
+                                            @if($canConfirm)
+                                                <details class="relative inline-block text-left">
+                                                    <summary class="inline-block cursor-pointer list-none rounded-md border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50">Reverse</summary>
+                                                    <form action="{{ route('admin.finance.payments.reverse', $receipt) }}" method="POST" class="absolute right-0 z-20 mt-2 w-72 space-y-2 rounded-lg border border-border bg-card p-3 shadow-lg"
+                                                          onsubmit="return confirm('Reverse this confirmed payment? This cannot be undone, only corrected by recording a new payment.')">
+                                                        @csrf
+                                                        <input type="hidden" name="return_to" value="{{ $returnTo }}">
+                                                        <label for="reverse-reason-{{ $receipt->id }}" class="block text-xs font-semibold">Reversal reason *</label>
+                                                        <textarea id="reverse-reason-{{ $receipt->id }}" name="reason" rows="2" minlength="5" required class="w-full rounded-md border border-border bg-card px-2 py-1.5 text-sm" placeholder="Why is this payment being reversed?"></textarea>
+                                                        <button type="submit" class="w-full rounded-md bg-red-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-800">Reverse payment</button>
+                                                    </form>
+                                                </details>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="6" class="px-5 py-8 text-center text-muted-foreground">No payments recorded yet.</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
                 <section aria-labelledby="activity-heading" class="fv-rise rounded-lg border border-border bg-card">
                     <header class="flex flex-wrap items-end justify-between gap-3 border-b border-border px-5 py-4">
                         <div>
@@ -303,8 +394,8 @@
                             <p class="mt-1 text-xs text-muted-foreground">{{ $reportFrom || $reportTo ? 'Filtered: ' . ($reportFrom ?: 'start') . ' to ' . ($reportTo ?: 'today') : 'All time' }} &middot; {{ $currency }}</p>
                         </div>
                         <form method="GET" action="{{ route('admin.finance.index') }}#receipts" class="flex flex-wrap items-end gap-2">
-                            <label class="text-xs text-muted-foreground">From <input type="date" name="from" value="{{ $reportFrom }}" class="mt-1 block rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground"></label>
-                            <label class="text-xs text-muted-foreground">To <input type="date" name="to" value="{{ $reportTo }}" class="mt-1 block rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground"></label>
+                            <label class="text-xs text-muted-foreground">From <input type="date" name="from" value="{{ $reportFrom }}" class="mt-1 block rounded-md border border-border bg-card px-3 py-1.5 text-sm text-foreground"></label>
+                            <label class="text-xs text-muted-foreground">To <input type="date" name="to" value="{{ $reportTo }}" class="mt-1 block rounded-md border border-border bg-card px-3 py-1.5 text-sm text-foreground"></label>
                             <button class="rounded-md border border-border px-3 py-1.5 text-sm font-semibold hover:bg-muted/40">Apply</button>
                             @if($reportFrom || $reportTo)<a href="{{ route('admin.finance.index') }}#receipts" class="px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground">Clear</a>@endif
                         </form>
@@ -500,18 +591,18 @@
 
                         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                             <label class="block text-sm">Paid on
-                                <input type="date" name="paid_on" value="{{ old('paid_on', now()->toDateString()) }}" max="{{ now()->toDateString() }}" required class="mt-1 w-full rounded-md border border-border bg-background px-3 py-2">
+                                <input type="date" name="paid_on" value="{{ old('paid_on', now()->toDateString()) }}" max="{{ now()->toDateString() }}" required class="mt-1 w-full rounded-md border border-border bg-card px-3 py-2">
                                 @error('paid_on')<span class="mt-1 block text-xs text-red-700">{{ $message }}</span>@enderror
                             </label>
                             <label class="block text-sm">Method
-                                <input name="method" value="{{ old('method') }}" required maxlength="100" placeholder="Bank transfer" class="mt-1 w-full rounded-md border border-border bg-background px-3 py-2">
+                                <input name="method" value="{{ old('method') }}" required maxlength="100" placeholder="Bank transfer" class="mt-1 w-full rounded-md border border-border bg-card px-3 py-2">
                                 @error('method')<span class="mt-1 block text-xs text-red-700">{{ $message }}</span>@enderror
                             </label>
                             <label class="block text-sm">Reference
-                                <input name="reference" value="{{ old('reference') }}" maxlength="255" placeholder="Transaction ID (optional)" class="mt-1 w-full rounded-md border border-border bg-background px-3 py-2">
+                                <input name="reference" value="{{ old('reference') }}" maxlength="255" placeholder="Transaction ID (optional)" class="mt-1 w-full rounded-md border border-border bg-card px-3 py-2">
                             </label>
                             <label class="block text-sm">Notes
-                                <input name="notes" value="{{ old('notes') }}" maxlength="2000" placeholder="Optional" class="mt-1 w-full rounded-md border border-border bg-background px-3 py-2">
+                                <input name="notes" value="{{ old('notes') }}" maxlength="2000" placeholder="Optional" class="mt-1 w-full rounded-md border border-border bg-card px-3 py-2">
                             </label>
                         </div>
 
@@ -554,33 +645,6 @@
 
             {{-- ============ RECEIVABLES ============ --}}
             <div id="panel-receivables" role="tabpanel" aria-labelledby="tab-receivables" x-show="tab === 'receivables'" x-cloak class="space-y-6">
-                <section aria-labelledby="recentreceipts-heading" class="fv-rise rounded-lg border border-border bg-card">
-                    <header class="border-b border-border px-5 py-4">
-                        <h3 id="recentreceipts-heading" class="font-semibold">Recent payments</h3>
-                        <p class="mt-1 text-xs text-muted-foreground">Latest 10 confirmed customer payments, including PayPal captures.</p>
-                    </header>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm">
-                            <thead class="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-                                <tr><th class="px-5 py-3">Received on</th><th class="px-5 py-3">Customer</th><th class="px-5 py-3">Order</th><th class="px-5 py-3">Method</th><th class="px-5 py-3 text-right">Amount</th></tr>
-                            </thead>
-                            <tbody class="divide-y divide-border">
-                                @forelse($recentReceipts as $receipt)
-                                    <tr>
-                                        <td class="px-5 py-3 text-muted-foreground">{{ ($receipt->received_on ?? $receipt->created_at)->format('M j, Y') }}</td>
-                                        <td class="px-5 py-3 font-medium">{{ $receipt->client?->name ?? '—' }}</td>
-                                        <td class="px-5 py-3">@if($receipt->order)<a class="text-primary hover:underline" href="{{ route('admin.orders.show', $receipt->order) }}">{{ $receipt->order->order_number }}</a>@else #{{ $receipt->order_id }}@endif</td>
-                                        <td class="px-5 py-3">{{ ucfirst($receipt->method) }}@if($receipt->reference) <span class="text-xs text-muted-foreground">&middot; {{ $receipt->reference }}</span>@endif</td>
-                                        <td class="px-5 py-3 text-right font-semibold tabular-nums">{{ $money($receipt->amount, $receipt->currency) }}</td>
-                                    </tr>
-                                @empty
-                                    <tr><td colspan="5" class="px-5 py-8 text-center text-muted-foreground">No payments recorded yet.</td></tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-
                 <section aria-labelledby="aging-heading" class="fv-rise rounded-lg border border-border bg-card">
                     <header class="border-b border-border px-5 py-4">
                         <h3 id="aging-heading" class="font-semibold">Unpaid order balances by age</h3>

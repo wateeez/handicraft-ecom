@@ -156,6 +156,7 @@
                 <tr>
                     <th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Name</th>
                     <th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Category</th>
+                    <th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Vendor</th>
                     <th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Price</th>
                     <th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Dimensions</th>
                     <th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Weight</th>
@@ -180,6 +181,9 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                             {{ $product->category->name ?? 'Uncategorized' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                            {{ $product->vendor->name ?? '—' }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm">
                             @if($product->discount_price)
