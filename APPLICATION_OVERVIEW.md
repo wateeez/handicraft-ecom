@@ -73,7 +73,9 @@ A full-featured Laravel e-commerce platform built for selling handicraft product
 
 ### Authentication
 - Admin login at `/login` with email/password. Redirects to the admin dashboard on success.
-- "Remember Me" and "Forgot Password" supported.
+- "Remember Me" supported. Login is throttled to 5 attempts per minute per IP.
+- There is **no self-service "Forgot Password"** and **no public registration**. `Auth::routes()` was removed from `routes/web.php`; only the explicit login/logout routes exist. The `auth/passwords/*` and `auth/register` views are unused.
+- Password recovery: another admin with `manage_users` resets it from `/admin/users/{user}/reset-password`, or, if nobody can (for example the only super admin forgot theirs), run `php artisan admin:reset-password {email}` on the server (add `--activate` to also re-activate the account). Keep at least two super admins.
 - Logout invalidates the session and redirects to the homepage.
 
 ### Maintenance Mode
@@ -221,7 +223,7 @@ Three interconnected configuration areas:
 - Create, view, edit, and soft-delete admin users.
 - **Assign/revoke roles** from a user's profile.
 - **Toggle active/inactive** status — inactive users cannot log in.
-- **Reset passwords** from within the admin panel.
+- **Reset passwords** from within the admin panel (cannot reset an account with higher privileges than your own). Server-side fallback: `php artisan admin:reset-password {email}`.
 - Search by name or email; filter by role and status.
 - Last login timestamp and IP address are recorded.
 
@@ -316,6 +318,8 @@ Actions tracked include: order created, status changed, item added/removed/updat
 | `POST` | `/api/paypal/orders/{orderId}/capture` | Captures the PayPal payment; marks the order as paid and generates an invoice. |
 | `POST` | `/api/orders/{order}/cancel-pending` | Cancels a pending unpaid order. |
 
+All three require a `pay_token` in the JSON body and are throttled to 10 requests per minute. The token is issued by `POST /checkout/init-order` as `pay_token` and is an HMAC of the order id and number (`Order::paymentToken()`, keyed by `APP_KEY`, no DB column). Requests with a missing or wrong token are rejected. All API routes also get the `api` rate limiter (60/min) via `throttleApi()` in `bootstrap/app.php`.
+
 ---
 
 ## Database Models
@@ -378,6 +382,15 @@ A queued background job that automatically transitions dispatched orders to "Del
 
 ---
 
+## Artisan Commands
+
+| Command | Purpose |
+|---|---|
+| `php artisan admin:reset-password {email} [--activate]` | Recovery: set a new password (prompted, hidden, validated against `Password::defaults()`) for an admin account; `--activate` re-enables a deactivated account. |
+| `php artisan finance:backfill-payments [--apply] [--method=cash]` | Record the missing confirmed payment for paid orders that have none. Dry run unless `--apply` is passed. |
+
+---
+
 ## Seeding & Default Data
 
 Running `php artisan db:seed` populates:
@@ -392,10 +405,26 @@ Running `php artisan db:seed` populates:
 
 ---
 
+## Security Hardening (October 2026)
+
+Full audit and findings: `SECURITY_REPORT.md`. Summary of the controls now in place:
+
+- **Payment endpoints** need the per-order `pay_token` (see API section). The checkout success page `/checkout/success/{orderNumber}?token=...` also requires it, so order numbers cannot be enumerated. Rotating `APP_KEY` invalidates outstanding tokens.
+- **Rate limits:** API 60/min (global) and 10/min on PayPal routes; `POST /login` 5/min; inquiry, quote, init-order and shipping-calculation 10/min; cart add/update/remove 60/min.
+- **No public registration or password-reset routes** (see Authentication).
+- **Uploads:** images are validated with `image` + `mimes` (no SVG for logos). The bulk image ZIP import caps entries (1000) and uncompressed size (200 MB), rejects path-traversal entries, uses a unique temp directory, accepts only real jpg/png/gif/webp files (checked with `finfo` + `getimagesize`), and derives the stored extension from the detected MIME type.
+- **Output escaping:** use `{{ }}` or `nl2br(e())`. When emitting JSON into `<script>`, include `JSON_HEX_TAG | JSON_HEX_AMP` (and `HEX_APOS | HEX_QUOT` for JS literals). Escape user values with `e()` in any `Mail::html` body.
+- **Mass assignment:** shipping rate create/update accept only named fields. Several models still use `$guarded = []`, so always pass validated or `only([...])` data to `create()`/`update()`.
+- **SSRF:** all outbound HTTP goes to fixed hosts (PayPal, Resend, forex providers from config). Do not add features that fetch user-supplied URLs without an allow-list.
+- **Production checklist:** `APP_DEBUG=false`, `APP_ENV=production`, HTTPS (session cookie `secure` defaults on in production), PHP on a patched release.
+
+---
+
 ## Key Design Decisions
 
 - **Unified Order/Inquiry model**: Both inquiries and paid orders share the `orders` table, distinguished by a `type` field (`inquiry` or `order`). This simplifies the workflow where inquiries can be converted to real orders without data migration.
 - **Client Snapshots**: When an order is paid, the client's address and financial totals are frozen into JSON columns (`client_snapshot`, `financial_snapshot`). This ensures invoices and records remain accurate even if the client profile is later updated.
+- **Per-order payment token**: PayPal create/capture/cancel are public endpoints, so each call must present an HMAC `pay_token` bound to the order. Together with server-side amounts, a caller can neither pay a different amount nor touch another customer's order.
 - **Server-side PayPal amounts**: The PayPal integration always reads the order total from the database — never from the frontend request — preventing price manipulation.
 - **Immutable Audit Logs**: The `order_audit_logs` table has no `updated_at` column; entries are write-once. This guarantees a tamper-evident paper trail.
 - **Cached Site Settings**: All site settings are cached using `Cache::rememberForever` and invalidated only when a setting is updated, keeping the overhead of reading configuration minimal on every request.

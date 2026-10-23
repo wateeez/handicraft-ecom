@@ -268,6 +268,20 @@ class Order extends Model
     /**
      * Generate next order number: ORD-YYYY-NNNNN
      */
+    /**
+     * Unguessable per-order token proving the caller created the order in checkout.
+     * Derived from the app key, so no schema change is needed.
+     */
+    public function paymentToken(): string
+    {
+        return hash_hmac('sha256', 'order-pay:' . $this->id . ':' . $this->order_number, (string) config('app.key'));
+    }
+
+    public function validPaymentToken(?string $token): bool
+    {
+        return is_string($token) && $token !== '' && hash_equals($this->paymentToken(), $token);
+    }
+
     public static function generateOrderNumber(): string
     {
         // lockForUpdate() serialises concurrent inserts under InnoDB (gap lock on last row).

@@ -49,11 +49,18 @@ class PayPalController extends Controller
             return response()->json(['error' => 'PayPal payments are currently disabled.'], 403);
         }
 
-        $request->validate(['order_id' => ['required', 'integer']]);
+        $request->validate([
+            'order_id' => ['required', 'integer'],
+            'pay_token' => ['required', 'string'],
+        ]);
 
         $order = Order::find($request->integer('order_id'));
 
-        if (!$order || $order->is_paid || $order->type !== Order::TYPE_ORDER) {
+        if (!$order || ! $order->validPaymentToken($request->input('pay_token'))) {
+            return response()->json(['error' => 'Invalid or already paid order.'], 422);
+        }
+
+        if ($order->is_paid || $order->type !== Order::TYPE_ORDER) {
             return response()->json(['error' => 'Invalid or already paid order.'], 422);
         }
 
@@ -101,11 +108,18 @@ class PayPalController extends Controller
      */
     public function capturePayment(Request $request, string $paypalOrderId)
     {
-        $request->validate(['order_id' => ['required', 'integer']]);
+        $request->validate([
+            'order_id' => ['required', 'integer'],
+            'pay_token' => ['required', 'string'],
+        ]);
+
+        if (! preg_match('/^[A-Za-z0-9]{10,40}$/', $paypalOrderId)) {
+            return response()->json(['error' => 'Invalid PayPal order ID.'], 422);
+        }
 
         $order = Order::find($request->integer('order_id'));
 
-        if (!$order || $order->type !== Order::TYPE_ORDER) {
+        if (!$order || ! $order->validPaymentToken($request->input('pay_token')) || $order->type !== Order::TYPE_ORDER) {
             return response()->json(['error' => 'Order not found.'], 404);
         }
 
@@ -167,7 +181,7 @@ class PayPalController extends Controller
                 'success'      => true,
                 'order_number' => $order->order_number,
                 'message'      => 'Payment successful. Your order has been placed.',
-                'redirect_url' => route('checkout.success', ['orderNumber' => $order->order_number]),
+                'redirect_url' => route('checkout.success', ['orderNumber' => $order->order_number, 'token' => $order->paymentToken()]),
             ]);
         }
 
@@ -214,17 +228,21 @@ class PayPalController extends Controller
             'success'      => true,
             'order_number' => $order->order_number,
             'message'      => 'Payment successful. Your order has been placed.',
-            'redirect_url' => route('checkout.success', ['orderNumber' => $order->order_number]),
+            'redirect_url' => route('checkout.success', ['orderNumber' => $order->order_number, 'token' => $order->paymentToken()]),
         ]);
     }
 
     /**
      * Cancel a pending (unpaid) order when the user closes the PayPal popup.
-     * This is a public endpoint — no auth required — but only cancels orders
+     * Requires the per-order pay_token issued at checkout, and only cancels orders
      * that are: not paid, of TYPE_ORDER, and not already cancelled.
      */
     public function cancelPending(Request $request, Order $order)
     {
+        if (! $order->validPaymentToken($request->input('pay_token'))) {
+            return response()->json(['error' => 'Invalid order.'], 422);
+        }
+
         if ($order->is_paid) {
             return response()->json(['error' => 'Cannot cancel a paid order.'], 422);
         }

@@ -12,6 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(\App\Http\Middleware\CheckMaintenanceMode::class);
+
+        // Apply the 'api' rate limiter (RouteServiceProvider) to every API route.
+        $middleware->throttleApi();
         
         // Register admin middleware aliases
         $middleware->alias([

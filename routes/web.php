@@ -52,24 +52,23 @@ Route::get('/returns', [PageController::class, 'returns'])->name('pages.returns'
 
 // Cart & Checkout
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
-Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
-Route::post('/cart/update', [CartController::class, 'updateQuantity'])->name('cart.update');
-Route::post('/cart/remove', [CartController::class, 'removeItem'])->name('cart.remove');
+Route::post('/cart/add', [CartController::class, 'add'])->middleware('throttle:60,1')->name('cart.add');
+Route::post('/cart/update', [CartController::class, 'updateQuantity'])->middleware('throttle:60,1')->name('cart.update');
+Route::post('/cart/remove', [CartController::class, 'removeItem'])->middleware('throttle:60,1')->name('cart.remove');
 Route::get('/checkout/{token?}', [CartController::class, 'checkout'])->name('checkout'); // Token for inquiries
-Route::post('/checkout/calculate-shipping', [CartController::class, 'calculateShipping'])->name('checkout.calculate-shipping');
-Route::post('/checkout/init-order', [CartController::class, 'initOrder'])->name('checkout.init-order');
-Route::post('/checkout/submit-quote', [CartController::class, 'submitQuote'])->name('checkout.submit-quote');
+Route::post('/checkout/calculate-shipping', [CartController::class, 'calculateShipping'])->middleware('throttle:10,1')->name('checkout.calculate-shipping');
+Route::post('/checkout/init-order', [CartController::class, 'initOrder'])->middleware('throttle:10,1')->name('checkout.init-order');
+Route::post('/checkout/submit-quote', [CartController::class, 'submitQuote'])->middleware('throttle:10,1')->name('checkout.submit-quote');
 Route::get('/checkout/success/{orderNumber}', [CartController::class, 'orderSuccess'])->name('checkout.success');
 Route::get('/quote/success', fn() => view('frontend.cart.quote-success'))->name('quote.success');
 
 // Inquiry
-Route::post('/products/{product}/inquire', [FrontendInquiryController::class, 'store'])->name('inquiry.store');
+Route::post('/products/{product}/inquire', [FrontendInquiryController::class, 'store'])->middleware('throttle:10,1')->name('inquiry.store');
 
-// Auth Routes
-Auth::routes();
+// Auth Routes (admin login only: public registration and the unimplemented password-reset routes are intentionally not registered)
 
 Route::get('/login', [\App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [\App\Http\Controllers\Auth\LoginController::class, 'login'])->name('login.post');
+Route::post('/login', [\App\Http\Controllers\Auth\LoginController::class, 'login'])->middleware('throttle:5,1')->name('login.post');
 Route::post('/logout', [\App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
 
 // Admin
@@ -123,7 +122,7 @@ Route::middleware(['auth', 'viewer.readonly'])->prefix('admin')->name('admin.')-
 
     // Products
     Route::resource('products', AdminProductController::class)
-        ->only(['index', 'show'])
+        ->only(['index'])
         ->middleware('permission:view_products,manage_products');
     Route::middleware('permission:manage_products')->group(function () {
         Route::resource('products', AdminProductController::class)->except(['index', 'show']);

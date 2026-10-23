@@ -502,8 +502,34 @@ class ProductController extends Controller
             return back()->with('error', 'Unable to open ZIP file.');
         }
 
-        $tempDir = storage_path('app/temp-images-' . time());
-        mkdir($tempDir, 0755, true);
+        // Reject zip bombs and path-traversal entries before extracting anything.
+        $maxEntries = 1000;
+        $maxUncompressed = 200 * 1024 * 1024;
+        $totalSize = 0;
+
+        if ($zip->numFiles > $maxEntries) {
+            $zip->close();
+            return back()->with('error', "ZIP contains too many files (max {$maxEntries}).");
+        }
+
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $stat = $zip->statIndex($i);
+            $entryName = str_replace('\\', '/', (string) ($stat['name'] ?? ''));
+            $totalSize += (int) ($stat['size'] ?? 0);
+
+            if (str_starts_with($entryName, '/') || preg_match('#(^|/)\.\.(/|$)#', $entryName) || str_contains($entryName, "\0")) {
+                $zip->close();
+                return back()->with('error', 'ZIP contains an invalid file path.');
+            }
+        }
+
+        if ($totalSize > $maxUncompressed) {
+            $zip->close();
+            return back()->with('error', 'ZIP is too large once extracted (max 200 MB).');
+        }
+
+        $tempDir = storage_path('app/temp-images-' . Str::uuid());
+        mkdir($tempDir, 0700, true);
 
         $zip->extractTo($tempDir);
         $zip->close();
@@ -536,7 +562,7 @@ class ProductController extends Controller
                 // Format: SKU.ext (main), SKU_0.ext (secondary), SKU_1.ext, SKU_2.ext, etc.
                 // Use pathinfo to correctly handle filenames with multiple dots.
                 $info = pathinfo($filename);
-                if (empty($info['filename']) || empty($info['extension'])) {
+                if (empty($info['filename'])) {
                     $skipped++;
                     Log::warning('Bulk image upload: invalid filename format', [
                         'filename' => $filename,
@@ -545,7 +571,22 @@ class ProductController extends Controller
                 }
 
                 $nameWithoutExt = $info['filename'];
-                $extension = $info['extension'];
+
+                // Only real raster images are accepted. The stored extension comes from the
+                // detected MIME type, never from the (attacker-controlled) archive entry name.
+                $allowedMimes = [
+                    'image/jpeg' => 'jpg',
+                    'image/png' => 'png',
+                    'image/gif' => 'gif',
+                    'image/webp' => 'webp',
+                ];
+                $detectedMime = is_file($filePath) && !is_link($filePath) ? (new \finfo(FILEINFO_MIME_TYPE))->file($filePath) : false;
+                if (!$detectedMime || !isset($allowedMimes[$detectedMime]) || @getimagesize($filePath) === false) {
+                    $skipped++;
+                    Log::warning('Bulk image upload: rejected non-image file', ['filename' => $filename]);
+                    continue;
+                }
+                $extension = $allowedMimes[$detectedMime];
 
                 // Determine the SKU and image slot from the filename.
                 //

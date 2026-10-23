@@ -118,14 +118,14 @@ class ShippingController extends Controller
     public function storeRate(Request $request)
     {
         $request->validate([
-            'shipping_zone_id' => 'required',
-            'shipping_provider_id' => 'required',
+            'shipping_zone_id' => 'required|exists:shipping_zones,id',
+            'shipping_provider_id' => 'required|exists:shipping_providers,id',
             'min_weight' => 'required|numeric',
             'max_weight' => 'required|numeric',
             'price' => 'required|numeric',
         ]);
 
-        ShippingRate::create($request->all());
+        ShippingRate::create($request->only(['shipping_zone_id', 'shipping_provider_id', 'min_weight', 'max_weight', 'price']));
         return back()->with('success', 'Rate added.');
     }
 
@@ -144,7 +144,7 @@ class ShippingController extends Controller
             'price' => 'required|numeric',
         ]);
 
-        $rate->update($request->all());
+        $rate->update($request->only(['min_weight', 'max_weight', 'price']));
         return redirect()->route('admin.shipping.index')->with('success', 'Rate updated.');
     }
 

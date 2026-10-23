@@ -308,16 +308,19 @@ class CartController extends Controller
 
         return response()->json([
             'order_id' => $order->id,
+            'pay_token' => $order->paymentToken(),
             'grand_total' => number_format((float) $order->grand_total, 2, '.', ''),
         ]);
     }
 
-    public function orderSuccess(string $orderNumber)
+    public function orderSuccess(Request $request, string $orderNumber)
     {
         $order = Order::where('order_number', $orderNumber)
             ->where('is_paid', true)
             ->with(['client', 'items.product'])
             ->firstOrFail();
+
+        abort_unless($order->validPaymentToken($request->query('token')), 404);
 
         return view('frontend.cart.order-success', compact('order'));
     }

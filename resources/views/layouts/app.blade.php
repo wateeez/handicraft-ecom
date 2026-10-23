@@ -32,7 +32,7 @@
     <meta property="og:title" content="{{ $defaultTitle }}">
     <meta property="og:description" content="{{ $defaultDescription }}">
     <meta property="og:url" content="{{ url()->current() }}">
-    <script type="application/ld+json">{!! json_encode($organizationSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+    <script type="application/ld+json">{!! json_encode($organizationSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
     @if(!empty($siteSettings['favicon_url']))
         <link rel="icon" type="image/x-icon" href="{{ $siteSettings['favicon_url'] }}">
     @endif

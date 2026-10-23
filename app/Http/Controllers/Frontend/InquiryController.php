@@ -52,10 +52,10 @@ class InquiryController extends Controller
 
                 $subject = "Inquiry Received for Product: {$product->name}";
 
-                $body = "Dear {$request->name},<br><br>"
-      . "Thank you for your inquiry about the product: {$product->name} .<br><br>"
+                $body = "Dear " . e($request->name) . ",<br><br>"
+      . "Thank you for your inquiry about the product: " . e($product->name) . " .<br><br>"
       . "We will get back to you shortly.<br><br>"
-      . "Best regards,<br>{$fromName}";
+      . "Best regards,<br>" . e($fromName);
 
         Mail::html($body, function ($message) use ($toEmail, $toName, $fromEmail, $fromName, $subject) {
                 $message->to($toEmail, $toName)

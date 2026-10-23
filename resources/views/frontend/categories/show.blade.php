@@ -40,7 +40,7 @@
         'name' => $category->name . ' Handicrafts',
         'description' => strip_tags($description),
         'url' => route('categories.show', $category),
-    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) !!}
     </script>
     @if($faqItems)
         <script type="application/ld+json">
@@ -55,7 +55,7 @@
                     'text' => $faq['answer'],
                 ],
             ], $faqItems),
-        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) !!}
         </script>
     @endif
 @endpush

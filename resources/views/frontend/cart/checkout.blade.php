@@ -362,6 +362,7 @@
     <script src="https://www.paypal.com/sdk/js?client-id={{ trim(config('services.paypal.client_id')) }}&currency=USD&intent=capture&components=buttons"></script>
     <script>
         let localOrderId = null;
+        let localPayToken = null;
 
         function showPayPalError(msg) {
             const el = document.getElementById('paypal-feedback');
@@ -395,6 +396,7 @@
             }
 
             localOrderId = result.order_id;
+            localPayToken = result.pay_token;
             return result.order_id;
         }
 
@@ -425,7 +427,7 @@
                     const response = await fetch('/api/paypal/orders', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                        body: JSON.stringify({ order_id: orderId }),
+                        body: JSON.stringify({ order_id: orderId, pay_token: localPayToken }),
                     });
                     const orderData = await response.json();
 
@@ -445,7 +447,7 @@
                         const response = await fetch('/api/paypal/orders/' + data.orderID + '/capture', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                            body: JSON.stringify({ order_id: localOrderId }),
+                            body: JSON.stringify({ order_id: localOrderId, pay_token: localPayToken }),
                         });
                         const result = await response.json();
 
@@ -465,13 +467,16 @@
                 // Customer closed the PayPal popup: cancel the pending order to avoid orphans.
                 onCancel: async function () {
                     const cancelledId = localOrderId;
+                    const cancelToken = localPayToken;
                     localOrderId = null;
+                    localPayToken = null;
 
                     if (cancelledId) {
                         try {
                             await fetch('/api/orders/' + cancelledId + '/cancel-pending', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                                body: JSON.stringify({ pay_token: cancelToken }),
                             });
                         } catch (e) {
                             console.warn('Could not cancel pending order:', e);

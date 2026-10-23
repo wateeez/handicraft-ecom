@@ -366,7 +366,7 @@
                 $arr[] = [
                     'id' => $id++,
                     'product_id' => $i->product_id,
-                    'product_name' => str_replace("'", "\'", $i->product_name),
+                    'product_name' => $i->product_name,
                     'quantity' => $i->quantity,
                     'unit_price' => floatval($i->unit_price),
                     'weight_kg' => floatval($i->weight_kg),
@@ -379,7 +379,7 @@
                     'line_total' => floatval($i->line_total)
                 ];
             }
-            return json_encode($arr);
+            return json_encode($arr, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
         }
     @endphp
 
