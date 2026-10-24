@@ -37,6 +37,6 @@ class LoginController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect(config('app.admin_domain') ? route('login') : '/');
     }
 }

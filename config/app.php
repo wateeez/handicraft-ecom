@@ -18,6 +18,12 @@ return [
     'name' => env('APP_NAME', 'Laravel'),
 
     /*
+    | Host that serves the admin dashboard and login (e.g. dashboard.example.com).
+    | Leave empty to keep the admin on the storefront host under /admin.
+    */
+    'admin_domain' => env('ADMIN_DOMAIN') ?: null,
+
+    /*
     |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------

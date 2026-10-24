@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 | Request::HEADER_X_FORWARDED_PROTO
         );
 
+        $middleware->prepend(\App\Http\Middleware\RestrictAdminHost::class);
         $middleware->append(\App\Http\Middleware\CheckMaintenanceMode::class);
 
         // Apply the 'api' rate limiter (RouteServiceProvider) to every API route.

@@ -20,7 +20,7 @@ class CheckMaintenanceMode
         // Check if maintenance mode is enabled in cache
         if (Cache::get('maintenance_mode')) {
             // Allow admin, login, logout, and internal routes
-            if ($request->is('admin*') || $request->is('login') || $request->is('logout') || $request->is('sanctum/*')) {
+            if ($request->getHost() === config('app.admin_domain') || $request->is('admin*') || $request->is('login') || $request->is('logout') || $request->is('sanctum/*')) {
                 return $next($request);
             }
 

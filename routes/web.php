@@ -31,6 +31,19 @@ use App\Http\Controllers\Admin\CommissionPayoutController;
 |--------------------------------------------------------------------------
 */
 
+$adminDomain = config('app.admin_domain');
+
+// Dashboard host: login, logout and the root redirect live here (registered first so
+// they win over the storefront routes below on this host).
+if ($adminDomain) {
+    Route::domain($adminDomain)->group(function () {
+        Route::get('/', fn () => redirect()->route('admin.dashboard'));
+        Route::get('/login', [\App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
+        Route::post('/login', [\App\Http\Controllers\Auth\LoginController::class, 'login'])->middleware('throttle:5,1')->name('login.post');
+        Route::post('/logout', [\App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
+    });
+}
+
 // Frontend
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/robots.txt', [RobotsController::class, 'index'])->name('robots');
@@ -67,12 +80,18 @@ Route::post('/products/{product}/inquire', [FrontendInquiryController::class, 's
 
 // Auth Routes (admin login only: public registration and the unimplemented password-reset routes are intentionally not registered)
 
-Route::get('/login', [\App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [\App\Http\Controllers\Auth\LoginController::class, 'login'])->middleware('throttle:5,1')->name('login.post');
-Route::post('/logout', [\App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
+if (!$adminDomain) {
+    Route::get('/login', [\App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [\App\Http\Controllers\Auth\LoginController::class, 'login'])->middleware('throttle:5,1')->name('login.post');
+    Route::post('/logout', [\App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
+}
 
 // Admin
-Route::middleware(['auth', 'viewer.readonly'])->prefix('admin')->name('admin.')->group(function () {
+$adminRoutes = Route::middleware(['auth', 'viewer.readonly'])->prefix('admin')->name('admin.');
+if ($adminDomain) {
+    $adminRoutes = $adminRoutes->domain($adminDomain);
+}
+$adminRoutes->group(function () {
     Route::middleware('permission:view_dashboard')->get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::middleware('permission:view_finance')->get('finance', [FinanceController::class, 'index'])->name('finance.index');
     Route::middleware('permission:view_finance')->get('finance/report-summary', [FinanceController::class, 'reportSummary'])->name('finance.report-summary');
@@ -240,3 +259,13 @@ Route::middleware(['auth', 'viewer.readonly'])->prefix('admin')->name('admin.')-
     });
 });
   
+
+// Old storefront-host admin/login links: send people to the dashboard host.
+if ($adminDomain) {
+    Route::get('/login', fn () => redirect()->route('login'));
+    Route::get('/admin/{any?}', function (\Illuminate\Http\Request $request, ?string $any = null) {
+        abort_if($request->getHost() === config('app.admin_domain'), 404);
+
+        return redirect()->to($request->getScheme() . '://' . config('app.admin_domain') . '/admin' . ($any ? '/' . $any : ''));
+    })->where('any', '.*');
+}
