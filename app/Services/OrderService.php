@@ -45,6 +45,7 @@ class OrderService
                 'delivery_period_days' => $data['delivery_period_days'] ?? 14,
                 'source_inquiry_id' => $data['source_inquiry_id'] ?? null,
                 'notes' => $data['notes'] ?? null,
+                'tracking_number' => $data['tracking_number'] ?? null,
             ]);
 
             // Save items

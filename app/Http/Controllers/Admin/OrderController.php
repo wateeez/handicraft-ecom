@@ -130,9 +130,15 @@ class OrderController extends Controller
             'type' => 'required|in:inquiry,order',
             'client_id' => 'nullable|exists:clients,id',
             'items' => 'required|array|min:1',
+            'items.*.product_id' => 'nullable|exists:products,id',
+            'items.*.product_name' => 'nullable|string|max:255',
             'items.*.unit_price' => 'required|numeric|min:0',
             'items.*.quantity' => 'required|integer|min:1',
-            'items.*.weight_kg' => 'required|numeric|min:0',
+            'items.*.weight_kg' => 'nullable|numeric|min:0',
+            'items.*.length' => 'nullable|numeric|min:0',
+            'items.*.width' => 'nullable|numeric|min:0',
+            'items.*.height' => 'nullable|numeric|min:0',
+            'tracking_number' => 'nullable|string|max:255',
             'order_discount_type' => 'nullable|in:percent,fixed,none',
             'order_discount_value' => 'nullable|numeric|min:0',
             'shipping_cost' => 'nullable|numeric|min:0',
@@ -142,7 +148,8 @@ class OrderController extends Controller
         // Build items
         $items = [];
         foreach ($request->items as $item) {
-            if (empty($item['unit_price']) && empty($item['product_id']))
+            // Rows with neither a product nor a custom name are blank placeholders; a $0 price is valid.
+            if (empty($item['product_id']) && trim((string) ($item['product_name'] ?? '')) === '')
                 continue;
             $items[] = [
                 'product_id' => $item['product_id'] ?? null,
@@ -151,6 +158,9 @@ class OrderController extends Controller
                 'quantity' => (int) ($item['quantity'] ?? 1),
                 'unit_price' => (float) ($item['unit_price'] ?? 0),
                 'weight_kg' => (float) ($item['weight_kg'] ?? 0),
+                'length' => isset($item['length']) && $item['length'] !== '' ? (float) $item['length'] : null,
+                'width' => isset($item['width']) && $item['width'] !== '' ? (float) $item['width'] : null,
+                'height' => isset($item['height']) && $item['height'] !== '' ? (float) $item['height'] : null,
                 'item_discount_type' => $item['item_discount_type'] ?? 'none',
                 'item_discount_value' => (float) ($item['item_discount_value'] ?? 0),
             ];
@@ -164,7 +174,12 @@ class OrderController extends Controller
             'shipping_cost',
             'notes',
             'delivery_period_days',
+            'tracking_number',
         ]), ['items' => $items]);
+
+        if (empty($items)) {
+            return back()->withInput()->withErrors(['items' => 'Add at least one item with a product or a name.']);
+        }
 
         $data['order_discount_type'] = $data['order_discount_type'] ?? 'none';
         $data['order_discount_value'] = $data['order_discount_value'] ?? 0;

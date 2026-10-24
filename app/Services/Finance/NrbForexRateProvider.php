@@ -9,7 +9,7 @@ use Throwable;
 
 /**
  * Fetches the official Nepal Rastra Bank USD sell rate (NPR per USD, cached),
- * falling back to the last rate an admin confirmed if NRB is unreachable.
+ * falling back to a free market-rate API, then the last rate an admin confirmed, if NRB is unreachable.
  * NRB publishes once a day and skips weekends/holidays, so the latest day with a USD rate in the past week is used.
  */
 class NrbForexRateProvider implements ForexRateProvider
@@ -22,7 +22,7 @@ class NrbForexRateProvider implements ForexRateProvider
 
     public function currentRate(): ?string
     {
-        $live = Cache::remember(self::CACHE_KEY, (int) config('services.forex.cache_seconds', 3600), fn () => $this->fetch());
+        $live = Cache::remember(self::CACHE_KEY, (int) config('services.forex.cache_seconds', 3600), fn () => $this->fetch() ?? $this->fetchOpenRate());
 
         return $live ?? $this->rates->get(FinanceRateRepository::LAST_FOREX_KEY);
     }
@@ -66,6 +66,22 @@ class NrbForexRateProvider implements ForexRateProvider
             }
 
             return null;
+        } catch (Throwable $e) {
+            report($e);
+
+            return null;
+        }
+    }
+
+    private function fetchOpenRate(): ?string
+    {
+        try {
+            $response = Http::timeout(5)->get(config('services.forex.open_url'));
+            $rate = $response->json('rates.NPR');
+
+            return $response->successful() && is_numeric($rate) && $rate > 0
+                ? number_format((float) $rate, 4, '.', '')
+                : null;
         } catch (Throwable $e) {
             report($e);
 

@@ -82,7 +82,7 @@
                                         <div class="md:col-span-4">
                                             <label class="block text-xs font-semibold text-truffle-extra-dark mb-1">Product</label>
                                             <select :name="`items[${index}][product_id]`" x-model="item.product_id"
-                                                @change="populateItemData(index)"
+                                                @change="populateItemData(index, $event.target)"
                                                 class="w-full text-sm border-truffle-medium/30 rounded-md shadow-sm focus:border-green-500 focus:ring-green-500">
                                                 <option value="">-- Custom Product --</option>
                                                 @foreach($products as $product)
@@ -313,7 +313,7 @@
                         <div class="mt-6">
                             <button type="submit"
                                 class="w-full bg-green-premium text-white font-bold py-3 px-4 rounded-xl hover:bg-green-800 transition-colors shadow-sm cursor-pointer"
-                                :disabled="items.length === 0">
+                                :disabled="items.length === 0 || !items.some(i => i.product_id || (i.product_name || '').trim())">
                                 Create Record
                             </button>
                         </div>
@@ -376,8 +376,7 @@
                     this.calculateTotals();
                 },
 
-                populateItemData(index) {
-                    const selectEl = document.querySelector(`select[name="items[${index}][product_id]"]`);
+                populateItemData(index, selectEl) {
                     if (selectEl && selectEl.selectedIndex > 0) {
                         const option = selectEl.options[selectEl.selectedIndex];
                         this.items[index].unit_price = parseFloat(option.dataset.price) || 0;
