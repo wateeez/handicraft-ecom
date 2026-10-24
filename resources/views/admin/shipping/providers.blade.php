@@ -9,18 +9,6 @@
 
 @section('content')
 <div class="p-6">
-    @if(session('success'))
-    <div class="bg-green-premium/20 border border-green-400 text-green-premium px-4 py-3 rounded mb-6">
-        {{ session('success') }}
-    </div>
-    @endif
-
-    @if(session('error'))
-    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-        {{ session('error') }}
-    </div>
-    @endif
-
     <!-- Create New Provider Form -->
     <div class="bg-cream rounded-lg shadow-sm p-6 mb-6">
         <div class="flex items-center mb-4">

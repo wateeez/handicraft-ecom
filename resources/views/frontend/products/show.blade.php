@@ -9,17 +9,27 @@
     $productImage = $product->main_image ?: $product->secondary_image;
 @endphp
 
-@section('title', $product->name . ' | ' . $siteSettings['site_name'])
-@section('meta_description', $seoDescription)
+@section('title', $product->meta_title ?: $product->name . ' | ' . $siteSettings['site_name'])
+@section('meta_description', $product->meta_description ?: $seoDescription)
 @section('canonical', $productUrl)
+@section('og_type', 'product')
+@if($productImage)
+    @section('og_image', $productImage)
+    @section('og_image_alt', $product->name)
+@endif
 
 @push('head')
-    <meta property="og:type" content="product">
-    <meta property="og:url" content="{{ $productUrl }}">
-    @if($productImage)
-        <meta property="og:image" content="{{ $productImage }}">
-        <meta property="og:image:alt" content="{{ $product->name }}">
-    @endif
+    <script type="application/ld+json">
+    {!! json_encode(array_filter([
+        '@context' => 'https://schema.org',
+        '@type' => 'BreadcrumbList',
+        'itemListElement' => array_values(array_filter([
+            ['@type' => 'ListItem', 'position' => 1, 'name' => 'Home', 'item' => route('home')],
+            $product->category ? ['@type' => 'ListItem', 'position' => 2, 'name' => $product->category->name, 'item' => route('categories.show', $product->category)] : null,
+            ['@type' => 'ListItem', 'position' => $product->category ? 3 : 2, 'name' => $product->name, 'item' => $productUrl],
+        ])),
+    ]), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) !!}
+    </script>
     <script type="application/ld+json">
     {!! json_encode([
         '@context' => 'https://schema.org',
@@ -58,7 +68,7 @@
                 <div class="relative z-10">
                     <div id="imageContainer" class="rounded-2xl overflow-hidden mb-4 bg-muted/60 border border-border h-[45vh] sm:h-[50vh] md:h-[75vh] flex items-center justify-center relative md:cursor-crosshair card-lift">
                         @if($product->main_image)
-                            <img src="{{ $product->main_image }}" alt="{{ $product->name }}"
+                            <img src="{{ $product->main_image }}" alt="{{ $product->name }}" fetchpriority="high" decoding="async"
                                 class="max-h-full max-w-full object-contain transition-transform duration-300" id="mainProductImage">
                         @else
                             <span class="text-muted-foreground text-lg">No Image</span>
@@ -140,21 +150,21 @@
                                 <img src="{{ $product->main_image }}" 
                                     onclick="document.getElementById('mainProductImage').src='{{ $product->main_image }}'"
                                     class="h-20 w-20 object-cover rounded-lg border-2 border-primary cursor-pointer hover:opacity-75 transition flex-shrink-0"
-                                    alt="Main">
+                                    alt="{{ $product->name }} - main view" loading="lazy" decoding="async">
                             @endif
                             <!-- Secondary image thumbnail -->
                             @if($product->secondary_image)
                                 <img src="{{ $product->secondary_image }}" 
                                     onclick="document.getElementById('mainProductImage').src='{{ $product->secondary_image }}'"
                                     class="h-20 w-20 object-cover rounded-lg border-2 border-truffle-medium/30 cursor-pointer hover:border-primary hover:opacity-75 transition flex-shrink-0"
-                                    alt="Secondary">
+                                    alt="{{ $product->name }} - second view" loading="lazy" decoding="async">
                             @endif
                             <!-- Additional images -->
                             @foreach($product->images ?? [] as $image)
                                 <img src="{{ $image }}" 
                                     onclick="document.getElementById('mainProductImage').src='{{ $image }}'"
                                     class="h-20 w-20 object-cover rounded-lg border-2 border-truffle-medium/30 cursor-pointer hover:border-primary hover:opacity-75 transition flex-shrink-0"
-                                    alt="Product image">
+                                    alt="{{ $product->name }} - view {{ $loop->iteration + 2 }}" loading="lazy" decoding="async">
                             @endforeach
                         </div>
                     </div>
@@ -372,7 +382,7 @@
                             class="group bg-card rounded-2xl overflow-hidden border border-border card-lift shimmer-sweep shadow-xs flex flex-col justify-between block transition-all">
                             <div class="bg-muted aspect-[3/4] overflow-hidden relative">
                                 @if($relProduct->main_image)
-                                    <img src="{{ $relProduct->main_image }}" alt="{{ $relProduct->name }}"
+                                    <img src="{{ $relProduct->main_image }}" alt="{{ $relProduct->name }}" loading="lazy" decoding="async"
                                         loading="lazy"
                                         class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
                                 @else

@@ -196,6 +196,8 @@
                     <p class="text-xs text-truffle-extra-dark mt-1">This will be displayed prominently on the product page</p>
                 </div>
 
+                @include('admin.partials.seo-fields', ['model' => $product, 'hint' => 'product name and description'])
+
                 <!-- Settings -->
                 <div class="col-span-2 mt-4">
                     <div class="flex items-center">

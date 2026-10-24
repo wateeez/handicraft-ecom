@@ -391,16 +391,9 @@
 
             <!-- Scrollable Content -->
             <div class="flex-1 overflow-auto bg-background p-4 sm:p-6 md:p-8 custom-scroll bg-paper">
-                @if(session('success'))
-                    <div class="mb-5 bg-card border-l-4 border-primary p-4 rounded-r-xl shadow-xs flex items-start gap-3 animate-fade-in-up" role="alert">
-                        <div class="p-1 rounded-full bg-primary/10 text-primary">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        </div>
-                        <div>
-                            <p class="font-medium text-sm text-foreground">{{ session('success') }}</p>
-                        </div>
-                    </div>
-                @endif
+                @unless(View::hasSection('inline_flash'))
+                    @include('admin.partials.flash')
+                @endunless
                 @if(session('checkout_link'))
                     <div class="mb-4 bg-violet-50 border border-violet-200 text-violet-800 px-4 py-3 rounded relative" role="alert">
                         <p class="font-semibold text-sm mb-1">Payment link ready — share this with the customer:</p>
@@ -411,11 +404,6 @@
                                 Copy
                             </button>
                         </div>
-                    </div>
-                @endif
-                @if(session('error'))
-                    <div class="mb-4 bg-red-100 text-red-700 px-4 py-3 rounded relative" role="alert">
-                        <span class="block sm:inline">{{ session('error') }}</span>
                     </div>
                 @endif
 

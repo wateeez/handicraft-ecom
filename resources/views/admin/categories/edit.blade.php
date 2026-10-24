@@ -25,6 +25,8 @@
                     class="mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2">{{ $category->description }}</textarea>
             </div>
 
+            @include('admin.partials.seo-fields', ['model' => $category, 'hint' => 'category name and description', 'wrapperClass' => 'mb-4'])
+
             <div class="flex justify-between">
                 <a href="{{ route('admin.categories.index') }}" class="text-truffle-extra-dark hover:text-truffle-extra-dark">Cancel</a>
                 <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded shadow hover:bg-indigo-700">Update

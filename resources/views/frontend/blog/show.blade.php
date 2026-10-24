@@ -13,33 +13,23 @@
 @endsection
 
 @section('canonical', route('blog.show', $post->slug))
+@section('og_type', 'article')
+@if($post->featured_image)
+    @section('og_image', url($post->featured_image))
+    @section('og_image_alt', $post->title)
+@endif
 
 @push('head')
     <!-- SEO Meta Tags -->
     <meta name="author" content="{{ $post->author->name ?? $siteSettings['site_name'] }}">
     
     <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="article">
-    <meta property="og:url" content="{{ route('blog.show', $post->slug) }}">
-    <meta property="og:title" content="{{ $post->seo_title }}">
-    <meta property="og:description" content="{{ $post->seo_description }}">
-    @if($post->featured_image)
-        <meta property="og:image" content="{{ url($post->featured_image) }}">
-    @endif
     <meta property="article:published_time" content="{{ $post->published_at->toIso8601String() }}">
     <meta property="article:modified_time" content="{{ $post->updated_at->toIso8601String() }}">
     @if($post->author)
         <meta property="article:author" content="{{ $post->author->name }}">
     @endif
     
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ $post->seo_title }}">
-    <meta name="twitter:description" content="{{ $post->seo_description }}">
-    @if($post->featured_image)
-        <meta name="twitter:image" content="{{ url($post->featured_image) }}">
-    @endif
-
     <!-- JSON-LD Structured Data -->
     <script type="application/ld+json">
     {
@@ -117,7 +107,7 @@
         <!-- Featured Image -->
         @if($post->featured_image)
             <div class="aspect-[2/1] rounded-2xl overflow-hidden bg-card border border-border shadow-md">
-                <img src="{{ $post->featured_image }}" alt="{{ $post->title }}"
+                <img src="{{ $post->featured_image }}" alt="{{ $post->title }}" fetchpriority="high" decoding="async"
                     class="w-full h-full object-cover">
             </div>
         @endif
@@ -164,7 +154,7 @@
                     <article class="bg-card rounded-2xl overflow-hidden shadow-xs hover:shadow-xl border border-border transition-all duration-300 transform hover:-translate-y-1 group">
                         <a href="{{ route('blog.show', $related->slug) }}" class="block aspect-[16/10] overflow-hidden bg-paper/60">
                             @if($related->featured_image)
-                                <img src="{{ $related->featured_image }}" alt="{{ $related->title }}"
+                                <img src="{{ $related->featured_image }}" alt="{{ $related->title }}" loading="lazy" decoding="async"
                                     class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
                             @else
                                 <div class="w-full h-full flex items-center justify-center bg-paper text-muted-foreground/40">

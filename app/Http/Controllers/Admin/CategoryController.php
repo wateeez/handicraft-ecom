@@ -47,11 +47,17 @@ class CategoryController extends Controller
             ]);
             return back()->with('success', 'Sub-Category created.');
         } else {
-            $request->validate(['name' => 'required']);
+            $request->validate([
+                'name' => 'required',
+                'meta_title' => 'nullable|string|max:70',
+                'meta_description' => 'nullable|string|max:200',
+            ]);
             Category::create([
                 'name' => $request->name,
                 'slug' => Str::slug($request->name),
-                'description' => $request->description
+                'description' => $request->description,
+                'meta_title' => $request->meta_title,
+                'meta_description' => $request->meta_description,
             ]);
             return redirect()->route('admin.categories.index')->with('success', 'Category created.');
         }
@@ -65,11 +71,17 @@ class CategoryController extends Controller
 
     public function update(Request $request, Category $category)
     {
-        $request->validate(['name' => 'required']);
+        $request->validate([
+            'name' => 'required',
+            'meta_title' => 'nullable|string|max:70',
+            'meta_description' => 'nullable|string|max:200',
+        ]);
         $category->update([
             'name' => $request->name,
             'slug' => Str::slug($request->name),
-            'description' => $request->description
+            'description' => $request->description,
+            'meta_title' => $request->meta_title,
+            'meta_description' => $request->meta_description,
         ]);
         return redirect()->route('admin.categories.index')->with('success', 'Category updated.');
     }

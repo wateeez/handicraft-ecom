@@ -25,6 +25,7 @@
                     <textarea name="description" rows="2"
                         class="mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2"></textarea>
                 </div>
+                @include('admin.partials.seo-fields', ['model' => null, 'hint' => 'category name and description', 'wrapperClass' => 'mb-4'])
                 <button type="submit"
                     class="bg-green-premium text-white px-4 py-2 rounded shadow hover:bg-green-800 w-full">Create
                     Category</button>

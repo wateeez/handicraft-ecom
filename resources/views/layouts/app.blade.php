@@ -5,6 +5,11 @@
     @php
         $defaultTitle = trim($__env->yieldContent('title')) ?: $siteSettings['site_name'] . ' | Handmade Handicrafts';
         $defaultDescription = trim($__env->yieldContent('meta_description')) ?: 'Discover distinctive handicraft items from Nepal.';
+        $canonicalUrl = trim($__env->yieldContent('canonical')) ?: url()->current();
+        $ogImage = trim($__env->yieldContent('og_image')) ?: ($siteSettings['navbar_logo_url'] ?? null);
+        if ($ogImage && !\Illuminate\Support\Str::startsWith($ogImage, ['http://', 'https://'])) {
+            $ogImage = url($ogImage);
+        }
         $isPrivatePage = request()->routeIs('cart.*', 'checkout*', 'quote.success', 'login', 'register', 'password.*', 'verification.*');
         $socialProfiles = preg_split('/\r\n|\r|\n/', $siteSettings['social_profiles'] ?? '') ?: [];
         $socialProfiles = array_values(array_filter($socialProfiles, fn ($url) => filter_var(trim($url), FILTER_VALIDATE_URL)));
@@ -26,12 +31,21 @@
     <title>{{ $defaultTitle }}</title>
     <meta name="description" content="{{ $defaultDescription }}">
     <meta name="robots" content="@yield('robots', $isPrivatePage ? 'noindex, nofollow' : 'index, follow')">
-    <link rel="canonical" href="@yield('canonical', url()->current())">
+    <link rel="canonical" href="{{ $canonicalUrl }}">
     <meta property="og:site_name" content="{{ $siteSettings['site_name'] }}">
     <meta property="og:locale" content="en_US">
+    <meta property="og:type" content="@yield('og_type', 'website')">
     <meta property="og:title" content="{{ $defaultTitle }}">
     <meta property="og:description" content="{{ $defaultDescription }}">
-    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:url" content="{{ $canonicalUrl }}">
+    <meta name="twitter:card" content="{{ $ogImage ? 'summary_large_image' : 'summary' }}">
+    <meta name="twitter:title" content="{{ $defaultTitle }}">
+    <meta name="twitter:description" content="{{ $defaultDescription }}">
+    @if($ogImage)
+        <meta property="og:image" content="{{ $ogImage }}">
+        <meta property="og:image:alt" content="{{ trim($__env->yieldContent('og_image_alt')) ?: $defaultTitle }}">
+        <meta name="twitter:image" content="{{ $ogImage }}">
+    @endif
     <script type="application/ld+json">{!! json_encode($organizationSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
     @if(!empty($siteSettings['favicon_url']))
         <link rel="icon" type="image/x-icon" href="{{ $siteSettings['favicon_url'] }}">
@@ -83,7 +97,7 @@
                 <a href="{{ route('home') }}" class="flex min-w-0 items-center space-x-3">
                     @if(!empty($siteSettings['navbar_logo_url']))
                         <img src="{{ $siteSettings['navbar_logo_url'] }}"
-                            alt="{{ $siteSettings['site_name'] }}" class="h-12 w-auto object-contain">
+                            alt="{{ $siteSettings['site_name'] }}" class="h-12 w-auto object-contain" decoding="async">
                     @else
                         <span class="truncate text-2xl font-bold font-serif text-truffle-extra-dark tracking-wide">
                             {{ $siteSettings['site_name'] }}
@@ -160,7 +174,7 @@
                     <div class="flex items-center space-x-3 mb-4">
                         @if(!empty($siteSettings['footer_logo_url']))
                             <img src="{{ $siteSettings['footer_logo_url'] }}"
-                                alt="{{ $siteSettings['site_name'] }}" class="h-10 w-auto object-contain">
+                                alt="{{ $siteSettings['site_name'] }}" class="h-10 w-auto object-contain" loading="lazy" decoding="async">
                         @else
                             <span class="text-xl font-bold font-serif tracking-wide">
                                 {{ $siteSettings['site_name'] }}
@@ -254,7 +268,7 @@
                             <a href="{{ $whatsappLink }}" target="_blank" rel="noopener noreferrer"
                                 title="Chat on WhatsApp">
                                 <img src="{{ $siteSettings['footer_qr_code_url'] }}"
-                                    alt="WhatsApp QR Code"
+                                    alt="WhatsApp QR code to chat with {{ $siteSettings['site_name'] }}" loading="lazy"
                                     class="w-32 h-32 object-contain bg-cream p-2 rounded hover:shadow-lg transition cursor-pointer">
                             </a>
                             <p class="site-footer-muted text-xs mt-2">Tap to chat on WhatsApp</p>

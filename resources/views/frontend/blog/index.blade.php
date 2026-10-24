@@ -36,7 +36,7 @@
                 <!-- Featured Image -->
                 <a href="{{ route('blog.show', $post->slug) }}" class="block aspect-[16/10] overflow-hidden bg-paper/60 relative">
                     @if($post->featured_image)
-                        <img src="{{ $post->featured_image }}" alt="{{ $post->title }}"
+                        <img src="{{ $post->featured_image }}" alt="{{ $post->title }}" loading="lazy" decoding="async"
                             class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
                     @else
                         <div class="w-full h-full flex items-center justify-center bg-paper text-muted-foreground/40">

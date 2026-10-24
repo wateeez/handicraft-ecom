@@ -7,6 +7,14 @@ use Illuminate\Support\Str;
 
 class BlogPost extends Model
 {
+
+    protected static function booted(): void
+    {
+        $forget = fn () => \Illuminate\Support\Facades\Cache::forget(\App\Http\Controllers\Frontend\SitemapController::CACHE_KEY);
+        static::saved($forget);
+        static::deleted($forget);
+    }
+
     protected $guarded = [];
 
     protected $casts = [

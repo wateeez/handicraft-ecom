@@ -11,6 +11,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
 {
+
+    protected static function booted(): void
+    {
+        $forget = fn () => \Illuminate\Support\Facades\Cache::forget(\App\Http\Controllers\Frontend\SitemapController::CACHE_KEY);
+        static::saved($forget);
+        static::deleted($forget);
+    }
+
     use HasFactory;
 
 
@@ -26,6 +34,8 @@ class Product extends Model
         'material',
         'category_id',
         'vendor_id',
+        'meta_title',
+        'meta_description',
         'sub_category_id',
         'sku',
         'length',

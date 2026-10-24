@@ -14,6 +14,11 @@ class Vendor extends Model
 
     protected $casts = ['is_active' => 'boolean'];
 
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
+
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);

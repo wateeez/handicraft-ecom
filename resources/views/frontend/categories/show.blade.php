@@ -24,15 +24,25 @@
     };
 @endphp
 
-@section('title', $category->name . ' Handicrafts | ' . $siteSettings['site_name'])
-@section('meta_description', \Illuminate\Support\Str::limit(strip_tags($description), 160))
+@section('title', $category->meta_title ?: $category->name . ' Handicrafts | ' . $siteSettings['site_name'])
+@section('meta_description', $category->meta_description ?: \Illuminate\Support\Str::limit(strip_tags($description), 160))
 @section('canonical', route('categories.show', $category))
+@if($category->image)
+    @section('og_image', \App\Models\Product::mediaUrl($category->image))
+    @section('og_image_alt', $category->name . ' handicrafts')
+@endif
 
 @push('head')
-    <meta property="og:type" content="website">
-    @if($category->image)
-        <meta property="og:image" content="{{ \App\Models\Product::mediaUrl($category->image) }}">
-    @endif
+    <script type="application/ld+json">
+    {!! json_encode([
+        '@context' => 'https://schema.org',
+        '@type' => 'BreadcrumbList',
+        'itemListElement' => [
+            ['@type' => 'ListItem', 'position' => 1, 'name' => 'Home', 'item' => route('home')],
+            ['@type' => 'ListItem', 'position' => 2, 'name' => $category->name, 'item' => route('categories.show', $category)],
+        ],
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) !!}
+    </script>
     <script type="application/ld+json">
     {!! json_encode([
         '@context' => 'https://schema.org',

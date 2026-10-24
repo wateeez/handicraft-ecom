@@ -28,7 +28,7 @@
                                             <div class="h-16 w-16 flex-shrink-0 rounded-xl overflow-hidden bg-muted border border-border">
                                                 @if($item['product']->main_image)
                                                     <img class="h-full w-full object-cover"
-                                                        src="{{ $item['product']->main_image }}" alt="{{ $item['product']->name }}">
+                                                        src="{{ $item['product']->main_image }}" alt="{{ $item['product']->name }}" loading="lazy" decoding="async">
                                                 @else
                                                     <div class="h-full w-full bg-muted flex items-center justify-center text-xs text-muted-foreground">Craft</div>
                                                 @endif

@@ -17,18 +17,6 @@
 @section('content')
 <div class="p-6">
     <!-- Success/Error Messages -->
-    @if(session('success'))
-    <div class="bg-green-premium/20 border border-green-400 text-green-premium px-4 py-3 rounded mb-6">
-        {{ session('success') }}
-    </div>
-    @endif
-
-    @if(session('error'))
-    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-        {{ session('error') }}
-    </div>
-    @endif
-
     <!-- Alpine.js Tab Management -->
     <div x-data="{ activeTab: '{{ $defaultTab ?? 'zones' }}' }">
         

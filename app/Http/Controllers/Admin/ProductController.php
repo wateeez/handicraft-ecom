@@ -25,7 +25,8 @@ class ProductController extends Controller
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('sku', 'like', "%{$search}%");
+                  ->orWhere('sku', 'like', "%{$search}%")
+                  ->orWhereHas('vendor', fn ($v) => $v->where('name', 'like', "%{$search}%"));
             });
         }
 
@@ -33,10 +34,17 @@ class ProductController extends Controller
             $query->where('category_id', $request->category_id);
         }
 
-        $products = $query->latest()->paginate(10);
-        $categories = Category::all();
+        if ($request->vendor_id === 'none') {
+            $query->whereNull('vendor_id');
+        } elseif ($request->filled('vendor_id')) {
+            $query->where('vendor_id', $request->vendor_id);
+        }
 
-        return view('admin.products.index', compact('products', 'categories'));
+        $products = $query->latest()->paginate(10)->withQueryString();
+        $categories = Category::all();
+        $vendors = Vendor::withCount('products')->orderBy('name')->get(['id', 'name']);
+
+        return view('admin.products.index', compact('products', 'categories', 'vendors'));
     }
 
     public function create()
@@ -56,6 +64,8 @@ class ProductController extends Controller
 
             'category_id' => 'required|exists:categories,id',
             'vendor_id' => 'nullable|exists:vendors,id',
+            'meta_title' => 'nullable|string|max:70',
+            'meta_description' => 'nullable|string|max:200',
             'weight' => 'required|numeric', // Important for shipping
             'length' => 'required|numeric',
             'width' => 'required|numeric',
@@ -114,6 +124,8 @@ class ProductController extends Controller
 
             'category_id' => 'required|exists:categories,id',
             'vendor_id' => 'nullable|exists:vendors,id',
+            'meta_title' => 'nullable|string|max:70',
+            'meta_description' => 'nullable|string|max:200',
             'weight' => 'required|numeric',
             'length' => 'required|numeric',
             'width' => 'required|numeric',
@@ -352,6 +364,11 @@ class ProductController extends Controller
         }, $filename, [
             'Content-Type' => 'text/csv',
         ]);
+    }
+
+    public function bulk()
+    {
+        return view('admin.products.bulk');
     }
 
     public function importProducts(Request $request)
