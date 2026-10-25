@@ -97,7 +97,7 @@ class BlogController extends Controller
         $data = $request->all();
         
         // Update slug if title changed
-        if ($request->title !== $blog->title) {
+        if ($request->title !== $blog->title || $blog->slug === '') {
             $data['slug'] = BlogPost::generateSlug($request->title, $blog->id);
         }
 

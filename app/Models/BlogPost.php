@@ -53,7 +53,7 @@ class BlogPost extends Model
      */
     public static function generateSlug(string $title, ?int $excludeId = null): string
     {
-        $slug = Str::slug($title);
+        $slug = Str::slug($title) ?: 'post';
         $originalSlug = $slug;
         $counter = 1;
 

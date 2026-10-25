@@ -64,6 +64,8 @@ class SitemapController extends Controller
             ]));
 
         BlogPost::published()
+            ->where('slug', '!=', '')
+            ->whereNotNull('slug')
             ->select(['slug', 'featured_image', 'updated_at'])
             ->each(fn (BlogPost $post) => $urls->push([
                 'loc' => route('blog.show', $post->slug),
