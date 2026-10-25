@@ -66,7 +66,7 @@ class SitemapController extends Controller
         BlogPost::published()
             ->select(['slug', 'featured_image', 'updated_at'])
             ->each(fn (BlogPost $post) => $urls->push([
-                'loc' => route('blog.show', $post),
+                'loc' => route('blog.show', $post->slug),
                 'lastmod' => $post->updated_at,
                 'images' => array_filter([$post->featured_image ? url($post->featured_image) : null]),
             ]));
