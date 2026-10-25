@@ -7,13 +7,19 @@
 @endif
 
 @section('content')
-    <div class="container mx-auto px-4 sm:px-6 py-12">
-        <div class="flex flex-col md:flex-row gap-12">
+    <div class="container mx-auto px-4 sm:px-6 py-6 md:py-12">
+        <div class="flex flex-col md:flex-row gap-6 md:gap-12">
 
             <!-- Sidebar Filter -->
             <aside class="w-full md:w-1/4 relative z-30">
-                <div class="bg-cream p-6 rounded-lg shadow-sm border border-gray-100 sticky top-24">
-                    <h3 class="text-xl font-serif mb-6 text-truffle-extra-dark">Categories</h3>
+                <!-- Mobile-only toggle: keeps products visible on first load -->
+                <button type="button" id="mobile-cat-toggle" aria-expanded="false" aria-controls="category-panel"
+                    class="md:hidden w-full flex items-center justify-between bg-cream px-4 py-3 rounded-lg shadow-sm border border-gray-100 text-truffle-extra-dark">
+                    <span class="font-serif text-lg">Categories</span>
+                    <svg id="mobile-cat-chevron" class="w-5 h-5 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div id="category-panel" class="hidden md:block mt-3 md:mt-0 bg-cream p-6 rounded-lg shadow-sm border border-gray-100 md:sticky md:top-24 max-h-[70vh] md:max-h-none overflow-y-auto md:overflow-visible">
+                    <h3 class="hidden md:block text-xl font-serif mb-6 text-truffle-extra-dark">Categories</h3>
                     <ul class="space-y-3">
                         <li>
                             <a href="{{ route('home') }}"
@@ -278,6 +284,13 @@
     </div>
 
     <script>
+        document.getElementById('mobile-cat-toggle')?.addEventListener('click', function () {
+            const panel = document.getElementById('category-panel');
+            const open = panel.classList.toggle('hidden') === false;
+            this.setAttribute('aria-expanded', open ? 'true' : 'false');
+            document.getElementById('mobile-cat-chevron').classList.toggle('rotate-180', open);
+        });
+
         // Mobile-only: tap-to-expand subcategories (hover doesn't exist on touch devices)
         document.addEventListener('click', function (e) {
             const btn = e.target.closest('[data-subcat-toggle]');
