@@ -15,7 +15,7 @@ class FinanceInsightService
         $gross = (float) Payment::where('client_id', $client->id)->whereIn('status', ['confirmed', 'reversed'])->sum('reporting_amount');
         $refunds = (float) Refund::whereIn('payment_id', (clone $confirmedPayments)->select('id'))
             ->where('status', 'confirmed')->sum('reporting_amount');
-        $orders = Order::where('client_id', $client->id);
+        $orders = Order::where('client_id', $client->id)->where('type', Order::TYPE_ORDER);
         $paidOrders = (clone $orders)->where('is_paid', true);
 
         return [

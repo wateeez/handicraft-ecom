@@ -11,7 +11,7 @@ class ClientController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Client::withCount('orders');
+        $query = Client::withCount(['orders' => fn($q) => $q->where('type', 'order')]);
 
         if ($search = $request->get('search')) {
             $query->where(function ($q) use ($search) {

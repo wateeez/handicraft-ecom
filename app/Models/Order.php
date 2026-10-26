@@ -282,18 +282,20 @@ class Order extends Model
         return is_string($token) && $token !== '' && hash_equals($this->paymentToken(), $token);
     }
 
-    public static function generateOrderNumber(): string
+    public static function generateOrderNumber(string $type = self::TYPE_ORDER): string
     {
+        // Inquiries get their own INQ- series so no ORD- number is consumed until a customer actually orders.
+        $prefix = $type === self::TYPE_INQUIRY ? 'INQ' : 'ORD';
         // lockForUpdate() serialises concurrent inserts under InnoDB (gap lock on last row).
         // Must be called within an open DB::transaction.
         $year = now()->year;
         $last = static::withTrashed()
-            ->where('order_number', 'like', "ORD-{$year}-%")
+            ->where('order_number', 'like', "{$prefix}-{$year}-%")
             ->orderByDesc('id')
             ->lockForUpdate()
             ->first();
         $nextNum = $last ? ((int) substr($last->order_number, -5)) + 1 : 1;
-        return "ORD-{$year}-" . str_pad($nextNum, 5, '0', STR_PAD_LEFT);
+        return "{$prefix}-{$year}-" . str_pad($nextNum, 5, '0', STR_PAD_LEFT);
     }
 
     /**

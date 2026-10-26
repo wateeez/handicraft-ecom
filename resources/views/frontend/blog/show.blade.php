@@ -115,7 +115,7 @@
 
     <!-- Article Content -->
     <div class="max-w-3xl mx-auto">
-        <div class="prose prose-lg prose-neutral max-w-none text-foreground/90 font-serif leading-relaxed">
+        <div class="prose prose-lg prose-neutral max-w-none text-foreground/90 font-sans leading-relaxed">
             {!! nl2br(e($post->content)) !!}
         </div>
 

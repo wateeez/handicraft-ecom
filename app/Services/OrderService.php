@@ -32,7 +32,7 @@ class OrderService
             $shippingProviderId = $data['shipping_provider_id'] ?? ShippingProvider::getDefaultProviderId();
 
             $order = Order::create([
-                'order_number' => Order::generateOrderNumber(),
+                'order_number' => Order::generateOrderNumber($type),
                 'type' => $type,
                 'checkout_token' => $type === Order::TYPE_INQUIRY ? Str::random(32) : null,
                 'client_id' => $data['client_id'] ?? null,
@@ -121,6 +121,11 @@ class OrderService
 
             $fillable = array_intersect_key($data, array_flip($updateFields));
             $order->fill($fillable);
+
+            // An inquiry promoted to an order by an admin becomes a real order and gets an ORD- number.
+            if ($order->isDirty('type') && $order->type === Order::TYPE_ORDER && $order->getOriginal('type') === Order::TYPE_INQUIRY) {
+                $order->order_number = Order::generateOrderNumber(Order::TYPE_ORDER);
+            }
             $order->save();
 
             // Sync items if provided and not locked

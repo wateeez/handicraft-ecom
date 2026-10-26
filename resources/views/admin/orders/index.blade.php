@@ -13,13 +13,9 @@
         {{-- Header Actions --}}
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div class="flex gap-2 flex-wrap">
-                <a href="{{ route('admin.orders.index') }}"
-                    class="px-4 py-2 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all {{ !request('type') ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-paper/50' }}">
-                    All
-                </a>
                 <a href="{{ route('admin.orders.index', ['type' => 'order']) }}"
-                    class="px-4 py-2 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all {{ request('type') === 'order' ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-paper/50' }}">
-                    Direct Orders
+                    class="px-4 py-2 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all {{ request('type') !== 'inquiry' ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-paper/50' }}">
+                    Orders
                 </a>
                 <a href="{{ route('admin.orders.index', ['type' => 'inquiry']) }}"
                     class="px-4 py-2 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all {{ request('type') === 'inquiry' ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-paper/50' }}">

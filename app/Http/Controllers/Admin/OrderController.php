@@ -86,9 +86,9 @@ class OrderController extends Controller
             ->whereNull('merged_into_order_id');
 
         // Filters
-        if ($type = $request->get('type')) {
-            $query->where('type', $type);
-        }
+        // Inquiries are not orders: the list shows orders unless inquiries are explicitly requested.
+        $type = $request->get('type') === Order::TYPE_INQUIRY ? Order::TYPE_INQUIRY : Order::TYPE_ORDER;
+        $query->where('type', $type);
         if ($status = $request->get('status')) {
             $query->where('status', $status);
         }
