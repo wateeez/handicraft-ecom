@@ -253,7 +253,7 @@
                                                 Only</span>
                                         @endunless
                                     </div>
-                                    <h2 class="text-xl leading-tight font-serif font-bold text-foreground mb-2 group-hover:text-primary transition-colors">{{ $product->name }}</h2>
+                                    <h2 class="text-xl sm:text-base lg:text-lg leading-tight font-serif font-bold text-foreground mb-2 group-hover:text-primary transition-colors">{{ $product->name }}</h2>
                                 </div>
                                 <div class="text-primary font-bold text-lg font-sans tabular-nums mt-1">
                                     @if($product->discount_price)
