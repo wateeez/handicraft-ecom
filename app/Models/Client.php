@@ -58,6 +58,57 @@ class Client extends Model
     }
 
     /**
+     * Normalise a country name or alias ("Nepal", "uk") to the ISO code used for shipping.
+     */
+    public static function normalizeCountry(?string $value): ?string
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return null;
+        }
+
+        $map = config('countries.map', []);
+        $upper = strtoupper($value);
+        $aliases = ['UK' => 'GB', 'UAE' => 'AE', 'USA' => 'US', 'KSA' => 'SA'];
+
+        if (isset($aliases[$upper])) {
+            return $aliases[$upper];
+        }
+        if (isset($map[$upper])) {
+            return $upper;
+        }
+        foreach ($map as $code => $name) {
+            if (strcasecmp($name, $value) === 0) {
+                return $code;
+            }
+        }
+
+        return $value;
+    }
+
+    /**
+     * Fill only the profile fields that are still empty, so repeat inquiries
+     * complete a client's details without overwriting what we already hold.
+     */
+    public function fillMissing(array $data): self
+    {
+        if (array_key_exists('country', $data)) {
+            $data['country'] = static::normalizeCountry($data['country']);
+        }
+
+        $missing = collect($data)
+            ->only(['name', 'phone', 'company_name', 'address_line', 'city', 'state', 'zip_code', 'country'])
+            ->filter(fn ($v, $k) => filled($v) && blank($this->{$k}))
+            ->all();
+
+        if ($missing) {
+            $this->fill($missing)->save();
+        }
+
+        return $this;
+    }
+
+    /**
      * Generate the next buyer ID in format BYR-00001
      */
     public static function generateBuyerId(): string

@@ -92,7 +92,7 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Country / Territory</label>
-                                @if(isset($inquiry) && $inquiry->country)
+                                @if(isset($inquiry) && $inquiry->country && in_array($inquiry->country, array_column($availableCountriesOptions, 'value')))
                                     <div class="p-3 bg-paper/60 border border-border rounded-xl font-medium text-foreground">
                                         {{ $availableCountriesOptions[array_search($inquiry->country, array_column($availableCountriesOptions, 'value'))]['label'] ?? $inquiry->country }}
                                     </div>

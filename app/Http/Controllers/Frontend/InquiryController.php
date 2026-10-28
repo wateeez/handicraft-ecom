@@ -9,14 +9,6 @@ use App\Models\Client;
 use App\Models\Order;
 use App\Services\OrderService;
 
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Bus\Queueable;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Address;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
-
 class InquiryController extends Controller
 {
     public function __construct(protected OrderService $orderService)
@@ -25,50 +17,35 @@ class InquiryController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
+            'phone' => 'required|string|max:50',
+            'country' => 'required|string|max:100',
+            'address_line' => 'required|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'zip_code' => 'nullable|string|max:20',
             'product_id' => 'required|exists:products,id',
-            'message' => 'required|string'
+            'message' => 'nullable|string|max:5000',
         ]);
 
-        $product = Product::findOrFail($request->product_id);
+        $product = Product::findOrFail($validated['product_id']);
 
-
-        // Find or create client
+        // Find or create the client, then complete any details we were missing
         $client = Client::firstOrCreate(
-            ['email' => $request->email],
+            ['email' => $validated['email']],
             [
-                'name' => $request->name,
+                'name' => $validated['name'],
                 'buyer_id' => Client::generateBuyerId(),
             ]
         );
+        $client->fillMissing($validated);
 
-            $fromEmail = env('MAIL_FROM_ADDRESS');
-            $fromName  = env('MAIL_FROM_APP_NAME');
-
-            $toEmail = $request->email;
-            $toName  = $request->name;
-
-                $subject = "Inquiry Received for Product: {$product->name}";
-
-                $body = "Dear " . e($request->name) . ",<br><br>"
-      . "Thank you for your inquiry about the product: " . e($product->name) . " .<br><br>"
-      . "We will get back to you shortly.<br><br>"
-      . "Best regards,<br>" . e($fromName);
-
-        Mail::html($body, function ($message) use ($toEmail, $toName, $fromEmail, $fromName, $subject) {
-                $message->to($toEmail, $toName)
-             ->from($fromEmail, $fromName)
-             ->subject($subject);
-});
-
-
-        // Prepare order data
-        $orderData = [
+        // Create the inquiry first; its confirmation/admin emails are dispatched by OrderService after commit.
+        $this->orderService->createOrder([
             'type' => Order::TYPE_INQUIRY,
             'client_id' => $client->id,
-            'notes' => $request->message,
+            'notes' => $validated['message'] ?? null,
             'items' => [
                 [
                     'product_id' => $product->id,
@@ -77,12 +54,8 @@ class InquiryController extends Controller
                     'weight_kg' => $product->weight,
                 ]
             ]
-        ];
-
-        // Create the unified Inquiry (Order record)
-        $this->orderService->createOrder($orderData, null);
+        ], null);
 
         return back()->with('success', 'Your inquiry has been sent! We will contact you shortly.');
     }
 }
-

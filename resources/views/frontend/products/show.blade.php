@@ -270,7 +270,7 @@
                     @endif
 
                     {{-- Inquiry Button / Form Toggle --}}
-                    <div x-data="{ open: false }" class="mt-4">
+                    <div x-data="{ open: {{ $errors->any() && old("product_id") ? "true" : "false" }} }" class="mt-4">
                         @php
                             $waNumber = preg_replace('/[^0-9]/', '', $siteSettings['whatsapp_number'] ?? '');
                             $defaultTemplate = 'Hi! I am interested in: {product_name} (SKU: {sku} | Price: ${price}) - {url}';
@@ -315,27 +315,32 @@
                                 @csrf
                                 <input type="hidden" name="product_id" value="{{ $product->id }}">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <input type="text" name="name" placeholder="Full Name" required
+                                    <input type="text" name="name" value="{{ old('name') }}" placeholder="Full Name" required
                                         class="w-full p-3 bg-[#F5F2EA] border rounded-lg focus:ring-primary focus:border-primary">
-                                    <input type="email" name="email" placeholder="Email Address" required
+                                    <input type="email" name="email" value="{{ old('email') }}" placeholder="Email Address" required
                                         class="w-full p-3 bg-[#F5F2EA] border rounded-lg focus:ring-primary focus:border-primary">
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <input type="text" name="phone" placeholder="Phone Number" required
+                                    <input type="text" name="phone" value="{{ old('phone') }}" placeholder="Phone Number" required
                                         class="w-full p-3 bg-[#F5F2EA] border rounded-lg focus:ring-primary focus:border-primary">
-                                    <input type="text" name="country" placeholder="Country" required
+                                    <select name="country" required
                                         class="w-full p-3 bg-[#F5F2EA] border rounded-lg focus:ring-primary focus:border-primary">
+                                        <option value="">Country</option>
+                                        @foreach(collect(config('countries.map'))->except(['UK', 'UAE', 'USA', 'KSA'])->sort() as $code => $label)
+                                            <option value="{{ $code }}" {{ old('country') === $code ? 'selected' : '' }}>{{ $label }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
-                                <input type="text" name="address_line" placeholder="Address Line" required
+                                <input type="text" name="address_line" value="{{ old('address_line') }}" placeholder="Address Line" required
                                     class="w-full p-3 bg-[#F5F2EA] border rounded-lg focus:ring-green-premium focus:border-green-premium">
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <input type="text" name="city" placeholder="City"
+                                    <input type="text" name="city" value="{{ old('city') }}" placeholder="City"
                                         class="w-full p-3 bg-[#F5F2EA] border rounded-lg focus:ring-primary focus:border-primary">
-                                    <input type="text" name="zip_code" placeholder="Zip Code"
+                                    <input type="text" name="zip_code" value="{{ old('zip_code') }}" placeholder="Zip Code"
                                         class="w-full p-3 bg-[#F5F2EA] border rounded-lg focus:ring-primary focus:border-primary">
                                 </div>
                                 <textarea name="message" rows="3" placeholder="I am interested in this product..."
-                                    class="w-full p-3 bg-[#F5F2EA] border rounded-lg focus:ring-green-premium focus:border-green-premium"></textarea>
+                                    class="w-full p-3 bg-[#F5F2EA] border rounded-lg focus:ring-green-premium focus:border-green-premium">{{ old('message') }}</textarea>
 
                                 <button type="submit"
                                     class="w-full bg-secondary text-white font-bold py-3 rounded-lg hover:opacity-90 transition">Send

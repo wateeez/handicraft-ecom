@@ -81,7 +81,8 @@ class CartController extends Controller
                     ];
                     $subtotal += (float) $item->line_total;
                 }
-                $inquiry = $omsOrder;
+                // The order row holds no contact details; prefill the form from its client profile.
+                $inquiry = $omsOrder->client ?? $omsOrder;
             } else {
                 $inquiry = Inquiry::where('checkout_token', $token)->firstOrFail();
 
@@ -296,6 +297,12 @@ class CartController extends Controller
                 'zip_code' => $validated['zip_code'] ?? null,
                 'country' => $validated['country'],
             ]);
+        } else {
+            $client->fillMissing([
+                'name' => $validated['name'], 'phone' => $validated['phone'] ?? null,
+                'address_line' => $validated['address'], 'city' => $validated['city'],
+                'zip_code' => $validated['zip_code'] ?? null, 'country' => $validated['country'],
+            ]);
         }
 
         $order = $this->orderService->createOrder([
@@ -365,6 +372,11 @@ class CartController extends Controller
                 'country'      => $validated['country'],
             ]
         );
+        $client->fillMissing([
+            'name' => $validated['name'], 'phone' => $validated['phone'] ?? null,
+            'address_line' => $validated['address'], 'city' => $validated['city'],
+            'zip_code' => $validated['zip_code'] ?? null, 'country' => $validated['country'],
+        ]);
 
         // ── 2. Build items array for OrderService ─────────────────────────────
         $items = [];

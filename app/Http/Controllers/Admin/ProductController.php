@@ -384,8 +384,21 @@ class ProductController extends Controller
             return back()->with('error', 'Unable to read CSV file.');
         }
 
+        // Detect delimiter (comma, tab or semicolon) from the header line
+        $firstLine = fgets($handle);
+        rewind($handle);
+        $delimiter = ',';
+        $best = 0;
+        foreach ([',', "\t", ';'] as $candidate) {
+            $count = substr_count((string) $firstLine, $candidate);
+            if ($count > $best) {
+                $best = $count;
+                $delimiter = $candidate;
+            }
+        }
+
         // Read header row
-        $headers = fgetcsv($handle);
+        $headers = fgetcsv($handle, 0, $delimiter);
         if (!$headers) {
             fclose($handle);
             return back()->with('error', 'CSV file is empty or invalid.');
@@ -406,10 +419,20 @@ class ProductController extends Controller
         DB::beginTransaction();
         
         try {
-            while (($row = fgetcsv($handle)) !== false) {
+            while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
                 try {
+                    // Skip blank lines (fgetcsv returns [null])
+                    if (count($row) === 1 && $row[0] === null) {
+                        continue;
+                    }
+
+                    // Rows with missing/extra columns would make array_combine throw
+                    $headerCount = count($headers);
+                    $row = count($row) < $headerCount
+                        ? array_pad($row, $headerCount, null)
+                        : array_slice($row, 0, $headerCount);
                     $data = array_combine($headers, $row);
-                    
+
                     // Required fields validation
                     if (empty($data['name']) || empty($data['sku']) || empty($data['price']) || empty($data['category'])) {
                         $errors[] = "Row skipped: Missing required fields (name, sku, price, or category)";
