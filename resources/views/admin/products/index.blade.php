@@ -166,6 +166,8 @@
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
+                            <a href="{{ route('products.show', $product->slug) }}" target="_blank" rel="noopener"
+                                class="text-muted-foreground hover:text-foreground hover:underline font-semibold">View</a>
                             <a href="{{ route('admin.products.edit', $product) }}"
                                 class="text-primary hover:underline font-semibold">Edit</a>
                             <form action="{{ route('admin.products.destroy', $product) }}" method="POST" class="inline-block"
