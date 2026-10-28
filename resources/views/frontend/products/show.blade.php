@@ -400,7 +400,7 @@
                                 @endif
                             </div>
                             <div class="p-4 text-center">
-                                <h3 class="font-serif font-bold text-xl leading-tight text-foreground group-hover:text-primary transition-colors truncate mb-1.5">{{ $relProduct->name }}</h3>
+                                <h3 class="font-serif font-bold text-xl leading-tight text-foreground group-hover:text-primary transition-colors mb-1.5">{{ $relProduct->name }}</h3>
                                 <div class="text-primary font-bold text-lg font-sans tabular-nums">
                                     @if($relProduct->discount_price)
                                         <span class="text-muted-foreground line-through text-sm mr-1.5 font-normal">${{ number_format($relProduct->price, 2) }}</span>
