@@ -17,16 +17,6 @@ class PageController extends Controller
         ]);
     }
 
-    public function about()
-    {
-        return $this->contentPage(
-            'about_content',
-            'About ' . SiteSetting::get('site_name', 'Handicraft Nepal NP'),
-            'Our Story',
-            'About'
-        );
-    }
-
     public function returns()
     {
         return $this->contentPage(

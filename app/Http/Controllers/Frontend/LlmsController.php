@@ -34,13 +34,13 @@ class LlmsController extends Controller
         $lines = array_merge($lines, [
             '',
             '## Important pages',
-            '- [Shop](' . route('home') . ')',
+            '- [About Us](' . route('about') . '): who we are, our artisans, ethical production and vision',
+            '- [Shop](' . config('site.shop_url') . ')',
             '- [Blog](' . route('blog.index') . ')',
             '- [Sitemap](' . route('sitemap') . ')',
         ]);
         foreach ([
             'shipping_policy' => ['Shipping policy', 'pages.shipping-policy'],
-            'about_content' => ['About', 'pages.about'],
             'returns_policy' => ['Returns policy', 'pages.returns'],
         ] as $settingKey => [$label, $route]) {
             if (SiteSetting::get($settingKey)) {

@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             DemoUsersSeeder::class,
             OmsSeeder::class,
             ProfitSettingsSeeder::class,
+            AboutPageSeeder::class,
         ]);
 
         if (!User::where('email', 'admin@ecom.com')->exists()) {

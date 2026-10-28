@@ -139,6 +139,8 @@
 
             <!-- Cart -->
             <div class="hidden md:flex items-center justify-end space-x-6 w-full md:w-auto">
+                <a href="{{ route('about') }}"
+                    class="text-[15px] font-serif font-semibold tracking-tight text-foreground hover:text-primary transition-colors duration-200">About Us</a>
                 <!-- Cart -->
                 <a href="{{ route('cart.index') }}"
                     class="relative text-foreground hover:text-primary flex items-center gap-2 transition-colors duration-200 group">
@@ -236,9 +238,7 @@
                     <h4 class="font-bold mb-4">Quick Links</h4>
                     <ul class="site-footer-muted space-y-2 text-sm">
                         <li><a href="{{ route('blog.index') }}" class="hover:text-gold">Blog</a></li>
-                        @if($siteSettings['about_content'])
-                            <li><a href="{{ route('pages.about') }}" class="hover:text-gold">About</a></li>
-                        @endif
+                        <li><a href="{{ route('about') }}" class="hover:text-gold">About Us</a></li>
                         @if($siteSettings['footer_email'] || $siteSettings['footer_phone'] || $siteSettings['whatsapp_number'])
                             <li><a href="{{ route('pages.contact') }}" class="hover:text-gold">Contact</a></li>
                         @endif

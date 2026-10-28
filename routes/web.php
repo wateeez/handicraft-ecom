@@ -9,6 +9,8 @@ use App\Http\Controllers\Frontend\PageController;
 use App\Http\Controllers\Frontend\RobotsController;
 use App\Http\Controllers\Frontend\SitemapController;
 use App\Http\Controllers\Frontend\LlmsController;
+use App\Http\Controllers\Frontend\AboutController;
+use App\Http\Controllers\Admin\AboutPageController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\InquiryController as AdminInquiryController;
@@ -59,7 +61,8 @@ Route::get('/categories/{category:slug}', [ProductController::class, 'category']
 
 // Static Pages
 Route::get('/shipping-policy', [PageController::class, 'shippingPolicy'])->name('pages.shipping-policy');
-Route::get('/about', [PageController::class, 'about'])->name('pages.about');
+Route::get('/about-us', [AboutController::class, 'show'])->name('about');
+Route::redirect('/about', '/about-us', 301);
 Route::get('/contact', [PageController::class, 'contact'])->name('pages.contact');
 Route::get('/returns', [PageController::class, 'returns'])->name('pages.returns');
 
@@ -236,6 +239,12 @@ $adminRoutes->group(function () {
     Route::middleware('permission:manage_settings')->group(function () {
         Route::get('settings', [SiteSettingController::class, 'index'])->name('settings.index');
         Route::post('settings', [SiteSettingController::class, 'update'])->name('settings.update');
+    });
+
+    // About Us page content
+    Route::middleware('permission:manage_settings')->group(function () {
+        Route::get('about', [AboutPageController::class, 'edit'])->name('about.edit');
+        Route::put('about', [AboutPageController::class, 'update'])->name('about.update');
     });
 
     // Blog Management

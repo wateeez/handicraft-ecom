@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
+use App\Models\AboutPage;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\BlogPost;
@@ -27,9 +28,11 @@ class SitemapController extends Controller
             ['loc' => route('products.index'), 'lastmod' => Product::max('updated_at')],
             ['loc' => route('blog.index'), 'lastmod' => BlogPost::max('updated_at')],
         ]);
+        if ($about = AboutPage::first()) {
+            $urls->push(['loc' => route('about'), 'lastmod' => $about->updated_at]);
+        }
         foreach ([
             'shipping_policy' => 'pages.shipping-policy',
-            'about_content' => 'pages.about',
             'returns_policy' => 'pages.returns',
         ] as $settingKey => $route) {
             $setting = SiteSetting::where('key', $settingKey)->first();
