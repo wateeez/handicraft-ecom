@@ -113,10 +113,10 @@
                         @endif
                         @if(isset($featuredCount) && $featuredCount > 0)
                             <a href="{{ route('home', array_merge(request()->only('category', 'subcategory'), ['filter' => 'featured'])) }}"
-                                class="px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-200 flex items-center gap-2 {{ request('filter') == 'featured' ? 'bg-secondary text-white shadow-lg' : 'bg-[#F5F2EA] text-truffle-extra-dark hover:bg-[#E8E2D2]' }}">
+                                class="px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-200 flex items-center gap-2 {{ request('filter') == 'featured' ? 'bg-secondary text-secondary-foreground shadow-lg' : 'bg-[#F5F2EA] text-truffle-extra-dark hover:bg-[#E8E2D2]' }}">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
                                 Featured
-                                <span class="{{ request('filter') == 'featured' ? 'bg-cream/20' : 'bg-secondary/20 text-secondary' }} px-2 py-0.5 rounded-full text-xs">{{ $featuredCount }}</span>
+                                <span class="{{ request('filter') == 'featured' ? 'bg-cream/20' : 'bg-secondary/30 text-secondary-foreground' }} px-2 py-0.5 rounded-full text-xs">{{ $featuredCount }}</span>
                             </a>
                         @endif
                         @if(isset($recommendedCount) && $recommendedCount > 0)
@@ -253,7 +253,7 @@
                                                 Only</span>
                                         @endunless
                                     </div>
-                                    <h3 class="text-xl leading-tight font-serif font-bold text-foreground mb-2 group-hover:text-primary transition-colors">{{ $product->name }}</h3>
+                                    <h2 class="text-xl leading-tight font-serif font-bold text-foreground mb-2 group-hover:text-primary transition-colors">{{ $product->name }}</h2>
                                 </div>
                                 <div class="text-primary font-bold text-lg font-sans tabular-nums mt-1">
                                     @if($product->discount_price)

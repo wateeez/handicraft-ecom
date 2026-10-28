@@ -52,9 +52,16 @@
     @endif
     @stack('head')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Instrument+Sans:wght@400;500;600;700&display=swap"
-        rel="stylesheet">
+        rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Instrument+Sans:wght@400;500;600;700&display=swap"
+            rel="stylesheet">
+    </noscript>
     <style>
         .site-header {
             background-color: rgb(246 241 225 / 0.85);
@@ -97,7 +104,7 @@
                 <a href="{{ route('home') }}" class="flex min-w-0 items-center space-x-3">
                     @if(!empty($siteSettings['navbar_logo_url']))
                         <img src="{{ $siteSettings['navbar_logo_url'] }}"
-                            alt="{{ $siteSettings['site_name'] }}" class="h-12 w-auto object-contain" decoding="async">
+                            alt="{{ $siteSettings['site_name'] }}" class="h-12 w-auto object-contain" height="48" fetchpriority="high" decoding="async">
                     @else
                         <span class="truncate text-2xl font-bold font-serif text-truffle-extra-dark tracking-wide">
                             {{ $siteSettings['site_name'] }}
@@ -126,8 +133,8 @@
                         <input type="text" name="search" placeholder="Search handcrafted masterworks..."
                             value="{{ request('search') }}"
                             class="w-full bg-card border border-border rounded-full py-2.5 sm:py-3 pl-5 pr-12 text-sm sm:text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200 shadow-xs">
-                        <button type="submit"
-                            class="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors">
+                        <button type="submit" aria-label="Search"
+                            class="absolute right-1 top-1/2 transform -translate-y-1/2 p-3 text-muted-foreground hover:text-primary transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
