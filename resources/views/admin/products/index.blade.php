@@ -33,6 +33,9 @@
     <!-- Search & Filter -->
     <div class="bg-card p-5 rounded-2xl mb-6 border border-border shadow-xs">
         <form method="GET" class="space-y-4">
+            @if(request()->filled('per_page'))
+                <input type="hidden" name="per_page" value="{{ $perPage }}">
+            @endif
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Search</label>
@@ -182,7 +185,24 @@
             </tbody>
         </table>
     </div>
-    <div class="mt-5">
-        {{ $products->links() }}
+    <div class="mt-5 flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <form method="GET" class="flex items-center gap-2 text-sm text-muted-foreground">
+            @foreach(request()->except(['page', 'per_page']) as $key => $value)
+                @if(is_scalar($value))
+                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                @endif
+            @endforeach
+            <label for="per_page" class="whitespace-nowrap">Products per page</label>
+            <select id="per_page" name="per_page" onchange="this.form.submit()"
+                class="py-1.5 pl-3 pr-8 bg-paper/50 border border-border rounded-xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition">
+                @foreach($perPageOptions as $option)
+                    <option value="{{ $option }}" {{ $perPage === $option ? 'selected' : '' }}>{{ $option }}</option>
+                @endforeach
+            </select>
+            <noscript><button type="submit" class="px-3 py-1.5 border border-border rounded-xl text-foreground">Apply</button></noscript>
+        </form>
+        <div class="flex-1 sm:flex sm:justify-end">
+            {{ $products->links() }}
+        </div>
     </div>
 @endsection

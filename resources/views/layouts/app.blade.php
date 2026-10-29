@@ -288,6 +288,10 @@
             </div>
         </div>
     </footer>
+
+    @can('edit-storefront-products')
+        @include('partials.admin-product-editor')
+    @endcan
 </body>
 
 </html>

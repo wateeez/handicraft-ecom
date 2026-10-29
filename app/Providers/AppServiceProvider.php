@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
@@ -30,6 +31,10 @@ class AppServiceProvider extends ServiceProvider
         if (app()->environment('production') || str_starts_with((string) config('app.url'), 'https://')) {
             URL::forceScheme('https');
         }
+
+        // Logged-in admins who can manage products may quick-edit them from the storefront
+        Gate::define('edit-storefront-products', fn (\App\Models\User $user) =>
+            $user->is_active && $user->hasPermission('manage_products'));
 
         // Share site settings with all views (with error handling for migrations)
         View::composer('*', function ($view) {

@@ -6,6 +6,15 @@
     <title>Order Confirmation</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: Arial, sans-serif;">
+    @php
+        // Build links from APP_URL, not the host of whichever request triggered the email
+        $siteUrl = rtrim((string) config('app.url'), '/');
+        $orderPageUrl = $siteUrl . route('checkout.success', ['orderNumber' => $order->order_number, 'token' => $order->paymentToken()], false);
+        $logoUrl = $siteSettings['footer_logo_url'] ?? $siteSettings['navbar_logo_url'] ?? null;
+        if ($logoUrl && !\Illuminate\Support\Str::startsWith($logoUrl, ['http://', 'https://'])) {
+            $logoUrl = $siteUrl . '/' . ltrim($logoUrl, '/');
+        }
+    @endphp
 
     <table border="0" cellpadding="0" cellspacing="0" width="100%">
         <tr>
@@ -17,7 +26,9 @@
                     <!-- Header with Logo -->
                     <tr>
                         <td align="center" style="background-color: #2d4a34; padding: 40px 20px;">
-                            <img src="{{ config('app.url') }}/images/logo.png" alt="Handicraft Nepal NP" width="200" style="display: block; margin-bottom: 20px; border: 0;">
+                            @if($logoUrl)
+                                <img src="{{ $logoUrl }}" alt="{{ $siteSettings['site_name'] ?? 'Handicraft Nepal NP' }}" width="200" style="display: block; margin-bottom: 20px; border: 0;">
+                            @endif
                             <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: normal; text-transform: uppercase; letter-spacing: 2px;">Order Confirmation</h1>
                         </td>
                     </tr>
@@ -49,7 +60,11 @@
                     <!-- Button -->
                     <tr>
                         <td align="center" style="padding-bottom: 40px;">
-                            <a href="{{ route('checkout.success', ['orderNumber' => $order->order_number, 'token' => $order->paymentToken()]) }}" style="background-color: #2d4a34; color: #ffffff; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Visit your Order Page</a>
+                            <a href="{{ $orderPageUrl }}" target="_blank" rel="noopener" style="background-color: #2d4a34; color: #ffffff; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Visit your Order Page</a>
+                            <p style="margin: 20px 40px 0; font-size: 12px; color: #777777; line-height: 1.5;">
+                                If the button doesn't work, copy this link into your browser:<br>
+                                <a href="{{ $orderPageUrl }}" target="_blank" rel="noopener" style="color: #2d4a34; word-break: break-all;">{{ $orderPageUrl }}</a>
+                            </p>
                         </td>
                     </tr>
 

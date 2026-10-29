@@ -186,6 +186,7 @@
                         class="text-truffle-extra-dark uppercase tracking-widest text-sm font-semibold">{{ $product->category->name ?? 'Uncategorized' }}</span>
                 </div>
 
+                @include('partials.admin-edit-product-button', ['class' => 'mb-3'])
                 <h1 class="text-3xl sm:text-4xl font-serif font-bold text-truffle-extra-dark mb-4">{{ $product->name }}</h1>
 
                 @if($product->description)
@@ -234,8 +235,11 @@
                                     <div>
                                         <p class="text-sm font-semibold uppercase tracking-wide text-truffle-extra-dark/70">Live Total</p>
                                         <div class="mt-2 text-3xl font-bold text-primary">
-                                            $<span x-text="formatMoney(totalUnitPrice)"></span>
+                                            $<span x-text="formatMoney(totalPrice)"></span>
                                         </div>
+                                        <p class="mt-1 text-sm text-truffle-extra-dark/70" x-show="quantity > 1">
+                                            $<span x-text="formatMoney(totalUnitPrice)"></span> &times; <span x-text="quantity"></span>
+                                        </p>
                                     </div>
                                     @if($product->discount_price)
                                         <div class="text-right text-sm text-truffle-extra-dark/70">
@@ -255,7 +259,7 @@
                                 <div class="flex items-center border border-truffle-medium/30 rounded-full overflow-hidden">
                                     <button type="button" @click="qty = Math.max(minQuantity, qty - 1)"
                                         class="w-9 h-9 flex items-center justify-center text-truffle-extra-dark hover:text-truffle-extra-dark hover:bg-[#F5F2EA] transition text-lg leading-none select-none">-</button>
-                                    <input type="number" name="quantity" x-model="qty" :min="minQuantity"
+                                    <input type="number" name="quantity" x-model.number="qty" :min="minQuantity"
                                         class="w-10 text-center text-sm font-medium bg-transparent border-none focus:outline-none">
                                     <button type="button" @click="qty++"
                                         class="w-9 h-9 flex items-center justify-center text-truffle-extra-dark hover:text-truffle-extra-dark hover:bg-[#F5F2EA] transition text-lg leading-none select-none">+</button>
@@ -421,7 +425,7 @@
     <script>
         function productPurchaseForm(config) {
             return {
-                minQuantity: config.minQuantity,
+                minQuantity: Math.max(1, config.minQuantity || 1),
                 qty: config.minQuantity,
                 basePrices: config.basePrices,
                 saleAvailable: config.saleAvailable,
@@ -432,6 +436,12 @@
                 },
                 get totalUnitPrice() {
                     return this.basePrice;
+                },
+                get quantity() {
+                    return Math.max(this.minQuantity, parseInt(this.qty, 10) || 0);
+                },
+                get totalPrice() {
+                    return this.totalUnitPrice * this.quantity;
                 },
                 formatMoney(value) {
                     return Number(value || 0).toFixed(2);

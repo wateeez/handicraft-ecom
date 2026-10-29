@@ -40,11 +40,14 @@ class ProductController extends Controller
             $query->where('vendor_id', $request->vendor_id);
         }
 
-        $products = $query->latest()->paginate(10)->withQueryString();
+        $perPageOptions = range(5, 50, 5);
+        $perPage = in_array((int) $request->per_page, $perPageOptions, true) ? (int) $request->per_page : 10;
+
+        $products = $query->latest()->paginate($perPage)->withQueryString();
         $categories = Category::all();
         $vendors = Vendor::withCount('products')->orderBy('name')->get(['id', 'name']);
 
-        return view('admin.products.index', compact('products', 'categories', 'vendors'));
+        return view('admin.products.index', compact('products', 'categories', 'vendors', 'perPage', 'perPageOptions'));
     }
 
     public function create()
@@ -185,6 +188,32 @@ class ProductController extends Controller
     /**
      * Generate a unique slug for the product.
      */
+    /**
+     * Quick edit from the storefront: updates the customer-facing text and pricing only.
+     */
+    public function inlineUpdate(Request $request, Product $product)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'price' => 'required|numeric|min:0',
+            'discount_price' => 'nullable|numeric|min:0|lt:price',
+            'description' => 'nullable|string|max:5000',
+            'long_description' => 'nullable|string|max:20000',
+            'is_order_now_enabled' => 'required|boolean',
+        ]);
+
+        if ($data['name'] !== $product->name) {
+            $data['slug'] = $this->generateUniqueSlug($data['name'], $product->id);
+        }
+
+        $product->update($data);
+
+        return response()->json([
+            'message' => 'Product updated.',
+            'url' => route('products.show', $product->slug ?? $product->id),
+        ]);
+    }
+
     private function generateUniqueSlug(string $name, ?int $excludeId = null): string
     {
         $slug = Str::slug($name);

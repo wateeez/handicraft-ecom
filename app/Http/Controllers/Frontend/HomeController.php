@@ -114,7 +114,14 @@ class HomeController extends Controller
             $query->latest();
         }
 
-        $products = $query->paginate(16);
+        $products = $query->paginate(16)->withQueryString();
+
+        if ($request->ajax()) {
+            return response()->json([
+                'html' => $products->map(fn ($product) => view('partials.home-product-card', compact('product'))->render())->implode(''),
+                'next_page_url' => $products->nextPageUrl(),
+            ]);
+        }
         $categories = Cache::remember('all_categories_with_counts', 120, fn () =>
             Category::with('subCategories')->withCount('products')->get()
         );

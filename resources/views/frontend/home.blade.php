@@ -207,64 +207,9 @@
                     </form>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                     @forelse($products as $product)
-                        <a href="{{ route('products.show', $product->slug ?? $product->id) }}"
-                            class="group bg-card rounded-2xl overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 border border-border card-lift shimmer-sweep block flex flex-col justify-between">
-                            <!-- Image -->
-                            <div class="relative aspect-[3/4] overflow-hidden bg-muted">
-                                @if($product->main_image)
-                                    <img src="{{ $product->main_image }}" alt="{{ $product->name }}"
-                                        loading="lazy"
-                                        class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
-                                @else
-                                    <div class="w-full h-full flex items-center justify-center text-muted-foreground text-sm font-medium">No Image</div>
-                                @endif
-
-                                <!-- Discount Badge -->
-                                @if($product->discount_price && $product->price > $product->discount_price)
-                                    @php
-                                        $discountPercent = round((($product->price - $product->discount_price) / $product->price) * 100);
-                                    @endphp
-                                    <div class="absolute top-3 right-3">
-                                        <span class="bg-destructive text-white text-xs px-2.5 py-1 rounded-full font-bold shadow-md animate-pulse-glow">
-                                            -{{ $discountPercent }}%
-                                        </span>
-                                    </div>
-                                @endif
-
-                                <!-- Actions Overlay -->
-                                <div
-                                    class="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-center pb-6 bg-gradient-to-t from-black/60 to-transparent">
-                                    <span
-                                        class="bg-card text-foreground px-5 py-2 rounded-full font-semibold text-xs tracking-wide group-hover:bg-primary group-hover:text-primary-foreground transition shadow-lg transform translate-y-3 group-hover:translate-y-0 duration-300">
-                                        View Details
-                                    </span>
-                                </div>
-                            </div>
-
-                            <!-- Content -->
-                            <div class="p-5 text-center flex-1 flex flex-col justify-between">
-                                <div>
-                                    <div class="mb-2">
-                                        @unless($product->is_order_now_enabled)
-                                            <span
-                                                class="bg-accent/20 text-accent-foreground border border-accent/30 text-[12px] px-2.5 py-0.5 rounded-full uppercase tracking-wider font-semibold">Inquiry
-                                                Only</span>
-                                        @endunless
-                                    </div>
-                                    <h2 class="text-xl sm:text-base lg:text-lg leading-tight font-serif font-bold text-foreground mb-2 group-hover:text-primary transition-colors">{{ $product->name }}</h2>
-                                </div>
-                                <div class="text-primary font-bold text-lg font-sans tabular-nums mt-1">
-                                    @if($product->discount_price)
-                                        <span class="text-muted-foreground line-through text-sm mr-2 font-normal">${{ number_format($product->price, 2) }}</span>
-                                        <span>${{ number_format($product->discount_price, 2) }}</span>
-                                    @else
-                                        <span>${{ number_format($product->price, 2) }}</span>
-                                    @endif
-                                </div>
-                            </div>
-                        </a>
+                        @include('partials.home-product-card')
                     @empty
                         <div class="col-span-full text-center py-12">
                             <p class="text-truffle-extra-dark text-lg">No products found matching your criteria.</p>
@@ -272,14 +217,65 @@
                     @endforelse
                 </div>
 
-                <div class="mt-12">
-                    {{ $products->appends(request()->query())->links() }}
-                </div>
+                @if($products->hasMorePages())
+                    <div class="mt-12 flex flex-col items-center gap-3">
+                        <a id="load-more-products" href="{{ $products->nextPageUrl() }}"
+                            class="inline-flex items-center justify-center gap-2 rounded-full border-2 border-primary px-8 py-3 text-sm font-semibold text-primary hover:bg-primary hover:text-primary-foreground transition">
+                            <span data-label>Load More</span>
+                        </a>
+                        <p id="load-more-status" class="text-sm text-muted-foreground">
+                            Showing <span data-shown>{{ $products->count() }}</span> of {{ $products->total() }} products
+                        </p>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
 
     <script>
+        (function () {
+            const button = document.getElementById('load-more-products');
+            const grid = document.getElementById('product-grid');
+            if (!button || !grid) return;
+
+            const label = button.querySelector('[data-label]');
+            const shown = document.querySelector('#load-more-status [data-shown]');
+            let loading = false;
+
+            button.addEventListener('click', async function (e) {
+                e.preventDefault();
+                if (loading) return;
+                loading = true;
+                label.textContent = 'Loading...';
+                button.setAttribute('aria-busy', 'true');
+
+                try {
+                    const response = await fetch(button.href, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    });
+                    if (!response.ok) throw new Error('Request failed');
+                    const data = await response.json();
+
+                    grid.insertAdjacentHTML('beforeend', data.html);
+                    if (shown) shown.textContent = grid.querySelectorAll(':scope > a').length;
+
+                    if (data.next_page_url) {
+                        button.href = data.next_page_url;
+                        label.textContent = 'Load More';
+                    } else {
+                        button.closest('div').querySelector('#load-more-status')?.remove();
+                        button.remove();
+                    }
+                } catch (err) {
+                    // Fall back to a normal page load if the request fails
+                    window.location.href = button.href;
+                } finally {
+                    loading = false;
+                    button.removeAttribute('aria-busy');
+                }
+            });
+        })();
+
         document.getElementById('mobile-cat-toggle')?.addEventListener('click', function () {
             const panel = document.getElementById('category-panel');
             const open = panel.classList.toggle('hidden') === false;

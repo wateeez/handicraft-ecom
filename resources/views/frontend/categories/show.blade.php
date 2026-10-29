@@ -123,9 +123,9 @@
                                         class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
                                 @endif
                             </div>
-                            <div class="p-4">
-                                <h3 class="font-serif font-bold text-foreground">{{ $product->name }}</h3>
-                                <p class="mt-2 font-semibold text-primary">${{ number_format($product->effective_price, 2) }}</p>
+                            <div class="p-4 text-left flex flex-col items-start gap-2 border-t border-border">
+                                <h3 class="w-full text-left text-pretty text-lg leading-snug font-serif font-bold text-truffle-dark break-words">{{ $product->name }}</h3>
+                                <p class="inline-flex items-center rounded-lg border border-primary/40 px-3 py-1 text-xl font-bold text-primary font-sans tabular-nums">${{ number_format($product->effective_price, 2) }}</p>
                             </div>
                         </a>
                     </article>

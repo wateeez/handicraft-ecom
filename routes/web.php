@@ -149,6 +149,7 @@ $adminRoutes->group(function () {
         ->middleware('permission:view_products,manage_products');
     Route::middleware('permission:manage_products')->group(function () {
         Route::resource('products', AdminProductController::class)->except(['index', 'show']);
+        Route::patch('products/{product}/inline', [AdminProductController::class, 'inlineUpdate'])->name('products.inline-update');
         Route::get('products-bulk', [AdminProductController::class, 'bulk'])->name('products.bulk');
         Route::get('products-bulk/template-csv', [AdminProductController::class, 'templateProductsCsv'])->name('products.template');
         Route::get('products-bulk/export', [AdminProductController::class, 'exportProducts'])->name('products.export');
