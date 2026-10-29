@@ -21,7 +21,10 @@ return [
     | Host that serves the admin dashboard and login (e.g. dashboard.example.com).
     | Leave empty to keep the admin on the storefront host under /admin.
     */
-    'admin_domain' => env('ADMIN_DOMAIN') ?: null,
+    // Accepts a bare host or a full URL (https://dashboard.example.com/) and keeps only the host.
+    'admin_domain' => env('ADMIN_DOMAIN')
+        ? (parse_url(str_contains(env('ADMIN_DOMAIN'), '://') ? env('ADMIN_DOMAIN') : 'https://' . env('ADMIN_DOMAIN'), PHP_URL_HOST) ?: null)
+        : null,
 
     /*
     |--------------------------------------------------------------------------

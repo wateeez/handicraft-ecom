@@ -7,7 +7,7 @@
             'description' => $product->description,
             'long_description' => $product->long_description,
             'is_order_now_enabled' => (bool) $product->is_order_now_enabled,
-            'update_url' => route('admin.products.inline-update', $product),
+            'update_url' => route('storefront.products.update', $product),
             'dashboard_url' => route('admin.products.edit', $product),
             'page_url' => route('products.show', $product->slug ?? $product->id),
         ]) }}"
