@@ -129,12 +129,13 @@ $adminRoutes->group(function () {
     });
 
     // Categories
+    // No create page: categories are added inline on the index.
+    Route::resource('categories', \App\Http\Controllers\Admin\CategoryController::class)
+        ->except(['index', 'show', 'create'])
+        ->middleware('permission:manage_categories');
     Route::resource('categories', \App\Http\Controllers\Admin\CategoryController::class)
         ->only(['index', 'show'])
         ->middleware('permission:view_categories,manage_categories');
-    Route::resource('categories', \App\Http\Controllers\Admin\CategoryController::class)
-        ->except(['index', 'show'])
-        ->middleware('permission:manage_categories');
 
     // Sub-Categories
     Route::middleware('permission:manage_categories')->group(function () {
@@ -168,16 +169,13 @@ $adminRoutes->group(function () {
 
     // Clients
     Route::resource('clients', ClientController::class)
-        ->only(['index', 'show'])
-        ->middleware('permission:view_clients,manage_clients');
-    Route::resource('clients', ClientController::class)
         ->except(['index', 'show'])
         ->middleware('permission:manage_clients');
+    Route::resource('clients', ClientController::class)
+        ->only(['index', 'show'])
+        ->middleware('permission:view_clients,manage_clients');
 
     // Orders
-    Route::resource('orders', OrderController::class)
-        ->only(['index', 'show'])
-        ->middleware('permission:view_orders,manage_orders');
     Route::middleware('permission:manage_orders')->group(function () {
         Route::post('orders/calculate-shipping', [OrderController::class, 'calculateShipping'])->name('orders.calculate-shipping');
         Route::resource('orders', OrderController::class)->except(['index', 'show']);
@@ -190,6 +188,10 @@ $adminRoutes->group(function () {
         Route::post('orders/{order}/items/{item}/return', [OrderController::class, 'returnItem'])->name('orders.items.return');
         Route::post('orders/{order}/items/{item}/undo-return', [OrderController::class, 'undoItemReturn'])->name('orders.items.undo-return');
     });
+    // Registered after the write routes so orders/create isn't captured by orders/{order}.
+    Route::resource('orders', OrderController::class)
+        ->only(['index', 'show'])
+        ->middleware('permission:view_orders,manage_orders');
     Route::post('orders/merge', [OrderController::class, 'merge'])
         ->middleware('permission:merge_orders')
         ->name('orders.merge');

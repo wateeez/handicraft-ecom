@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Str;
 
 class Order extends Model
 {
@@ -289,12 +290,15 @@ class Order extends Model
         // lockForUpdate() serialises concurrent inserts under InnoDB (gap lock on last row).
         // Must be called within an open DB::transaction.
         $year = now()->year;
+        // Order by the number itself, not id: an inquiry promoted to an order keeps its older id
+        // but takes the newest ORD- number. LENGTH first keeps 100000+ sorting after 99999.
         $last = static::withTrashed()
             ->where('order_number', 'like', "{$prefix}-{$year}-%")
-            ->orderByDesc('id')
+            ->orderByRaw('LENGTH(order_number) DESC')
+            ->orderByDesc('order_number')
             ->lockForUpdate()
             ->first();
-        $nextNum = $last ? ((int) substr($last->order_number, -5)) + 1 : 1;
+        $nextNum = $last ? ((int) Str::afterLast($last->order_number, '-')) + 1 : 1;
         return "{$prefix}-{$year}-" . str_pad($nextNum, 5, '0', STR_PAD_LEFT);
     }
 

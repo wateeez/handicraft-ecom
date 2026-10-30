@@ -126,67 +126,12 @@ class OrderController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'type' => 'required|in:inquiry,order',
-            'client_id' => 'nullable|exists:clients,id',
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'nullable|exists:products,id',
-            'items.*.product_name' => 'nullable|string|max:255',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.weight_kg' => 'nullable|numeric|min:0',
-            'items.*.length' => 'nullable|numeric|min:0',
-            'items.*.width' => 'nullable|numeric|min:0',
-            'items.*.height' => 'nullable|numeric|min:0',
-            'tracking_number' => 'nullable|string|max:255',
-            'order_discount_type' => 'nullable|in:percent,fixed,none',
-            'order_discount_value' => 'nullable|numeric|min:0',
-            'shipping_cost' => 'nullable|numeric|min:0',
-            'notes' => 'nullable|string',
-        ]);
+        $this->validateOrderRequest($request);
 
-        // Build items
-        $items = [];
-        foreach ($request->items as $item) {
-            // Rows with neither a product nor a custom name are blank placeholders; a $0 price is valid.
-            if (empty($item['product_id']) && trim((string) ($item['product_name'] ?? '')) === '')
-                continue;
-            $items[] = [
-                'product_id' => $item['product_id'] ?? null,
-                'product_name' => $item['product_name'] ?? null,
-                'product_sku' => $item['product_sku'] ?? null,
-                'quantity' => (int) ($item['quantity'] ?? 1),
-                'unit_price' => (float) ($item['unit_price'] ?? 0),
-                'weight_kg' => (float) ($item['weight_kg'] ?? 0),
-                'length' => isset($item['length']) && $item['length'] !== '' ? (float) $item['length'] : null,
-                'width' => isset($item['width']) && $item['width'] !== '' ? (float) $item['width'] : null,
-                'height' => isset($item['height']) && $item['height'] !== '' ? (float) $item['height'] : null,
-                'item_discount_type' => $item['item_discount_type'] ?? 'none',
-                'item_discount_value' => (float) ($item['item_discount_value'] ?? 0),
-            ];
-        }
-
-        $data = array_merge($request->only([
-            'type',
-            'client_id',
-            'order_discount_type',
-            'order_discount_value',
-            'shipping_cost',
-            'notes',
-            'delivery_period_days',
-            'tracking_number',
-        ]), ['items' => $items]);
-
-        if (empty($items)) {
+        $data = $this->buildOrderData($request);
+        if (empty($data['items'])) {
             return back()->withInput()->withErrors(['items' => 'Add at least one item with a product or a name.']);
         }
-
-        $data['order_discount_type'] = $data['order_discount_type'] ?? 'none';
-        $data['order_discount_value'] = $data['order_discount_value'] ?? 0;
-        $data['shipping_cost'] = $data['shipping_cost'] ?? 0;
-        $data['shipping_provider_id'] = $request->filled('shipping_provider_id')
-            ? $request->shipping_provider_id
-            : ShippingProvider::getDefaultProviderId();
 
         $order = $this->orderService->createOrder($data, auth()->user());
 
@@ -239,21 +184,70 @@ class OrderController extends Controller
 
     public function update(Request $request, Order $order)
     {
+        $this->validateOrderRequest($request);
+
+        $data = $this->buildOrderData($request);
+        if (empty($data['items'])) {
+            return back()->withInput()->withErrors(['items' => 'Add at least one item with a product or a name.']);
+        }
+
+        $this->orderService->updateOrder($order, $data, auth()->user());
+
+        return redirect()->route('admin.orders.show', $order)
+            ->with('success', "Order #{$order->order_number} updated successfully.");
+    }
+
+    /**
+     * Validation shared by the admin create and edit forms.
+     */
+    protected function validateOrderRequest(Request $request): void
+    {
+        $percentCap = function (string $discountTypeField) use ($request) {
+            return function ($attribute, $value, $fail) use ($request, $discountTypeField) {
+                if ($request->input($discountTypeField) === 'percent' && (float) $value > 100) {
+                    $fail('A percent discount cannot exceed 100%.');
+                }
+            };
+        };
+
         $request->validate([
             'type' => 'required|in:inquiry,order',
             'client_id' => 'nullable|exists:clients,id',
+            'shipping_provider_id' => 'nullable|exists:shipping_providers,id',
             'items' => 'required|array|min:1',
+            'items.*.product_id' => 'nullable|exists:products,id',
+            'items.*.product_name' => 'nullable|string|max:255',
             'items.*.unit_price' => 'required|numeric|min:0',
             'items.*.quantity' => 'required|integer|min:1',
-            'items.*.weight_kg' => 'required|numeric|min:0',
+            'items.*.weight_kg' => 'nullable|numeric|min:0',
+            'items.*.length' => 'nullable|numeric|min:0',
+            'items.*.width' => 'nullable|numeric|min:0',
+            'items.*.height' => 'nullable|numeric|min:0',
+            'items.*.item_discount_type' => 'nullable|in:percent,fixed,none',
+            'items.*.item_discount_value' => ['nullable', 'numeric', 'min:0', function ($attribute, $value, $fail) use ($request) {
+                $index = explode('.', $attribute)[1];
+                if ($request->input("items.{$index}.item_discount_type") === 'percent' && (float) $value > 100) {
+                    $fail('A percent discount cannot exceed 100%.');
+                }
+            }],
+            'tracking_number' => 'nullable|string|max:255',
             'order_discount_type' => 'nullable|in:percent,fixed,none',
-            'order_discount_value' => 'nullable|numeric|min:0',
+            'order_discount_value' => ['nullable', 'numeric', 'min:0', $percentCap('order_discount_type')],
             'shipping_cost' => 'nullable|numeric|min:0',
+            'delivery_period_days' => 'nullable|integer|min:0|max:365',
+            'notes' => 'nullable|string',
         ]);
+    }
 
+    /**
+     * Normalise the submitted form into the payload OrderService expects.
+     */
+    protected function buildOrderData(Request $request): array
+    {
         $items = [];
         foreach ($request->items as $item) {
-            if (empty($item['unit_price']) && empty($item['product_id']))
+            // Rows with neither a product nor a custom name are blank placeholders; a $0 price is valid.
+            if (empty($item['product_id']) && trim((string) ($item['product_name'] ?? '')) === '')
                 continue;
             $items[] = [
                 'product_id' => $item['product_id'] ?? null,
@@ -262,6 +256,9 @@ class OrderController extends Controller
                 'quantity' => (int) ($item['quantity'] ?? 1),
                 'unit_price' => (float) ($item['unit_price'] ?? 0),
                 'weight_kg' => (float) ($item['weight_kg'] ?? 0),
+                'length' => isset($item['length']) && $item['length'] !== '' ? (float) $item['length'] : null,
+                'width' => isset($item['width']) && $item['width'] !== '' ? (float) $item['width'] : null,
+                'height' => isset($item['height']) && $item['height'] !== '' ? (float) $item['height'] : null,
                 'item_discount_type' => $item['item_discount_type'] ?? 'none',
                 'item_discount_value' => (float) ($item['item_discount_value'] ?? 0),
             ];
@@ -270,23 +267,19 @@ class OrderController extends Controller
         $data = array_merge($request->only([
             'type',
             'client_id',
-            'order_discount_type',
-            'order_discount_value',
-            'shipping_cost',
             'notes',
-            'delivery_period_days',
+            'tracking_number',
         ]), ['items' => $items]);
 
-        $data['order_discount_type'] = $data['order_discount_type'] ?? 'none';
-        $data['order_discount_value'] = $data['order_discount_value'] ?? 0;
+        $data['order_discount_type'] = $request->input('order_discount_type') ?? 'none';
+        $data['order_discount_value'] = $request->input('order_discount_value') ?? 0;
+        $data['shipping_cost'] = $request->input('shipping_cost') ?? 0;
+        $data['delivery_period_days'] = $request->input('delivery_period_days') ?? 14;
         $data['shipping_provider_id'] = $request->filled('shipping_provider_id')
             ? $request->shipping_provider_id
             : ShippingProvider::getDefaultProviderId();
 
-        $this->orderService->updateOrder($order, $data, auth()->user());
-
-        return redirect()->route('admin.orders.show', $order)
-            ->with('success', "Order #{$order->order_number} updated successfully.");
+        return $data;
     }
 
     public function updateStatus(Request $request, Order $order)
