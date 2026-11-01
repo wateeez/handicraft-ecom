@@ -23,6 +23,12 @@ php artisan migrate --force
 echo "Migrations completed"
 echo ""
 
+# 2b. Build frontend assets (public/build is not in git, so new CSS/JS only reaches the server this way)
+echo "2b. Building frontend assets..."
+npm ci && npm run build || { echo "✗ Asset build failed (is Node.js installed?)"; exit 1; }
+echo "✓ Assets built"
+echo ""
+
 # 3. Seed roles and permissions
 echo "3. Seeding roles and permissions..."
 php artisan db:seed --class=RolesAndPermissionsSeeder --force

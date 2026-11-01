@@ -25,6 +25,16 @@
     </div>
     @endif
 
+    @if(session('import_errors'))
+    <div class="bg-red-500/10 border border-red-500/30 text-red-800 px-4 py-3 rounded-xl mb-6 text-sm">
+        <p class="font-semibold mb-1">{{ count(session('import_errors')) }} row(s) were not imported:</p>
+        <ul class="list-disc list-inside space-y-0.5 max-h-64 overflow-y-auto">
+            @foreach(session('import_errors') as $importError)<li>{{ $importError }}</li>@endforeach
+        </ul>
+        <p class="mt-2 text-xs text-red-700">Fix these rows and upload the file again. Rows that already imported will just be updated (matched by SKU).</p>
+    </div>
+    @endif
+
     <div class="bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
         <div>
             <div class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-border">
@@ -50,6 +60,11 @@
                             <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4"/></svg>
                             Export products
                         </a>
+                        <a href="{{ route('admin.products.categories-csv') }}"
+                            class="sm:col-span-2 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-paper/50 text-foreground text-sm font-medium hover:bg-paper hover:border-primary/40 transition">
+                            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
+                            Download category list (valid category &amp; sub_category values)
+                        </a>
                     </div>
 
                     <form action="{{ route('admin.products.import') }}" method="POST" enctype="multipart/form-data"
@@ -73,6 +88,7 @@
 
                     <div class="rounded-xl bg-brass/10 border border-brass/30 px-4 py-3 text-xs text-foreground space-y-1">
                         <p><span class="font-semibold">Required columns:</span> name, sku, category, sub_category, price, weight, length, width, height</p>
+                        <p><span class="font-semibold">Not sure of the exact names?</span> Download the category list above; it always matches your current categories.</p>
                         <p><span class="font-semibold">Category:</span> use the exact category name from your system</p>
                         <p><span class="font-semibold">Sub-category:</span> required. Add a child with <code>Sub-category &gt; Child</code>, e.g. <code>Wall Art &gt; Paintings</code> (the child is optional)</p>
                         <p><span class="font-semibold">Yes/no fields:</span> use true/false or 1/0</p>

@@ -353,6 +353,19 @@ class ProductController extends Controller
             ]
         ];
 
+        // Use this store's real categories in the examples so the template imports as-is.
+        $paths = $this->categoryPathRows();
+        $examples = $paths->where('depth', 2)->take(1)
+            ->merge($paths->where('depth', 1)->take(2))
+            ->values();
+        if ($examples->isNotEmpty()) {
+            foreach ($exampleRows as $i => $row) {
+                $example = $examples[$i % $examples->count()];
+                $exampleRows[$i][2] = $example['category'];
+                $exampleRows[$i][3] = $example['sub_category'];
+            }
+        }
+
         $filename = 'products-template-' . now()->format('Y-m-d') . '.csv';
 
         return response()->streamDownload(function () use ($headers, $exampleRows) {
@@ -365,6 +378,39 @@ class ProductController extends Controller
         }, $filename, [
             'Content-Type' => 'text/csv',
         ]);
+    }
+
+    /**
+     * Every valid category / sub_category pair for the bulk CSV, generated from the live categories.
+     */
+    public function categoriesCsv(): StreamedResponse
+    {
+        $rows = $this->categoryPathRows();
+
+        return response()->streamDownload(function () use ($rows) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['category', 'sub_category', 'level']);
+            foreach ($rows as $row) {
+                fputcsv($handle, [$row['category'], $row['sub_category'], $row['depth'] === 1 ? 'Sub-category' : 'Child sub-category']);
+            }
+            fclose($handle);
+        }, 'categories-' . now()->format('Y-m-d') . '.csv', [
+            'Content-Type' => 'text/csv',
+        ]);
+    }
+
+    /**
+     * One row per sub-category, as written in the bulk CSV: ['category', 'sub_category' (path), 'depth'].
+     */
+    private function categoryPathRows(): \Illuminate\Support\Collection
+    {
+        return Category::with('subCategories')->orderBy('name')->get()
+            ->flatMap(fn (Category $category) => $category->flattenedSubCategories()->map(fn ($row) => [
+                'category' => $category->name,
+                'sub_category' => $row['sub']->pathName(' > '),
+                'depth' => $row['depth'],
+            ]))
+            ->values();
     }
 
     public function exportProducts(): StreamedResponse
@@ -478,6 +524,18 @@ class ProductController extends Controller
             $headers[0] = ltrim($headers[0], "\xEF\xBB\xBF");
         }
 
+        // Accept "Sub Category", "sub-category", "SubCategory" etc. as sub_category.
+        $headers = array_map(function ($header) {
+            $header = preg_replace('/[\s\-]+/', '_', strtolower(trim((string) $header)));
+            return ['subcategory' => 'sub_category', 'sub_categories' => 'sub_category'][$header] ?? $header;
+        }, $headers);
+
+        $missing = array_diff(['name', 'sku', 'category', 'sub_category', 'price'], $headers);
+        if ($missing) {
+            fclose($handle);
+            return back()->with('error', 'CSV is missing required column(s): ' . implode(', ', $missing) . '. Download the latest template and copy your rows into it.');
+        }
+
         $imported = 0;
         $updated = 0;
         $failed = 0;
@@ -486,7 +544,9 @@ class ProductController extends Controller
         DB::beginTransaction();
         
         try {
+            $line = 1; // header
             while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
+                $line++;
                 try {
                     // Skip blank lines (fgetcsv returns [null])
                     if (count($row) === 1 && $row[0] === null) {
@@ -502,7 +562,7 @@ class ProductController extends Controller
 
                     // Required fields validation
                     if (empty($data['name']) || empty($data['sku']) || empty($data['price']) || empty($data['category'])) {
-                        $errors[] = "Row skipped: Missing required fields (name, sku, price, or category)";
+                        $errors[] = "Line {$line}: Missing required fields (name, sku, price, or category)";
                         $failed++;
                         continue;
                     }
@@ -513,7 +573,7 @@ class ProductController extends Controller
                         ->first();
                     
                     if (!$category) {
-                        $errors[] = "Row '{$data['name']}': Category '{$data['category']}' not found";
+                        $errors[] = "Line {$line} ('{$data['name']}'): Category '{$data['category']}' not found";
                         $failed++;
                         continue;
                     }
@@ -524,13 +584,13 @@ class ProductController extends Controller
                         $subCategory = $this->findSubCategoryByPath($category, $data['sub_category']);
 
                         if (!$subCategory) {
-                            $errors[] = "Row '{$data['name']}': Sub-category '{$data['sub_category']}' not found in '{$category->name}' (for a child use 'Parent > Child')";
+                            $errors[] = "Line {$line} ('{$data['name']}'): Sub-category '{$data['sub_category']}' not found in '{$category->name}' (for a child use 'Parent > Child')";
                             $failed++;
                             continue;
                         }
                         $subCategoryId = $subCategory->id;
                     } else {
-                        $errors[] = "Row '{$data['name']}': Sub-category is required";
+                        $errors[] = "Line {$line} ('{$data['name']}'): Sub-category is required";
                         $failed++;
                         continue;
                     }
@@ -577,7 +637,7 @@ class ProductController extends Controller
                     }
                     
                 } catch (\Exception $e) {
-                    $errors[] = "Row error: " . $e->getMessage();
+                    $errors[] = "Line {$line}: " . $e->getMessage();
                     $failed++;
                 }
             }
@@ -587,14 +647,12 @@ class ProductController extends Controller
 
             $message = "Import completed: {$imported} products created, {$updated} updated.";
             if ($failed > 0) {
-                $message .= " {$failed} rows failed.";
+                $message .= " {$failed} rows failed — see the list below.";
             }
 
-            if (!empty($errors) && count($errors) <= 10) {
-                $message .= " Errors: " . implode('; ', $errors);
-            }
-
-            return back()->with('success', $message);
+            return back()
+                ->with($imported + $updated === 0 && $failed > 0 ? 'error' : 'success', $message)
+                ->with('import_errors', array_slice($errors, 0, 200));
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -797,7 +855,7 @@ class ProductController extends Controller
             $q->where('name', $part)->orWhere('slug', Str::slug($part));
         });
 
-        $parts = array_values(array_filter(array_map('trim', explode('>', $value)), 'strlen'));
+        $parts = array_values(array_filter(array_map('trim', explode('>', str_replace('›', '>', $value))), 'strlen'));
         if (count($parts) <= 1) {
             $matches = $match(SubCategory::where('category_id', $category->id), $parts[0] ?? $value)->limit(2)->get();
             return $matches->count() === 1 ? $matches->first() : null;

@@ -152,6 +152,7 @@ $adminRoutes->group(function () {
         Route::resource('products', AdminProductController::class)->except(['index', 'show']);
         Route::get('products-bulk', [AdminProductController::class, 'bulk'])->name('products.bulk');
         Route::get('products-bulk/template-csv', [AdminProductController::class, 'templateProductsCsv'])->name('products.template');
+        Route::get('products-bulk/categories-csv', [AdminProductController::class, 'categoriesCsv'])->name('products.categories-csv');
         Route::get('products-bulk/export', [AdminProductController::class, 'exportProducts'])->name('products.export');
         Route::post('products-bulk/import', [AdminProductController::class, 'importProducts'])->name('products.import');
         Route::post('products-bulk/upload-images', [AdminProductController::class, 'bulkUploadImages'])->name('products.bulk-images');

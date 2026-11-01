@@ -261,9 +261,9 @@ class NestedSubCategoryTest extends TestCase
             ->assertSee('subcategory=' . $paintings->slug, false);
     }
 
-    private function importCsv(array $rows)
+    private function importCsv(array $rows, string $header = 'name,sku,category,sub_category,price,weight,length,width,height')
     {
-        $lines = ["name,sku,category,sub_category,price,weight,length,width,height"];
+        $lines = [$header];
         foreach ($rows as [$name, $sku, $subCategory]) {
             $lines[] = "\"{$name}\",{$sku},Home Decor,\"{$subCategory}\",50,1,10,10,10";
         }
@@ -285,9 +285,11 @@ class NestedSubCategoryTest extends TestCase
             ['Typo Item', 'BULK-4', 'Wall Art > Nope'],
             ['No Sub Item', 'BULK-7', ''],
         ])->assertSessionHas('success', fn ($message) => str_contains($message, '3 products created')
-            && str_contains($message, '2 rows failed')
-            && str_contains($message, "Sub-category 'Wall Art > Nope' not found")
-            && str_contains($message, "Sub-category is required"));
+            && str_contains($message, '2 rows failed'))
+            ->assertSessionHas('import_errors', [
+                "Line 5 ('Typo Item'): Sub-category 'Wall Art > Nope' not found in 'Home Decor' (for a child use 'Parent > Child')",
+                "Line 6 ('No Sub Item'): Sub-category is required",
+            ]);
 
         $this->assertSame($paintings->id, (int) Product::where('sku', 'BULK-1')->value('sub_category_id'));
         $this->assertSame($this->wallArt->id, (int) Product::where('sku', 'BULK-2')->value('sub_category_id'));
@@ -438,5 +440,61 @@ class NestedSubCategoryTest extends TestCase
         $this->get(route('home'))
             ->assertOk()
             ->assertDontSee('aria-label="Breadcrumb"', false);
+    }
+
+    public function test_bulk_import_accepts_header_variants_and_the_admin_separator(): void
+    {
+        $paintings = $this->nested('Paintings', $this->wallArt);
+
+        $this->importCsv(
+            [['Header Variant', 'BULK-H1', 'Wall Art › Paintings']],
+            'Name,SKU,Category,Sub Category,Price,Weight,Length,Width,Height'
+        )->assertSessionHas('success', fn ($message) => str_contains($message, '1 products created'));
+
+        $this->assertSame($paintings->id, (int) Product::where('sku', 'BULK-H1')->value('sub_category_id'));
+    }
+
+    public function test_bulk_import_rejects_a_file_without_the_sub_category_column(): void
+    {
+        $this->asAdmin()->post(route('admin.products.import'), [
+            'products_file' => UploadedFile::fake()->createWithContent('old.csv', "name,sku,category,price,weight,length,width,height\nOld,OLD-1,Home Decor,5,1,1,1,1"),
+        ])->assertSessionHas('error', fn ($message) => str_contains($message, 'missing required column(s): sub_category'));
+
+        $this->assertDatabaseMissing('products', ['sku' => 'OLD-1']);
+    }
+
+    public function test_bulk_import_that_imports_nothing_is_reported_as_an_error(): void
+    {
+        $this->importCsv([['Nope', 'BULK-N1', 'Missing Sub']])
+            ->assertSessionHas('error', fn ($message) => str_contains($message, '1 rows failed'))
+            ->assertSessionMissing('success');
+    }
+
+    public function test_category_list_and_template_use_the_live_categories(): void
+    {
+        $this->nested('Paintings', $this->wallArt);
+
+        $list = $this->asAdmin()->get(route('admin.products.categories-csv'))->assertOk()->streamedContent();
+        $this->assertStringContainsString('"Home Decor","Wall Art",Sub-category', $list);
+        $this->assertStringContainsString('"Home Decor","Wall Art > Paintings","Child sub-category"', $list);
+
+        $template = $this->asAdmin()->get(route('admin.products.template'))->assertOk()->streamedContent();
+        $this->assertStringContainsString('"Home Decor","Wall Art > Paintings"', $template);
+        $this->assertStringNotContainsString('Furniture', $template);
+
+        // The downloaded template imports cleanly as-is.
+        $this->asAdmin()->post(route('admin.products.import'), [
+            'products_file' => UploadedFile::fake()->createWithContent('template.csv', $template),
+        ])->assertSessionHas('success', fn ($message) => str_contains($message, '3 products created') && !str_contains($message, 'failed'));
+    }
+
+    public function test_bulk_page_lists_import_errors_and_links_the_category_list(): void
+    {
+        $this->asAdmin()->withSession(['import_errors' => ["Line 3 ('Lamp'): Sub-category is required"]])
+            ->get(route('admin.products.bulk'))
+            ->assertOk()
+            ->assertSee('1 row(s) were not imported')
+            ->assertSee("Line 3 ('Lamp'): Sub-category is required")
+            ->assertSee(route('admin.products.categories-csv'), false);
     }
 }
