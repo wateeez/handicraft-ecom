@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\Vendor;
 use App\Models\SubCategory;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -52,7 +53,7 @@ class ProductController extends Controller
 
     public function create()
     {
-        $categories = Category::with('subCategories')->get();
+        $categories = Category::with('topSubCategories.children')->get();
         $vendors = Vendor::active()->orderBy('name')->get(['id', 'name']);
         return view('admin.products.create', compact('categories', 'vendors'));
     }
@@ -66,6 +67,11 @@ class ProductController extends Controller
             'discount_price' => 'nullable|numeric|min:0',
 
             'category_id' => 'required|exists:categories,id',
+            // Every product needs a sub-category (or a child of one) from its category.
+            'sub_category_id' => [
+                'required',
+                Rule::exists('sub_categories', 'id')->where('category_id', $request->category_id),
+            ],
             'vendor_id' => 'nullable|exists:vendors,id',
             'meta_title' => 'nullable|string|max:70',
             'meta_description' => 'nullable|string|max:200',
@@ -75,6 +81,8 @@ class ProductController extends Controller
             'height' => 'required|numeric',
             'main_image' => 'nullable|image|max:2048',
             'images.*' => 'nullable|image|max:2048',
+        ], [
+            'sub_category_id.required' => 'Please choose a sub-category. If the list is empty, add a sub-category to this category first.',
         ]);
 
         $data = $request->all();
@@ -112,7 +120,7 @@ class ProductController extends Controller
 
     public function edit(Product $product)
     {
-        $categories = Category::with('subCategories')->get();
+        $categories = Category::with('topSubCategories.children')->get();
         $vendors = Vendor::where('is_active', true)->orWhere('id', $product->vendor_id)->orderBy('name')->get(['id', 'name']);
         return view('admin.products.edit', compact('product', 'categories', 'vendors'));
     }
@@ -126,6 +134,11 @@ class ProductController extends Controller
             'discount_price' => 'nullable|numeric|min:0',
 
             'category_id' => 'required|exists:categories,id',
+            // Every product needs a sub-category (or a child of one) from its category.
+            'sub_category_id' => [
+                'required',
+                Rule::exists('sub_categories', 'id')->where('category_id', $request->category_id),
+            ],
             'vendor_id' => 'nullable|exists:vendors,id',
             'meta_title' => 'nullable|string|max:70',
             'meta_description' => 'nullable|string|max:200',
@@ -135,6 +148,8 @@ class ProductController extends Controller
             'height' => 'required|numeric',
             'main_image' => 'nullable|image|max:2048',
             'images.*' => 'nullable|image|max:2048',
+        ], [
+            'sub_category_id.required' => 'Please choose a sub-category. If the list is empty, add a sub-category to this category first.',
         ]);
 
         $data = $request->all();
@@ -291,10 +306,33 @@ class ProductController extends Controller
                 '0'
             ],
             [
+                'Hand-painted Rocking Chair',
+                'CH002',
+                'Furniture',
+                'Chairs > Rocking Chairs',
+                '220.00',
+                '',
+
+                '1',
+                'Pine Wood',
+                '7.0',
+                '60',
+                '90',
+                '95',
+                'Child sub-category example: write Parent > Child',
+                '',
+                'true',
+                'false',
+                'false',
+                'false',
+                'false',
+                '0'
+            ],
+            [
                 'Modern Coffee Table',
                 'TB002',
                 'Furniture',
-                '',
+                'Tables',
                 '299.99',
                 '',
 
@@ -368,7 +406,7 @@ class ProductController extends Controller
                     $product->name,
                     $product->sku,
                     $product->category->name ?? '',
-                    $product->subCategory->name ?? '',
+                    $product->subCategory ? $product->subCategory->pathName(' > ') : '',
                     $product->price,
                     $product->discount_price ?? '',
 
@@ -480,19 +518,21 @@ class ProductController extends Controller
                         continue;
                     }
 
-                    // Find sub_category if provided
+                    // A sub-category is always required; a child is optional.
                     $subCategoryId = null;
                     if (!empty($data['sub_category'])) {
-                        $subCategory = SubCategory::where('category_id', $category->id)
-                            ->where(function($q) use ($data) {
-                                $q->where('name', $data['sub_category'])
-                                  ->orWhere('slug', Str::slug($data['sub_category']));
-                            })
-                            ->first();
-                        
-                        if ($subCategory) {
-                            $subCategoryId = $subCategory->id;
+                        $subCategory = $this->findSubCategoryByPath($category, $data['sub_category']);
+
+                        if (!$subCategory) {
+                            $errors[] = "Row '{$data['name']}': Sub-category '{$data['sub_category']}' not found in '{$category->name}' (for a child use 'Parent > Child')";
+                            $failed++;
+                            continue;
                         }
+                        $subCategoryId = $subCategory->id;
+                    } else {
+                        $errors[] = "Row '{$data['name']}': Sub-category is required";
+                        $failed++;
+                        continue;
                     }
 
                     // Prepare product data (sanitize text to avoid encoding issues)
@@ -744,6 +784,38 @@ class ProductController extends Controller
             $this->deleteDirectory($tempDir);
             return back()->with('error', 'Image upload failed: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Resolve a CSV sub_category value: either a nested path ("Wall Art > Paintings")
+     * or a single name/slug, which matches at any level within the category as long
+     * as only one sub-category has that name (otherwise the full path is required).
+     */
+    private function findSubCategoryByPath(Category $category, string $value): ?SubCategory
+    {
+        $match = fn ($query, string $part) => $query->where(function ($q) use ($part) {
+            $q->where('name', $part)->orWhere('slug', Str::slug($part));
+        });
+
+        $parts = array_values(array_filter(array_map('trim', explode('>', $value)), 'strlen'));
+        if (count($parts) <= 1) {
+            $matches = $match(SubCategory::where('category_id', $category->id), $parts[0] ?? $value)->limit(2)->get();
+            return $matches->count() === 1 ? $matches->first() : null;
+        }
+
+        $current = null;
+        foreach ($parts as $part) {
+            $current = $match(
+                SubCategory::where('category_id', $category->id)->where('parent_id', $current?->id),
+                $part
+            )->first();
+
+            if (!$current) {
+                return null;
+            }
+        }
+
+        return $current;
     }
 
     private function parseBool($value): bool

@@ -34,7 +34,7 @@ class ProductController extends Controller
 
     public function category(Category $category)
     {
-        $category->load('subCategories');
+        $category->load('topSubCategories.children');
 
         $products = $category->products()
             ->latest()

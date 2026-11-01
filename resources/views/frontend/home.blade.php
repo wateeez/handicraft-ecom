@@ -40,16 +40,16 @@
                                         <span
                                             class="text-xs bg-[#F5F2EA] text-truffle-extra-dark rounded-full px-2 py-0.5 group-hover:bg-green-premium/10 group-hover:text-green-premium transition">{{ $category->products_count }}</span>
 
-                                        @if($category->subCategories && $category->subCategories->count() > 0)
+                                        @if($category->topSubCategories && $category->topSubCategories->count() > 0)
                                             <button
                                                 type="button"
                                                 class="md:hidden inline-flex items-center justify-center h-8 w-8 rounded-full border border-truffle-medium/30 bg-cream text-truffle-extra-dark hover:text-green-premium hover:border-green-premium transition"
                                                 data-subcat-toggle="subcats-{{ $category->id }}"
                                                 aria-controls="subcats-{{ $category->id }}"
-                                                aria-expanded="false"
+                                                aria-expanded="{{ request('category') == $category->slug && request('subcategory') ? 'true' : 'false' }}"
                                                 aria-label="Toggle subcategories"
                                             >
-                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <svg class="h-4 w-4 transition-transform duration-200 {{ request('category') == $category->slug && request('subcategory') ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                                 </svg>
                                             </button>
@@ -58,33 +58,99 @@
                                 </div>
                                 
                                 <!-- Subcategories Dropdown on Hover -->
-                                @if($category->subCategories && $category->subCategories->count() > 0)
+                                @if($category->topSubCategories && $category->topSubCategories->count() > 0)
+                                    @php
+                                        $hasChildren = $category->topSubCategories->contains(fn ($sub) => $sub->children->isNotEmpty());
+                                        $activeSlug = request('category') == $category->slug ? request('subcategory') : null;
+                                        $subUrl = fn ($sub) => route('home', array_merge(request()->only('filter'), ['category' => $category->slug, 'subcategory' => $sub->slug]));
+                                        $branchActive = fn ($sub) => $activeSlug && ($sub->slug === $activeSlug || $sub->children->contains('slug', $activeSlug));
+                                    @endphp
+
                                     <!-- Mobile inline subcategories (tap to expand) -->
-                                    <div id="subcats-{{ $category->id }}" class="hidden md:hidden mt-2 ml-4">
-                                        <div class="bg-cream rounded-xl border border-gray-100 py-2">
-                                            @foreach($category->subCategories as $subCategory)
-                                                <a href="{{ route('home', array_merge(request()->only('filter'), ['category' => $category->slug, 'subcategory' => $subCategory->slug])) }}"
-                                                    class="block px-4 py-2 text-sm text-truffle-extra-dark hover:bg-green-premium/10 hover:text-green-premium transition">
-                                                    {{ $subCategory->name }}
+                                    <div id="subcats-{{ $category->id }}" class="{{ $activeSlug ? '' : 'hidden' }} md:hidden mt-2">
+                                        <ul class="ml-1 border-l-2 border-truffle-light pl-3 space-y-0.5">
+                                            <li>
+                                                <a href="{{ route('categories.show', $category) }}"
+                                                    class="block py-2 text-sm font-semibold text-green-premium">
+                                                    All {{ $category->name }}
                                                 </a>
+                                            </li>
+                                            @foreach($category->topSubCategories as $subCategory)
+                                                @php $open = $branchActive($subCategory); @endphp
+                                                <li>
+                                                    <div class="flex items-center gap-1">
+                                                        <a href="{{ $subUrl($subCategory) }}"
+                                                            class="flex-1 min-w-0 truncate py-2 text-sm transition {{ $activeSlug === $subCategory->slug ? 'font-bold text-green-premium' : 'text-truffle-extra-dark hover:text-green-premium' }}">
+                                                            {{ $subCategory->name }}
+                                                        </a>
+                                                        @if($subCategory->children->isNotEmpty())
+                                                            <button type="button"
+                                                                class="inline-flex items-center justify-center h-8 w-8 flex-shrink-0 rounded-full text-truffle-extra-dark/70 hover:text-green-premium hover:bg-green-premium/10 transition"
+                                                                data-subcat-toggle="subcats-{{ $category->id }}-{{ $subCategory->id }}"
+                                                                aria-controls="subcats-{{ $category->id }}-{{ $subCategory->id }}"
+                                                                aria-expanded="{{ $open ? 'true' : 'false' }}"
+                                                                aria-label="Show {{ $subCategory->name }} sub-categories">
+                                                                <svg class="h-4 w-4 transition-transform duration-200 {{ $open ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                                </svg>
+                                                            </button>
+                                                        @endif
+                                                    </div>
+                                                    @if($subCategory->children->isNotEmpty())
+                                                        <ul id="subcats-{{ $category->id }}-{{ $subCategory->id }}"
+                                                            class="{{ $open ? '' : 'hidden' }} ml-1 mb-1 border-l border-truffle-medium/40 pl-3 space-y-0.5">
+                                                            @foreach($subCategory->children as $child)
+                                                                <li>
+                                                                    <a href="{{ $subUrl($child) }}"
+                                                                        class="block py-1.5 text-[13px] transition {{ $activeSlug === $child->slug ? 'font-bold text-green-premium' : 'text-truffle-extra-dark/80 hover:text-green-premium' }}">
+                                                                        {{ $child->name }}
+                                                                    </a>
+                                                                </li>
+                                                            @endforeach
+                                                        </ul>
+                                                    @endif
+                                                </li>
                                             @endforeach
-                                        </div>
+                                        </ul>
                                     </div>
 
-                                    <!-- Desktop flyout subcategories (hover) -->
-                                    <div class="hidden group-hover:!block absolute left-full top-0 z-50 min-w-[220px]">
-                                        <div class="bg-cream rounded-xl shadow-xl border border-gray-100 py-3 relative">
+                                    <!-- Desktop flyout subcategories (hover). The left padding bridges the gap so hover isn't lost. -->
+                                    <div class="hidden md:group-hover:!block absolute left-full -top-3 z-50 pl-3">
+                                        <div class="relative bg-cream rounded-xl shadow-xl border border-gray-100 {{ $hasChildren ? 'w-[30rem]' : 'w-60' }}">
                                             <!-- Tiny arrow pointing left -->
-                                            <div class="absolute top-4 -left-1.5 w-3 h-3 bg-cream border-l border-t border-gray-100 transform -rotate-45"></div>
-                                            
-                                            <h4 class="px-4 pb-2 text-xs font-bold text-truffle-extra-dark/70 uppercase tracking-wider mb-1 border-b border-gray-50">Subcategories</h4>
-                                            
-                                            @foreach($category->subCategories as $subCategory)
-                                                <a href="{{ route('home', array_merge(request()->only('filter'), ['category' => $category->slug, 'subcategory' => $subCategory->slug])) }}"
-                                                    class="block px-4 py-2.5 text-sm text-truffle-extra-dark hover:bg-green-premium/10 hover:text-green-premium hover:pl-5 transition-all duration-200">
-                                                    {{ $subCategory->name }}
+                                            <div class="absolute top-5 -left-1.5 w-3 h-3 bg-cream border-l border-b border-gray-100 rotate-45"></div>
+
+                                            <div class="flex items-center justify-between gap-4 px-5 pt-4 pb-3 border-b border-truffle-light">
+                                                <h4 class="text-xs font-bold text-truffle-extra-dark/70 uppercase tracking-wider truncate">{{ $category->name }}</h4>
+                                                <a href="{{ route('categories.show', $category) }}"
+                                                    class="flex-shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-green-premium hover:underline">
+                                                    View all
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
                                                 </a>
-                                            @endforeach
+                                            </div>
+
+                                            <div class="max-h-[65vh] overflow-y-auto p-3 {{ $hasChildren ? 'columns-2 gap-3' : '' }}">
+                                                @foreach($category->topSubCategories as $subCategory)
+                                                    <div class="break-inside-avoid {{ $hasChildren ? 'mb-2' : '' }}">
+                                                        <a href="{{ $subUrl($subCategory) }}"
+                                                            class="block rounded-lg px-3 py-2 text-sm transition {{ $subCategory->children->isNotEmpty() ? 'font-semibold' : '' }} {{ $activeSlug === $subCategory->slug ? 'bg-green-premium/10 text-green-premium' : 'text-truffle-extra-dark hover:bg-green-premium/10 hover:text-green-premium' }}">
+                                                            {{ $subCategory->name }}
+                                                        </a>
+                                                        @if($subCategory->children->isNotEmpty())
+                                                            <ul class="ml-4 mt-0.5 border-l border-truffle-medium/40 pl-2 space-y-0.5">
+                                                                @foreach($subCategory->children as $child)
+                                                                    <li>
+                                                                        <a href="{{ $subUrl($child) }}"
+                                                                            class="block rounded-md px-2 py-1.5 text-[13px] transition {{ $activeSlug === $child->slug ? 'bg-green-premium/10 text-green-premium font-semibold' : 'text-truffle-extra-dark/80 hover:bg-green-premium/10 hover:text-green-premium' }}">
+                                                                            {{ $child->name }}
+                                                                        </a>
+                                                                    </li>
+                                                                @endforeach
+                                                            </ul>
+                                                        @endif
+                                                    </div>
+                                                @endforeach
+                                            </div>
                                         </div>
                                     </div>
                                 @endif
@@ -147,10 +213,47 @@
                             'discounted' => 'Discounted',
                             'most-sold' => 'Most Sold',
                         ];
-                        $currentTitle = $filterTitles[request('filter')] ?? 'All Products';
+                        $currentTitle = $filterTitles[request('filter')] ?? ($activeSubCategory->name ?? 'All Products');
                     @endphp
+
+                    @if($activeSubCategory)
+                        @php
+                            $subLink = fn ($sub) => route('home', array_merge(request()->only('filter'), ['category' => $activeSubCategory->category->slug, 'subcategory' => $sub->slug]));
+                            // Drill-down chips: this sub-category's children, or its siblings when a child is open.
+                            $chipParent = $activeSubCategory->children->isNotEmpty() ? $activeSubCategory : $activeSubCategory->parent;
+                        @endphp
+                        <nav class="mb-3 text-sm" aria-label="Breadcrumb">
+                            <ol class="flex flex-wrap items-center gap-1.5 text-truffle-extra-dark/70">
+                                <li><a href="{{ route('home') }}" class="hover:text-green-premium">Shop</a></li>
+                                <li aria-hidden="true">›</li>
+                                <li><a href="{{ route('categories.show', $activeSubCategory->category) }}" class="hover:text-green-premium">{{ $activeSubCategory->category->name }}</a></li>
+                                @if($activeSubCategory->parent)
+                                    <li aria-hidden="true">›</li>
+                                    <li><a href="{{ $subLink($activeSubCategory->parent) }}" class="hover:text-green-premium">{{ $activeSubCategory->parent->name }}</a></li>
+                                @endif
+                                <li aria-hidden="true">›</li>
+                                <li class="font-semibold text-truffle-extra-dark" aria-current="page">{{ $activeSubCategory->name }}</li>
+                            </ol>
+                        </nav>
+                    @endif
+
                     <h1 class="text-4xl font-serif text-truffle-extra-dark mb-2">{{ $currentTitle }}</h1>
                     <p class="text-truffle-extra-dark text-sm">Showing {{ $products->total() }} products</p>
+
+                    @if($activeSubCategory && $chipParent && $chipParent->children->isNotEmpty())
+                        <div class="mt-5 flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 sm:flex-wrap sm:overflow-visible" role="list" aria-label="{{ $chipParent->name }} sub-categories">
+                            <a href="{{ $subLink($chipParent) }}" role="listitem"
+                                class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium border transition {{ $activeSubCategory->is($chipParent) ? 'bg-green-premium border-green-premium text-white shadow-sm' : 'bg-cream border-truffle-medium/30 text-truffle-extra-dark hover:border-green-premium hover:text-green-premium' }}">
+                                All {{ $chipParent->name }}
+                            </a>
+                            @foreach($chipParent->children as $child)
+                                <a href="{{ $subLink($child) }}" role="listitem"
+                                    class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium border transition {{ $activeSubCategory->is($child) ? 'bg-green-premium border-green-premium text-white shadow-sm' : 'bg-cream border-truffle-medium/30 text-truffle-extra-dark hover:border-green-premium hover:text-green-premium' }}">
+                                    {{ $child->name }}
+                                </a>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
 
                 <div class="mb-8">
@@ -295,6 +398,7 @@
             const isHidden = target.classList.contains('hidden');
             target.classList.toggle('hidden');
             btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+            btn.querySelector('svg')?.classList.toggle('rotate-180', isHidden);
         });
     </script>
 @endsection

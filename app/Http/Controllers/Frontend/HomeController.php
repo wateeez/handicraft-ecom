@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\SubCategory;
 use Illuminate\Support\Facades\Cache;
 
 class HomeController extends Controller
@@ -65,11 +66,13 @@ class HomeController extends Controller
             });
         }
 
-        // Filter by SubCategory
+        // Filter by SubCategory, including products in its nested sub-categories
+        $activeSubCategory = null;
         if ($request->has('subcategory')) {
-            $query->whereHas('subCategory', function ($q) use ($request) {
-                $q->where('slug', $request->subcategory);
-            });
+            $activeSubCategory = SubCategory::with('category', 'children', 'parent.children')
+                ->where('slug', $request->subcategory)
+                ->first();
+            $query->whereIn('sub_category_id', $activeSubCategory ? $activeSubCategory->selfAndDescendantIds() : []);
         }
 
         // Filter by Search Term
@@ -123,12 +126,13 @@ class HomeController extends Controller
             ]);
         }
         $categories = Cache::remember('all_categories_with_counts', 120, fn () =>
-            Category::with('subCategories')->withCount('products')->get()
+            Category::with('topSubCategories.children')->withCount('products')->get()
         );
 
         return view('frontend.home', compact(
             'products', 
             'categories',
+            'activeSubCategory',
             'newArrivalsCount',
             'featuredCount',
             'recommendedCount',

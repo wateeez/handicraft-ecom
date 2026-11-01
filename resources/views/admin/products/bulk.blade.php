@@ -72,8 +72,9 @@
                     </form>
 
                     <div class="rounded-xl bg-brass/10 border border-brass/30 px-4 py-3 text-xs text-foreground space-y-1">
-                        <p><span class="font-semibold">Required columns:</span> name, sku, category, price, weight, length, width, height</p>
+                        <p><span class="font-semibold">Required columns:</span> name, sku, category, sub_category, price, weight, length, width, height</p>
                         <p><span class="font-semibold">Category:</span> use the exact category name from your system</p>
+                        <p><span class="font-semibold">Sub-category:</span> required. Add a child with <code>Sub-category &gt; Child</code>, e.g. <code>Wall Art &gt; Paintings</code> (the child is optional)</p>
                         <p><span class="font-semibold">Yes/no fields:</span> use true/false or 1/0</p>
                     </div>
                 </div>

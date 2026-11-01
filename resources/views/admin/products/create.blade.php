@@ -53,10 +53,10 @@
                     <label class="block text-sm font-medium text-truffle-extra-dark">Category</label>
                     <select name="category_id" id="category_id"
                         class="bg-card mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 @error('category_id') border-red-500 @enderror"
-                        required onchange="updateSubCategories()">
+                        required>
                         <option value="">Select Category</option>
                         @foreach($categories as $category)
-                            <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }} data-subcategories="{{ json_encode($category->subCategories) }}">{{ $category->name }}</option>
+                            <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }} data-subcategories="{{ json_encode($category->topSubCategories->map(fn ($sub) => ['id' => $sub->id, 'name' => $sub->name, 'children' => $sub->children->map(fn ($child) => ['id' => $child->id, 'name' => $child->name])->values()])->values()) }}">{{ $category->name }}</option>
                         @endforeach
                     </select>
                     @error('category_id')
@@ -64,46 +64,7 @@
                     @enderror
                 </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-truffle-extra-dark">Sub-Category (Optional)</label>
-                    <select name="sub_category_id" id="sub_category_id"
-                        class="bg-card mt-1 block w-full rounded-md border-truffle-medium/30 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2">
-                        <option value="">Select Sub-Category</option>
-                    </select>
-                </div>
-
-                <script>
-                function updateSubCategories(selectedSubCategoryId = null) {
-                    const categorySelect = document.getElementById('category_id');
-                    const subCategorySelect = document.getElementById('sub_category_id');
-                    const selectedOption = categorySelect.options[categorySelect.selectedIndex];
-                    
-                    // Clear existing options
-                    subCategorySelect.innerHTML = '<option value="">Select Sub-Category</option>';
-                    
-                    if (selectedOption && selectedOption.value) {
-                        const subCategories = JSON.parse(selectedOption.getAttribute('data-subcategories') || '[]');
-                        subCategories.forEach(subCat => {
-                            const option = document.createElement('option');
-                            option.value = subCat.id;
-                            option.textContent = subCat.name;
-                            if (selectedSubCategoryId && subCat.id == selectedSubCategoryId) {
-                                option.selected = true;
-                            }
-                            subCategorySelect.appendChild(option);
-                        });
-                    }
-                }
-
-                // Run on page load for old input
-                document.addEventListener('DOMContentLoaded', function() {
-                    const oldCategoryId = "{{ old('category_id') }}";
-                    const oldSubCategoryId = "{{ old('sub_category_id') }}";
-                    if (oldCategoryId) {
-                        updateSubCategories(oldSubCategoryId);
-                    }
-                });
-                </script>
+                @include('admin.products._sub-category-select', ['selected' => old('sub_category_id')])
 
                 <div>
                     <label class="block text-sm font-medium text-truffle-extra-dark">Price ($)</label>

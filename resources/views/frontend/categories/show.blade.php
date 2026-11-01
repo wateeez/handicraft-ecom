@@ -100,13 +100,20 @@
             </section>
         @endif
 
-        @if($category->subCategories->isNotEmpty())
-            <nav class="flex flex-wrap gap-3 mb-10" aria-label="{{ $category->name }} subcategories">
-                @foreach($category->subCategories as $subCategory)
+        @if($category->topSubCategories->isNotEmpty())
+            <nav class="flex flex-wrap items-center gap-3 mb-10" aria-label="{{ $category->name }} subcategories">
+                @foreach($category->topSubCategories as $subCategory)
                     <a href="{{ route('home', ['category' => $category->slug, 'subcategory' => $subCategory->slug]) }}"
                         class="rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:border-primary hover:text-primary">
                         {{ $subCategory->name }}
                     </a>
+                    @foreach($subCategory->children as $child)
+                        <a href="{{ route('home', ['category' => $category->slug, 'subcategory' => $child->slug]) }}"
+                            class="rounded-full border border-dashed border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:border-primary hover:text-primary"
+                            title="{{ $subCategory->name }} › {{ $child->name }}">
+                            {{ $child->name }}
+                        </a>
+                    @endforeach
                 @endforeach
             </nav>
         @endif
